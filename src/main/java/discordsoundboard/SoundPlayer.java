@@ -1,3 +1,5 @@
+package main.java.discordsoundboard;
+
 import com.sun.javaws.Launcher;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.audio.player.FilePlayer;
