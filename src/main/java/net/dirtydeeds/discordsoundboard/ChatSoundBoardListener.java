@@ -1,4 +1,4 @@
-package main.java.discordsoundboard;
+package net.dirtydeeds.discordsoundboard;
 
 import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.hooks.ListenerAdapter;

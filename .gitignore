@@ -2,3 +2,5 @@ out/
 *.iml
 tokens.json
 .idea/
+src/main/resources/sounds/*
+src/main/resources/app.properties

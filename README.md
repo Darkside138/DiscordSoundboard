@@ -1,6 +1,6 @@
 # DiscordSoundboard
 
-Simple soundboard for discord. You can trigger sounds by commands type in discord chat or you can choose the sound from the local UI. You will need to create an account that the bot will use to join and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
+Simple soundboard for discord. You can trigger sounds by commands typed in discord chat or you can choose the sound from the local UI. You will need to create an account that the bot will use to join and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
 ## Usage
 Running locally from an IDE: Update the app.properties file with the login information for your "bot". Property "username_to_join_channel" is used by the application when a button in the UI is clicked. Before playing the sound file the bot will look for the username specifiedin all the servers the bot account has access to and join that channel, then play the sound that was clicked. For local usage sounds can be placed in src/main/resources/sounds/.

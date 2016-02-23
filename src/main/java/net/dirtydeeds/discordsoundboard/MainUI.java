@@ -1,4 +1,4 @@
-package main.java.discordsoundboard;
+package net.dirtydeeds.discordsoundboard;
 
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
@@ -49,7 +49,7 @@ public class MainUI {
         if (stream == null) {
             System.out.println("Loading app.properties file from resources folder");
             try {
-                stream = this.getClass().getResourceAsStream("app.properties");
+                stream = this.getClass().getResourceAsStream("/app.properties");
                 appProperties.load(stream);
                 stream.close();
             } catch (IOException e) {

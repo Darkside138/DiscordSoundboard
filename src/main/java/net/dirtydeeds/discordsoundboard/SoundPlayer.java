@@ -1,4 +1,4 @@
-package main.java.discordsoundboard;
+package net.dirtydeeds.discordsoundboard;
 
 import com.sun.javaws.Launcher;
 import net.dv8tion.jda.JDA;
