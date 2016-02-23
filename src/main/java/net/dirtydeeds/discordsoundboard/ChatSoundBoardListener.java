@@ -28,7 +28,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             event.getChannel().sendMessage(sb.toString());
         } else if (message.startsWith("?")) {
             try {
-                soundPlayer.playFileForEvent(message.substring(1, message.length()) + ".mp3", event);
+                soundPlayer.playFileForEvent(message.substring(1, message.length()), event);
             } catch (Exception e) {
                 e.printStackTrace();
             }

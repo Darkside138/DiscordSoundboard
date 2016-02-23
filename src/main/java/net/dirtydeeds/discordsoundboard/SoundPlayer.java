@@ -60,20 +60,12 @@ public class SoundPlayer {
     }
     
     public void playFile(String fileName) {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(resourceDir + "/" + fileName);
-        if( url == null ){
-            url = Thread.currentThread().getContextClassLoader().getResource(fileName);
-        }
-        if( url == null ){
-            throw new RuntimeException( "Cannot find resource on classpath: '" + fileName + "'" );
+        File fileToPlay = availableSounds.get(fileName);
+        if (fileToPlay != null) {
+            playFile(fileToPlay);
         } else {
-            System.out.printf("Found file " + url);
+            playFile(fileName);
         }
-        fileName = url.getFile();
-
-        File audioFile = new File(fileName);
-        
-        playFile(audioFile);
     }
     
     public void playFile(File audioFile) {
