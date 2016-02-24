@@ -15,9 +15,12 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * @author dfurrer.
@@ -28,9 +31,11 @@ public class SoundPlayer {
     private Map<String, File> availableSounds;
     
     private final String resourceDir = "sounds";
+    private Path soundFilePath;
 
     public SoundPlayer(Player player) {
         this.player = player;
+        availableSounds = getFileList();
     }
 
     public void setBot(JDA bot) {
@@ -59,7 +64,44 @@ public class SoundPlayer {
         }
     }
     
-    public void playFile(String fileName) {
+    public void moveToChannel(VoiceChannel channel){
+        if (bot.getAudioManager().isConnected()) {
+            bot.getAudioManager().moveAudioConnection(channel);
+        } else {
+            bot.getAudioManager().openAudioConnection(channel);
+        }
+    }
+
+    public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
+        VoiceChannel channel = null;
+
+        outerloop:
+        for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
+            for (User user : channel1.getUsers()) {
+                if (user.getId().equals(event.getAuthor().getId())) {
+                    channel = channel1;
+                    break outerloop;
+                }
+            }
+        }
+
+        if (channel == null) {
+            event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
+            throw new Exception("Problem moving to requested channel");
+        }
+
+        moveToChannel(channel);
+    }
+
+    public Map<String, File> getAvailableSoundFiles() {
+        return availableSounds;
+    }
+    
+    public Path getSoundFilePath() {
+        return soundFilePath;
+    }
+    
+    private void playFile(String fileName) {
         URL url = Thread.currentThread().getContextClassLoader().getResource(resourceDir + "/" + fileName);
         if( url == null ){
             url = Thread.currentThread().getContextClassLoader().getResource(fileName);
@@ -76,7 +118,7 @@ public class SoundPlayer {
         playFile(audioFile);
     }
     
-    public void playFile(File audioFile) {
+    private void playFile(File audioFile) {
         try {
             player = new FilePlayer(audioFile);
 
@@ -110,40 +152,6 @@ public class SoundPlayer {
         }
     }
     
-    public void moveToChannel(VoiceChannel channel){
-        if (bot.getAudioManager().isConnected()) {
-            bot.getAudioManager().moveAudioConnection(channel);
-        } else {
-            bot.getAudioManager().openAudioConnection(channel);
-        }
-    }
-
-    public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
-        VoiceChannel channel = null;
-        
-        outerloop:
-        for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
-            for (User user : channel1.getUsers()) {
-                if (user.getId().equals(event.getAuthor().getId())) {
-                    channel = channel1;
-                    break outerloop;
-                }
-            }
-        }
-
-        if (channel == null) {
-            event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
-            throw new Exception("Problem moving to requested channel");
-        }
-        
-        moveToChannel(channel);
-    }
-    
-    public Map<String, File> getAvailableSoundFiles() {
-        availableSounds = getFileList();
-        return availableSounds;
-    }
-    
     private Map<String,File> getFileList() {
         Map<String,File> returnFiles = new HashMap<>();
         try {
@@ -151,7 +159,8 @@ public class SoundPlayer {
 
             if(jarFile.isFile()) {  // Run with JAR file
                 System.out.println("Loading from " + System.getProperty("user.dir") + "/sounds");
-                Files.walk(Paths.get(System.getProperty("user.dir") + "/sounds")).forEach(filePath -> {
+                soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
+                Files.walk(soundFilePath).forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         String fileName = filePath.getFileName().toString();
                         fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
@@ -163,6 +172,11 @@ public class SoundPlayer {
             } else {
                 System.out.println("Loading from classpath resources /" + resourceDir);
                 final URL url = Launcher.class.getResource("/" + resourceDir);
+                try {
+                    soundFilePath = Paths.get(url.toURI());
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
                 if (url != null) {
                     try {
                         final File apps = new File(url.toURI());
@@ -184,5 +198,9 @@ public class SoundPlayer {
             e.printStackTrace();
         }
         return returnFiles;
+    }
+    
+    private void updateAvailableSoundFiles() {
+        availableSounds = getFileList();
     }
 }

@@ -23,6 +23,7 @@ public class MainUI {
 
     private JFrame mainFrame;
     private JPanel controlPanel;
+    private JPanel soundButtonPanel;
     private Properties appProperties;
 
     public MainUI(){
@@ -31,6 +32,16 @@ public class MainUI {
         prepareGUI();
 
         mainFrame.setTitle(appProperties.getProperty("app_title"));
+
+        initializeDiscordBot();
+        
+        Map<String,File> soundFiles = soundPlayer.getAvailableSoundFiles();
+        
+        showSoundboard(soundFiles);
+    }
+
+    public static void main(String[] args){
+        new MainUI();
     }
 
     private void loadProperties() {
@@ -58,14 +69,6 @@ public class MainUI {
         }
     }
 
-    public static void main(String[] args){
-        MainUI mainUI = new MainUI();
-
-        mainUI.initializeDiscordBot();
-        
-        mainUI.showSoundboard();
-    }
-
     private void prepareGUI(){
         int width = 400;
         int height = 500;
@@ -87,19 +90,32 @@ public class MainUI {
         });
         controlPanel = new JPanel();
         controlPanel.setLayout(new FlowLayout());
-
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(new RefreshUIListener());
+        controlPanel.add(refreshButton);
         mainFrame.add(controlPanel);
+        
+        soundButtonPanel = new JPanel();
+        soundButtonPanel.setLayout(new FlowLayout());
+        mainFrame.add(soundButtonPanel);
+        
         mainFrame.setVisible(true);
     }
 
-    private void showSoundboard(){
-        Map<String,File> soundFiles = soundPlayer.getAvailableSoundFiles();
+    private class RefreshUIListener implements ActionListener{
+        public void actionPerformed(ActionEvent e) {
+            soundButtonPanel.removeAll();
+            showSoundboard(soundPlayer.getAvailableSoundFiles());
+        }
+    }
+
+    private void showSoundboard(Map<String,File> soundFiles){
         for(Map.Entry entry : soundFiles.entrySet()) {
             String mapKey = entry.getKey().toString();
             JButton soundButton1 = new JButton(mapKey);
             soundButton1.setActionCommand(mapKey);
             soundButton1.addActionListener(new ButtonClickListener());
-            controlPanel.add(soundButton1);
+            soundButtonPanel.add(soundButton1);
             mainFrame.setVisible(true);
         }
     }
@@ -114,13 +130,14 @@ public class MainUI {
     private void initializeDiscordBot() {
         try {
             soundPlayer = new SoundPlayer(player);
-            ChatSoundBoardListener chatListener = new ChatSoundBoardListener(soundPlayer);
             JDA bot = new JDABuilder()
                     .setEmail(appProperties.getProperty("username"))
                     .setPassword(appProperties.getProperty("password"))
-                    .addListener(chatListener)
                     .buildBlocking();
-            
+            if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(soundPlayer);
+                bot.addEventListener(chatListener);
+            }
             soundPlayer.setBot(bot);
         }
         catch (IllegalArgumentException e) {
