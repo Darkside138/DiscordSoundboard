@@ -19,8 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 
 /**
  * @author dfurrer.
@@ -143,41 +141,7 @@ public class SoundPlayer {
             }
         }
     }
-    
-    public void moveToChannel(VoiceChannel channel){
-        if (bot.getAudioManager().isConnected()) {
-            bot.getAudioManager().moveAudioConnection(channel);
-        } else {
-            bot.getAudioManager().openAudioConnection(channel);
-        }
-    }
 
-    public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
-        VoiceChannel channel = null;
-        
-        outerloop:
-        for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
-            for (User user : channel1.getUsers()) {
-                if (user.getId().equals(event.getAuthor().getId())) {
-                    channel = channel1;
-                    break outerloop;
-                }
-            }
-        }
-
-        if (channel == null) {
-            event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
-            throw new Exception("Problem moving to requested channel");
-        }
-        
-        moveToChannel(channel);
-    }
-    
-    public Map<String, File> getAvailableSoundFiles() {
-        availableSounds = getFileList();
-        return availableSounds;
-    }
-    
     private Map<String,File> getFileList() {
         Map<String,File> returnFiles = new HashMap<>();
         try {
