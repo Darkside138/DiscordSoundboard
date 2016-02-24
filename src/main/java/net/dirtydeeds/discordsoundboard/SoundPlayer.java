@@ -100,22 +100,14 @@ public class SoundPlayer {
     public Path getSoundFilePath() {
         return soundFilePath;
     }
-    
-    private void playFile(String fileName) {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(resourceDir + "/" + fileName);
-        if( url == null ){
-            url = Thread.currentThread().getContextClassLoader().getResource(fileName);
-        }
-        if( url == null ){
-            throw new RuntimeException( "Cannot find resource on classpath: '" + fileName + "'" );
-        } else {
-            System.out.printf("Found file " + url);
-        }
-        fileName = url.getFile();
 
-        File audioFile = new File(fileName);
-        
-        playFile(audioFile);
+    public void playFile(String fileName) {
+        File fileToPlay = availableSounds.get(fileName);
+        if (fileToPlay != null) {
+            playFile(fileToPlay);
+        } else {
+            playFile(fileName);
+        }
     }
     
     private void playFile(File audioFile) {
@@ -150,6 +142,40 @@ public class SoundPlayer {
                         .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel));
             }
         }
+    }
+    
+    public void moveToChannel(VoiceChannel channel){
+        if (bot.getAudioManager().isConnected()) {
+            bot.getAudioManager().moveAudioConnection(channel);
+        } else {
+            bot.getAudioManager().openAudioConnection(channel);
+        }
+    }
+
+    public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
+        VoiceChannel channel = null;
+        
+        outerloop:
+        for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
+            for (User user : channel1.getUsers()) {
+                if (user.getId().equals(event.getAuthor().getId())) {
+                    channel = channel1;
+                    break outerloop;
+                }
+            }
+        }
+
+        if (channel == null) {
+            event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
+            throw new Exception("Problem moving to requested channel");
+        }
+        
+        moveToChannel(channel);
+    }
+    
+    public Map<String, File> getAvailableSoundFiles() {
+        availableSounds = getFileList();
+        return availableSounds;
     }
     
     private Map<String,File> getFileList() {
