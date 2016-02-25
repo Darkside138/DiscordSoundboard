@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author dfurrer.
@@ -64,6 +65,9 @@ public class SoundPlayer {
     
     public void moveToChannel(VoiceChannel channel){
         if (bot.getAudioManager().isConnected()) {
+            if (bot.getAudioManager().isAttemptingToConnect()) {
+                bot.getAudioManager().closeAudioConnection();
+            }
             bot.getAudioManager().moveAudioConnection(channel);
         } else {
             bot.getAudioManager().openAudioConnection(channel);
@@ -85,7 +89,7 @@ public class SoundPlayer {
 
         if (channel == null) {
             event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
-            throw new Exception("Problem moving to requested channel");
+            throw new Exception("Problem moving to requested users channel" + event.getAuthor().getId());
         }
 
         moveToChannel(channel);
@@ -143,7 +147,7 @@ public class SoundPlayer {
     }
 
     private Map<String,File> getFileList() {
-        Map<String,File> returnFiles = new HashMap<>();
+        Map<String,File> returnFiles = new TreeMap<>();
         try {
             final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
 
