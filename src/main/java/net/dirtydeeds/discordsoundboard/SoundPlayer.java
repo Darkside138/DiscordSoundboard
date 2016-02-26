@@ -17,12 +17,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
  * @author dfurrer.
+ *
+ * This class handles moving into channels and playing sounds. Also, it loads the available sound files.
  */
 public class SoundPlayer {
     private JDA bot;
@@ -37,32 +38,47 @@ public class SoundPlayer {
         availableSounds = getFileList();
     }
 
+    /**
+     * Sets the bot into the player. The player requires the bot to be able to do most of it's other functions.
+     * @param bot - The JDA object.
+     */
     public void setBot(JDA bot) {
         this.bot = bot;
     }
-    
+
+    /**
+     * Joins the channel of the user provided and then plays a file.
+     * @param fileName - The name of the file to play.
+     * @param userName - The name of the user to lookup what VoiceChannel they are in.
+     */
     public void playFileForUser(String fileName, String userName) {
         try {
             joinCurrentChannel(userName);
             
-            File fileToPlay = availableSounds.get(fileName);
-            if (fileToPlay != null) {
-                playFile(fileToPlay);
-            } else {
-                playFile(fileName);
-            }
+            playFile(fileName);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Plays the fileName requested.
+     * @param fileName - The name of the file to play.
+     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *              the sound back in.
+     * @throws Exception
+     */
     public void playFileForEvent(String fileName, GuildMessageReceivedEvent event) throws Exception {
         if (event != null) {
             moveToUserIdsChannel(event);
             playFile(fileName);
         }
     }
-    
+
+    /**
+     * Moves to the specified voice channel.
+     * @param channel - The channel specified.
+     */
     public void moveToChannel(VoiceChannel channel){
         if (bot.getAudioManager().isConnected()) {
             if (bot.getAudioManager().isAttemptingToConnect()) {
@@ -74,6 +90,11 @@ public class SoundPlayer {
         }
     }
 
+    /**
+     * Find the "author" of the event and join the voice channel they are in.
+     * @param event - The event
+     * @throws Exception
+     */
     public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
         VoiceChannel channel = null;
 
@@ -95,14 +116,25 @@ public class SoundPlayer {
         moveToChannel(channel);
     }
 
+    /**
+     * Gets a Map of the loaded sound files.
+     * @return Map of sound files that have been loaded.
+     */
     public Map<String, File> getAvailableSoundFiles() {
         return availableSounds;
     }
-    
+
+    /**
+     * @return Returns the path that sound files were loaded from.
+     */
     public Path getSoundFilePath() {
         return soundFilePath;
     }
 
+    /**
+     * Play file name requested. Will first try to load the file from the map of available sounds.
+     * @param fileName - fileName to play.
+     */
     public void playFile(String fileName) {
         File fileToPlay = availableSounds.get(fileName);
         if (fileToPlay != null) {
@@ -111,7 +143,8 @@ public class SoundPlayer {
             playFile(fileName);
         }
     }
-    
+
+    //Play the file provided.
     private void playFile(File audioFile) {
         try {
             player = new FilePlayer(audioFile);
@@ -137,6 +170,7 @@ public class SoundPlayer {
         }
     }
 
+    //Join the users current channel.
     private void joinCurrentChannel(String userName) {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
@@ -146,6 +180,8 @@ public class SoundPlayer {
         }
     }
 
+    //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
+    //to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
     private Map<String,File> getFileList() {
         Map<String,File> returnFiles = new TreeMap<>();
         try {
@@ -171,20 +207,18 @@ public class SoundPlayer {
                 } catch (URISyntaxException e) {
                     e.printStackTrace();
                 }
-                if (url != null) {
-                    try {
-                        final File apps = new File(url.toURI());
-                        for (File app : apps.listFiles()) {
-                            if (returnFiles.get(app.getName()) == null) {
-                                String fileName = app.getName();
-                                fileName = fileName.substring(0, fileName.indexOf("."));
-                                returnFiles.put(fileName, app);
-                                System.out.println(app);
-                            }
+                try {
+                    final File apps = new File(url.toURI());
+                    for (File app : apps.listFiles()) {
+                        if (returnFiles.get(app.getName()) == null) {
+                            String fileName = app.getName();
+                            fileName = fileName.substring(0, fileName.indexOf("."));
+                            returnFiles.put(fileName, app);
+                            System.out.println(app);
                         }
-                    } catch (URISyntaxException ex) {
-                        // never happens
                     }
+                } catch (URISyntaxException ex) {
+                    // never happens
                 }
             }
         } catch (IOException e) {
@@ -193,7 +227,9 @@ public class SoundPlayer {
         }
         return returnFiles;
     }
-    
+
+    //Not used right now, but I plan to use this when I implement folder monitoring, When a change is detected this
+    //would be called.
     private void updateAvailableSoundFiles() {
         availableSounds = getFileList();
     }

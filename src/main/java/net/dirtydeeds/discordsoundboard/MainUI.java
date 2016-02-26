@@ -16,6 +16,11 @@ import java.util.Properties;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 
+/**
+ * @author dfurrer.
+ *
+ * This class handles the UI and initializing the bot
+ */
 public class MainUI {
     
     SoundPlayer soundPlayer;
@@ -25,6 +30,7 @@ public class MainUI {
     private JPanel controlPanel;
     private JPanel soundButtonPanel;
     private Properties appProperties;
+    private JDA bot;
 
     public MainUI(){
         loadProperties();
@@ -44,6 +50,7 @@ public class MainUI {
         new MainUI();
     }
 
+    //Loads in the properties from the app.properties file
     private void loadProperties() {
         appProperties = new Properties();
         InputStream stream = null;
@@ -69,6 +76,7 @@ public class MainUI {
         }
     }
 
+    //Sets up the initial UI
     private void prepareGUI(){
         int width = 400;
         int height = 500;
@@ -84,6 +92,7 @@ public class MainUI {
         mainFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowEvent){
                 System.exit(0);
+                bot.shutdown();
                 player.stop();
                 player = null;
             }
@@ -109,6 +118,7 @@ public class MainUI {
         }
     }
 
+    //This method creates a button for each sound file that is available
     private void showSoundboard(Map<String,File> soundFiles){
         for(Map.Entry entry : soundFiles.entrySet()) {
             String mapKey = entry.getKey().toString();
@@ -120,6 +130,7 @@ public class MainUI {
         }
     }
 
+    //When buttons are clicked join the specified users channel and play the sound
     private class ButtonClickListener implements ActionListener{
         public void actionPerformed(ActionEvent e) {
             String command = e.getActionCommand();
@@ -127,10 +138,11 @@ public class MainUI {
         }
     }
 
+    //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
     private void initializeDiscordBot() {
         try {
             soundPlayer = new SoundPlayer(player);
-            JDA bot = new JDABuilder()
+            bot = new JDABuilder()
                     .setEmail(appProperties.getProperty("username"))
                     .setPassword(appProperties.getProperty("password"))
                     .buildBlocking();
