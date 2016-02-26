@@ -1,6 +1,12 @@
+#Your bots username and password
 username=yourbotsemail@email.com
 password=password
+#The username to look for and join their channel when a sound is played from the UI
 username_to_join_channel=yourDiscordUsername
+#The title to be used for the app
 app_title=Sound Board
+#The window width/height in pixels
 app_width=400
 app_height=400
+#If the bot should respond to chat commands (true|false)
+respond_to_chat_commands=true

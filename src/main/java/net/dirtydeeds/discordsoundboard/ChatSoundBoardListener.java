@@ -9,6 +9,8 @@ import java.util.Set;
 
 /**
  * @author dfurrer.
+ *
+ * This class handles listening to commands in discord text channels and responding to them.
  */
 public class ChatSoundBoardListener extends ListenerAdapter {
     
@@ -23,6 +25,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         String message = event.getMessage().getContent();
         
         StringBuilder sb = new StringBuilder();
+
+        //Respond
         if (message.startsWith("?list")) {
             Set<Map.Entry<String, File>> entrySet = soundPlayer.getAvailableSoundFiles().entrySet();
             if (entrySet.size() > 0) {
@@ -34,6 +38,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             } else {
                 sb.append("The soundboard has no available sounds to play.");
             }
+        //If the command is not list and starts with ? try and play that "command" or sound file.
         } else if (message.startsWith("?")) {
             try {
                 soundPlayer.playFileForEvent(message.substring(1, message.length()), event);
