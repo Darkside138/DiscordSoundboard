@@ -26,7 +26,7 @@ import java.util.TreeMap;
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files.
  */
 public class SoundPlayer {
-    private JDA bot;
+    private final JDA bot;
     private Player player;
     private Map<String, File> availableSounds;
     
@@ -35,17 +35,10 @@ public class SoundPlayer {
     private final String resourceDir = "sounds";
     private Path soundFilePath;
 
-    public SoundPlayer(Player player) {
+    public SoundPlayer(Player player, JDA bot) {
         this.player = player;
-        availableSounds = getFileList();
-    }
-
-    /**
-     * Sets the bot into the player. The player requires the bot to be able to do most of it's other functions.
-     * @param bot - The JDA object.
-     */
-    public void setBot(JDA bot) {
         this.bot = bot;
+        availableSounds = getFileList();
     }
 
     /**

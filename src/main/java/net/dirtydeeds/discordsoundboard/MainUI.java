@@ -36,17 +36,26 @@ public class MainUI {
     private JDA bot;
 
     public MainUI(){
+        //Load properties
+        //Load properties
         loadProperties();
-        
+
+        //Prepare the main window UI
         prepareGUI();
 
-        mainFrame.setTitle(appProperties.getProperty("app_title"));
-
+        //Init the discord bot
         initializeDiscordBot();
-        
+
+        //Create the sound player
+        soundPlayer = new SoundPlayer(player, bot);
         Map<String,File> soundFiles = soundPlayer.getAvailableSoundFiles();
-        
         showSoundboard(soundFiles);
+
+        //Setup the ChatListener if the user has configured it to be active
+        if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
+            ChatSoundBoardListener chatListener = new ChatSoundBoardListener(soundPlayer);
+            bot.addEventListener(chatListener);
+        }
     }
 
     public static void main(String[] args){
@@ -89,13 +98,8 @@ public class MainUI {
         if (appProperties.getProperty("app_height") != null) {
             height = Integer.parseInt(appProperties.getProperty("app_height"));
         }
-        mainFrame = new JFrame("App Title");
-        
-//        JPanel mainPanel = (JPanel) mainFrame.getContentPane();
-//        mainPanel.setLayout(new FlowLayout());
-//        
-//        GridBagConstraints gbc = new GridBagConstraints();
-//        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        mainFrame = new JFrame(appProperties.getProperty("app_title"));
+//        mainFrame.setSize(width,height);
         
         mainFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowEvent){
@@ -113,7 +117,7 @@ public class MainUI {
             }
         };
         soundButtonPanel.setLayout(new FlowLayout());
-        
+
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(new RefreshUIListener());
 //        mainPanel.add(refreshButton);
@@ -122,10 +126,12 @@ public class MainUI {
         JPanel vPan = new JPanel();
         GridLayout grid = new GridLayout();
         grid.setColumns(1);
-        grid.setRows(2);
+        grid.setHgap(20);
+        grid.setRows(3);
         vPan.setLayout(grid);
         JLabel volumeLabel = new JLabel("Volume:");
         volumePanel.add(vPan);
+        vPan.add(spacer = new JLabel(" "),"span, grow");
         vPan.add(volumeLabel);
         JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
         slider.addChangeListener(new SliderListener());
@@ -133,7 +139,7 @@ public class MainUI {
         slider.setMajorTickSpacing(25);
         slider.setMinorTickSpacing(5);
         vPan.add(slider);
-        
+
         mainFrame.add(soundButtonPanel);
         
         mainFrame.setSize(width,height);
@@ -156,6 +162,7 @@ public class MainUI {
             soundButton1.addActionListener(new ButtonClickListener());
             soundButtonPanel.add(soundButton1);
         }
+        soundButtonPanel.add(spacer = new JLabel(" "),"span, grow");
         soundButtonPanel.add(spacer = new JLabel(" "),"span, grow");
         soundButtonPanel.add(volumePanel);
         mainFrame.setVisible(true);
@@ -180,16 +187,10 @@ public class MainUI {
     //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
     private void initializeDiscordBot() {
         try {
-            soundPlayer = new SoundPlayer(player);
             bot = new JDABuilder()
                     .setEmail(appProperties.getProperty("username"))
                     .setPassword(appProperties.getProperty("password"))
                     .buildBlocking();
-            if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(soundPlayer);
-                bot.addEventListener(chatListener);
-            }
-            soundPlayer.setBot(bot);
         }
         catch (IllegalArgumentException e) {
             System.out.println("The config was not populated. Please enter an email and password.");
