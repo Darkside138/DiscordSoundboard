@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Properties;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  * @author dfurrer.
@@ -27,8 +29,9 @@ public class MainUI {
     Player player;
 
     private JFrame mainFrame;
-    private JPanel controlPanel;
     private JPanel soundButtonPanel;
+    private JPanel volumePanel;
+    private JLabel spacer;
     private Properties appProperties;
     private JDA bot;
 
@@ -87,7 +90,12 @@ public class MainUI {
             height = Integer.parseInt(appProperties.getProperty("app_height"));
         }
         mainFrame = new JFrame("App Title");
-        mainFrame.setSize(width,height);
+        
+//        JPanel mainPanel = (JPanel) mainFrame.getContentPane();
+//        mainPanel.setLayout(new FlowLayout());
+//        
+//        GridBagConstraints gbc = new GridBagConstraints();
+//        gbc.gridwidth = GridBagConstraints.REMAINDER;
         
         mainFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowEvent){
@@ -97,17 +105,38 @@ public class MainUI {
                 player = null;
             }
         });
-        controlPanel = new JPanel();
-        controlPanel.setLayout(new FlowLayout());
+
+        soundButtonPanel = new JPanel(new FlowLayout()) {
+            @Override
+            public Dimension getMaximumSize() {
+                return super.getMaximumSize();
+            }
+        };
+        soundButtonPanel.setLayout(new FlowLayout());
+        
         JButton refreshButton = new JButton("Refresh");
         refreshButton.addActionListener(new RefreshUIListener());
-        controlPanel.add(refreshButton);
-        mainFrame.add(controlPanel);
+//        mainPanel.add(refreshButton);
+
+        volumePanel = new JPanel(new FlowLayout());
+        JPanel vPan = new JPanel();
+        GridLayout grid = new GridLayout();
+        grid.setColumns(1);
+        grid.setRows(2);
+        vPan.setLayout(grid);
+        JLabel volumeLabel = new JLabel("Volume:");
+        volumePanel.add(vPan);
+        vPan.add(volumeLabel);
+        JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+        slider.addChangeListener(new SliderListener());
+        slider.setPaintTicks(true);
+        slider.setMajorTickSpacing(25);
+        slider.setMinorTickSpacing(5);
+        vPan.add(slider);
         
-        soundButtonPanel = new JPanel();
-        soundButtonPanel.setLayout(new FlowLayout());
         mainFrame.add(soundButtonPanel);
         
+        mainFrame.setSize(width,height);
         mainFrame.setVisible(true);
     }
 
@@ -126,8 +155,10 @@ public class MainUI {
             soundButton1.setActionCommand(mapKey);
             soundButton1.addActionListener(new ButtonClickListener());
             soundButtonPanel.add(soundButton1);
-            mainFrame.setVisible(true);
         }
+        soundButtonPanel.add(spacer = new JLabel(" "),"span, grow");
+        soundButtonPanel.add(volumePanel);
+        mainFrame.setVisible(true);
     }
 
     //When buttons are clicked join the specified users channel and play the sound
@@ -135,6 +166,14 @@ public class MainUI {
         public void actionPerformed(ActionEvent e) {
             String command = e.getActionCommand();
             soundPlayer.playFileForUser(command, appProperties.getProperty("username_to_join_channel"));
+        }
+    }
+
+    class SliderListener implements ChangeListener {
+        public void stateChanged(ChangeEvent changeEvent) {
+            JSlider sliderEventSource = (JSlider) changeEvent.getSource();
+            float volume = (float) sliderEventSource.getValue() / 100;
+            soundPlayer.setVolume(volume);
         }
     }
 

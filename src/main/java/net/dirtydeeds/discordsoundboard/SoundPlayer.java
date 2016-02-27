@@ -30,6 +30,8 @@ public class SoundPlayer {
     private Player player;
     private Map<String, File> availableSounds;
     
+    private float volume;
+    
     private final String resourceDir = "sounds";
     private Path soundFilePath;
 
@@ -144,6 +146,14 @@ public class SoundPlayer {
         }
     }
 
+    /**
+     * Sets volume of the player.
+     * @param volume - The volume value to set.
+     */
+    public void setVolume(float volume) {
+        this.volume = volume;
+    }
+
     //Play the file provided.
     private void playFile(File audioFile) {
         try {
@@ -164,6 +174,9 @@ public class SoundPlayer {
             // client joins a VoiceChannel. You appear in the channel lobby immediately, but it takes a few
             // moments before you can start communicating.
             player.play();
+            if (player != null) {
+                player.setVolume(volume);
+            }
         }
         catch (IOException | UnsupportedAudioFileException e) {
             e.printStackTrace();
