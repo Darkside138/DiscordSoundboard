@@ -34,6 +34,7 @@ public class MainUI {
     private JLabel spacer;
     private Properties appProperties;
     private JDA bot;
+    private int initialVolume = 75;
 
     public MainUI(){
         //Load properties
@@ -56,6 +57,7 @@ public class MainUI {
             ChatSoundBoardListener chatListener = new ChatSoundBoardListener(soundPlayer);
             bot.addEventListener(chatListener);
         }
+        setSoundPlayerVolume(initialVolume);
     }
 
     public static void main(String[] args){
@@ -133,7 +135,7 @@ public class MainUI {
         volumePanel.add(vPan);
         vPan.add(spacer = new JLabel(" "),"span, grow");
         vPan.add(volumeLabel);
-        JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+        JSlider slider = new JSlider(JSlider.HORIZONTAL, 0, 100, initialVolume);
         slider.addChangeListener(new SliderListener());
         slider.setPaintTicks(true);
         slider.setMajorTickSpacing(25);
@@ -179,9 +181,13 @@ public class MainUI {
     class SliderListener implements ChangeListener {
         public void stateChanged(ChangeEvent changeEvent) {
             JSlider sliderEventSource = (JSlider) changeEvent.getSource();
-            float volume = (float) sliderEventSource.getValue() / 100;
-            soundPlayer.setVolume(volume);
+            setSoundPlayerVolume(sliderEventSource.getValue());
         }
+    }
+
+    private void setSoundPlayerVolume(int volume) {
+        float volumeFloat = (float) volume / 100;
+        soundPlayer.setVolume(volumeFloat);
     }
 
     //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
