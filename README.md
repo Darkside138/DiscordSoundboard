@@ -30,4 +30,4 @@ Once you've compiled the jar file you will need to place the .jar file, the app.
 then simple execute the .jar file.
 
 ###Playing sounds by text commands
-Type !list to get a list of sounds file commands the soundboard has available. The name of the commands will be the name of the sound file minus extension. When a user types one of the sound file commands listed the bot will join that users channel and then play the requested sound file. The bot remains in that channel unless the bot is requested to play sound in a different channel.
+Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will be the name of the sound file minus extension. When a user types one of the sound file commands listed the bot will join that users channel and then play the requested sound file. The bot remains in that channel unless the bot is requested to play sound in a different channel.
