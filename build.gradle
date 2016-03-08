@@ -1,0 +1,38 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'distribution'
+
+version = '1.0.2'
+
+repositories {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
+dependencies {
+    compile 'net.dv8tion:JDA:1.3.0_207'
+    compile 'commons-io:commons-io:2.4'
+}
+
+jar {
+    group = 'build'
+    manifest {
+        attributes 'Main-Class': 'net.dirtydeeds.discordsoundboard.MainUI',
+        'Implementation-Version': version
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude('**/app.properties**')
+    exclude('sounds/**')
+}
+
+distributions {
+    main {
+        baseName = 'discordSoundboard'
+        contents {
+            from { 'src/main/resources/app.propertries.example' }
+        }
+    }
+}
+

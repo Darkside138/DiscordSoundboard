@@ -1,6 +1,5 @@
 package net.dirtydeeds.discordsoundboard;
 
-import com.sun.javaws.Launcher;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.audio.player.Player;
@@ -207,7 +206,7 @@ public class SoundPlayer {
                 });
             } else {
                 System.out.println("Loading from classpath resources /" + resourceDir);
-                final URL url = Launcher.class.getResource("/" + resourceDir);
+                final URL url = SoundPlayer.class.getResource("/" + resourceDir);
                 try {
                     soundFilePath = Paths.get(url.toURI());
                 } catch (URISyntaxException e) {
