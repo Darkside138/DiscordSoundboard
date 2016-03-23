@@ -1,22 +1,34 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.service;
 
+import net.dirtydeeds.discordsoundboard.ChatSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.beans.SoundFile;
+import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dv8tion.jda.JDA;
+import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.audio.player.Player;
 import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.User;
 import net.dv8tion.jda.entities.VoiceChannel;
 import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.utils.SimpleLog;
+import org.springframework.stereotype.Service;
 
+import javax.security.auth.login.LoginException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 
 /**
@@ -24,20 +36,46 @@ import java.util.TreeMap;
  *
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files.
  */
-public class SoundPlayer {
-    private final JDA bot;
-    private Player player;
-    private Map<String, File> availableSounds;
+@Service
+public class SoundPlayerImpl {
+
+    public static final SimpleLog LOG = SimpleLog.getLog("SoundPlayerImpl");
     
-    private float volume;
+    private Properties appProperties;
+    private JDA bot;
+    private Player player;
+    private float playerVolume = (float) .75;
+    private Map<String, SoundFile> availableSounds;
     
     private final String resourceDir = "sounds";
     private Path soundFilePath;
 
-    public SoundPlayer(Player player, JDA bot) {
-        this.player = player;
-        this.bot = bot;
+    public SoundPlayerImpl() {
+        loadProperties();
+        initializeDiscordBot();
         availableSounds = getFileList();
+        setSoundPlayerVolume(75);
+    }
+    
+    public Properties getProperties() {
+        return appProperties;
+    }
+    
+    public void setBotListener(ChatSoundBoardListener listener) {
+        bot.addEventListener(listener);
+    }
+    
+    public void shutdown() {
+        player.stop();
+        bot.shutdown();
+    }
+
+    /**
+     * Sets volume of the player.
+     * @param volume - The volume value to set.
+     */
+    public void setSoundPlayerVolume(int volume) {
+        playerVolume = (float) volume / 100;
     }
 
     /**
@@ -46,6 +84,9 @@ public class SoundPlayer {
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      */
     public void playFileForUser(String fileName, String userName) {
+        if (userName == null || userName.isEmpty()) {
+            userName = appProperties.getProperty("username_to_join_channel");
+        }
         try {
             joinCurrentChannel(userName);
             
@@ -94,7 +135,7 @@ public class SoundPlayer {
 
         outerloop:
         for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
-            for (User user : channel1.getUsers()) {
+            for (net.dv8tion.jda.entities.User user : channel1.getUsers()) {
                 if (user.getId().equals(event.getAuthor().getId())) {
                     channel = channel1;
                     break outerloop;
@@ -114,7 +155,7 @@ public class SoundPlayer {
      * Gets a Map of the loaded sound files.
      * @return Map of sound files that have been loaded.
      */
-    public Map<String, File> getAvailableSoundFiles() {
+    public Map<String, SoundFile> getAvailableSoundFiles() {
         return availableSounds;
     }
 
@@ -130,20 +171,27 @@ public class SoundPlayer {
      * @param fileName - fileName to play.
      */
     public void playFile(String fileName) {
-        File fileToPlay = availableSounds.get(fileName);
+        SoundFile fileToPlay = availableSounds.get(fileName);
         if (fileToPlay != null) {
-            playFile(fileToPlay);
-        } else {
-            playFile(fileName);
+            playFile(fileToPlay.getSoundFile());
         }
     }
 
     /**
-     * Sets volume of the player.
-     * @param volume - The volume value to set.
+     * Get a list of users
      */
-    public void setVolume(float volume) {
-        this.volume = volume;
+    public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
+        String userNameToSelect = appProperties.getProperty("username_to_join_channel");
+        List<User> users = new ArrayList<>();
+        for (net.dv8tion.jda.entities.User user : bot.getUsers()) {
+            boolean selected = false;
+            String username = user.getUsername();
+            if (userNameToSelect.equals(username)) {
+                selected = true;
+            }
+            users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
+        }
+        return users;
     }
 
     //Play the file provided.
@@ -167,7 +215,7 @@ public class SoundPlayer {
             // moments before you can start communicating.
             player.play();
             if (player != null) {
-                player.setVolume(volume);
+                player.setVolume(playerVolume);
             }
         }
         catch (IOException | UnsupportedAudioFileException e) {
@@ -187,26 +235,29 @@ public class SoundPlayer {
 
     //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
     //to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
-    private Map<String,File> getFileList() {
-        Map<String,File> returnFiles = new TreeMap<>();
+    private Map<String,SoundFile> getFileList() {
+        Map<String,SoundFile> returnFiles = new TreeMap<>();
         try {
             final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-
+            
             if(jarFile.isFile()) {  // Run with JAR file
-                System.out.println("Loading from " + System.getProperty("user.dir") + "/sounds");
+                LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
                 soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
                 Files.walk(soundFilePath).forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         String fileName = filePath.getFileName().toString();
                         fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
                         fileName = fileName.substring(0, fileName.indexOf("."));
-                        System.out.println(fileName);
-                        returnFiles.put(fileName, filePath.toFile());
+                        LOG.info(fileName);
+                        File file = filePath.toFile();
+                        String parent = file.getParentFile().getName();
+                        SoundFile soundFile = new SoundFile(fileName, filePath.toFile(), parent);
+                        returnFiles.put(fileName, soundFile);
                     }
                 });
             } else {
-                System.out.println("Loading from classpath resources /" + resourceDir);
-                final URL url = SoundPlayer.class.getResource("/" + resourceDir);
+                LOG.info("Loading from classpath resources /" + resourceDir);
+                final URL url = SoundPlayerImpl.class.getResource("/" + resourceDir);
                 try {
                     soundFilePath = Paths.get(url.toURI());
                 } catch (URISyntaxException e) {
@@ -218,8 +269,10 @@ public class SoundPlayer {
                         if (returnFiles.get(app.getName()) == null) {
                             String fileName = app.getName();
                             fileName = fileName.substring(0, fileName.indexOf("."));
-                            returnFiles.put(fileName, app);
-                            System.out.println(app);
+                            String parent = app.getParentFile().getName();
+                            SoundFile soundFile = new SoundFile(fileName, app, parent);
+                            returnFiles.put(fileName, soundFile);
+                            LOG.info(app);
                         }
                     }
                 } catch (URISyntaxException ex) {
@@ -227,7 +280,7 @@ public class SoundPlayer {
                 }
             }
         } catch (IOException e) {
-            System.out.println(e.toString());
+            LOG.fatal(e.toString());
             e.printStackTrace();
         }
         return returnFiles;
@@ -237,5 +290,49 @@ public class SoundPlayer {
     //would be called.
     private void updateAvailableSoundFiles() {
         availableSounds = getFileList();
+    }
+
+    //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
+    private void initializeDiscordBot() {
+        try {
+            bot = new JDABuilder()
+                    .setEmail(appProperties.getProperty("username"))
+                    .setPassword(appProperties.getProperty("password"))
+                    .buildBlocking();
+        }
+        catch (IllegalArgumentException e) {
+            LOG.warn("The config was not populated. Please enter an email and password.");
+        }
+        catch (LoginException e) {
+            LOG.warn("The provided email / password combination was incorrect. Please provide valid details.");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //Loads in the properties from the app.properties file
+    private void loadProperties() {
+        appProperties = new Properties();
+        InputStream stream = null;
+        try {
+            stream = new FileInputStream(System.getProperty("user.dir") + "/app.properties");
+            appProperties.load(stream);
+            stream.close();
+            return;
+        } catch (FileNotFoundException e) {
+            LOG.warn("Could not find app.properties file.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (stream == null) {
+            LOG.warn("Loading app.properties file from resources folder");
+            try {
+                stream = this.getClass().getResourceAsStream("/app.properties");
+                appProperties.load(stream);
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
