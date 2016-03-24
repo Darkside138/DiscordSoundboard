@@ -39,6 +39,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 for (Map.Entry entry : entrySet) {
                     sb.append("?").append(entry.getKey()).append("\n");
                 }
+                sb.append("```");
                 LOG.info("Responding to chat request.");
                 event.getChannel().sendMessage(sb.toString());
             } else {

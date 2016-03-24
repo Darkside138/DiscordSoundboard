@@ -299,6 +299,11 @@ public class SoundPlayerImpl {
                     .setEmail(appProperties.getProperty("username"))
                     .setPassword(appProperties.getProperty("password"))
                     .buildBlocking();
+
+            if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this);
+                this.setBotListener(chatListener);
+            }
         }
         catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
