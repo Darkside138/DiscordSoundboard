@@ -4,7 +4,6 @@
     <title>Discord Soundboard</title>
     <script src="js/vendor/jquery-2.2.1.js"></script>
     <script src="js/vendor/jquery-ui.min.js"></script>
-    <script src="js/resizeselect.js"></script>
     
     <link rel="stylesheet" type="text/css" href="style/soundboard.css">
     <link rel="stylesheet" type="text/css" href="jquery-ui.min.css">
@@ -28,6 +27,12 @@
                     $("button, input:button").button();
 
                     $(".soundButton").click(function() {
+                        var volume = $('#volume').slider("option", "value");
+                        $.ajax({
+                            url: "/soundsApi/setVolume?volume=" + volume,
+                            method: 'POST'
+                        });
+                        
                         var username = $(".userNameSelect option:selected").text();
                         $.ajax({
                             url: "/soundsApi/playFile?soundFileId=" + this.value + "&username=" + username
@@ -55,13 +60,32 @@
             $.ajax({
                 url: "/soundsApi/getSoundCategories",
                 success: function(data) {
-                    $.each(data, function(i, obj) {
-                        $('.categorySelect')
-                                .append($("<option></option>")
-                                        .attr("value",obj)
-                                        .text(obj));
-                    });
-                    $('.categorySelect').selectmenu({ width : 'auto'});
+                    if (data.length > 1) {
+                        $.each(data, function(i, obj) {
+                            $('.categorySelect')
+                                    .append($("<option></option>")
+                                            .attr("value",obj)
+                                            .text(obj));
+                        });
+                        $('.categorySelect').selectmenu({
+                            width : 'auto',
+                            change: function( event, ui ) {
+                                if (ui.item.value) {
+                                    var matching = $('.soundButton').filter(function(){
+                                        return $(this).attr('data-category') == ui.item.value
+                                    });
+                                    $('.soundButton').hide();
+                                    matching.prop('selected', true).show();
+                                } else {
+                                    $('.soundButton').show();
+                                }
+                                
+                            }
+                        });
+                        $('.categoryContainer').show();
+                    } else {
+                        $('.categoryContainer').hide();
+                    }
                 }
             });
 
@@ -79,10 +103,6 @@
                     });
                 }
             });
-            $('.userNameSelect').change(function() {
-                $("#width_tmp_option").html($('#userSelect option:selected').text());
-                $(this).width($("#width_tmp_select").width());
-            });
         });
     </script>
 </head>
@@ -95,6 +115,7 @@
     <span class="categoryContainer">
         <label for="categorySelect" class="ui-widget">Select the category:</label>
         <select id="categorySelect" class="categorySelect resizeselect">
+            <option value="">All</option>
         </select>
     </span>
     <div class="buttonContainer"></div>

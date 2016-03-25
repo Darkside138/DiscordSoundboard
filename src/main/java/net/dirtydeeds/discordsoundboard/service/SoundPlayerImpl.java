@@ -5,6 +5,7 @@ import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
+import net.dv8tion.jda.OnlineStatus;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.audio.player.Player;
 import net.dv8tion.jda.entities.Guild;
@@ -63,11 +64,6 @@ public class SoundPlayerImpl {
     
     public void setBotListener(ChatSoundBoardListener listener) {
         bot.addEventListener(listener);
-    }
-    
-    public void shutdown() {
-        player.stop();
-        bot.shutdown();
     }
 
     /**
@@ -184,12 +180,14 @@ public class SoundPlayerImpl {
         String userNameToSelect = appProperties.getProperty("username_to_join_channel");
         List<User> users = new ArrayList<>();
         for (net.dv8tion.jda.entities.User user : bot.getUsers()) {
-            boolean selected = false;
-            String username = user.getUsername();
-            if (userNameToSelect.equals(username)) {
-                selected = true;
+            if (user.getOnlineStatus().equals(OnlineStatus.ONLINE)) {
+                boolean selected = false;
+                String username = user.getUsername();
+                if (userNameToSelect.equals(username)) {
+                    selected = true;
+                }
+                users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
             }
-            users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
         }
         return users;
     }
@@ -238,9 +236,9 @@ public class SoundPlayerImpl {
     private Map<String,SoundFile> getFileList() {
         Map<String,SoundFile> returnFiles = new TreeMap<>();
         try {
-            final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
+//            final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
             
-            if(jarFile.isFile()) {  // Run with JAR file
+//            if(jarFile.isFile()) {  // Run with JAR file
                 LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
                 soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
                 Files.walk(soundFilePath).forEach(filePath -> {
@@ -255,30 +253,30 @@ public class SoundPlayerImpl {
                         returnFiles.put(fileName, soundFile);
                     }
                 });
-            } else {
-                LOG.info("Loading from classpath resources /" + resourceDir);
-                final URL url = SoundPlayerImpl.class.getResource("/" + resourceDir);
-                try {
-                    soundFilePath = Paths.get(url.toURI());
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    final File apps = new File(url.toURI());
-                    for (File app : apps.listFiles()) {
-                        if (returnFiles.get(app.getName()) == null) {
-                            String fileName = app.getName();
-                            fileName = fileName.substring(0, fileName.indexOf("."));
-                            String parent = app.getParentFile().getName();
-                            SoundFile soundFile = new SoundFile(fileName, app, parent);
-                            returnFiles.put(fileName, soundFile);
-                            LOG.info(app);
-                        }
-                    }
-                } catch (URISyntaxException ex) {
-                    // never happens
-                }
-            }
+//            } else {
+//                LOG.info("Loading from classpath resources /" + resourceDir);
+//                final URL url = SoundPlayerImpl.class.getResource("/" + resourceDir);
+//                try {
+//                    soundFilePath = Paths.get(url.toURI());
+//                } catch (URISyntaxException e) {
+//                    e.printStackTrace();
+//                }
+//                try {
+//                    final File apps = new File(url.toURI());
+//                    for (File app : apps.listFiles()) {
+//                        if (returnFiles.get(app.getName()) == null) {
+//                            String fileName = app.getName();
+//                            fileName = fileName.substring(0, fileName.indexOf("."));
+//                            String parent = app.getParentFile().getName();
+//                            SoundFile soundFile = new SoundFile(fileName, app, parent);
+//                            returnFiles.put(fileName, soundFile);
+//                            LOG.info(app);
+//                        }
+//                    }
+//                } catch (URISyntaxException ex) {
+//                    // never happens
+//                }
+//            }
         } catch (IOException e) {
             LOG.fatal(e.toString());
             e.printStackTrace();
