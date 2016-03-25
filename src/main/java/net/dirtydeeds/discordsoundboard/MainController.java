@@ -2,6 +2,7 @@ package net.dirtydeeds.discordsoundboard;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * @author dfurrer.
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * This is the MainController for the SpringBoot application
  */
 @SpringBootApplication
+@EnableAsync
 public class MainController {
     
     public MainController() {

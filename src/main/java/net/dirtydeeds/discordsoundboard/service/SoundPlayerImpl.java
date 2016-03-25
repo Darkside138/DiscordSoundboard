@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.service;
 
 import net.dirtydeeds.discordsoundboard.ChatSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.MainWatch;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dv8tion.jda.JDA;
@@ -14,6 +15,7 @@ import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
@@ -26,11 +28,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * @author dfurrer.
@@ -38,7 +36,7 @@ import java.util.TreeMap;
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files.
  */
 @Service
-public class SoundPlayerImpl {
+public class SoundPlayerImpl implements Observer {
 
     public static final SimpleLog LOG = SimpleLog.getLog("SoundPlayerImpl");
     
@@ -47,11 +45,15 @@ public class SoundPlayerImpl {
     private Player player;
     private float playerVolume = (float) .75;
     private Map<String, SoundFile> availableSounds;
+    private final MainWatch mainWatch;
     
     private final String resourceDir = "sounds";
     private Path soundFilePath;
 
-    public SoundPlayerImpl() {
+    @Inject
+    public SoundPlayerImpl(MainWatch mainWatch) {
+        this.mainWatch = mainWatch;
+        this.mainWatch.addObserver(this);
         loadProperties();
         initializeDiscordBot();
         availableSounds = getFileList();
@@ -241,6 +243,9 @@ public class SoundPlayerImpl {
 //            if(jarFile.isFile()) {  // Run with JAR file
                 LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
                 soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
+
+                mainWatch.watchDirectoryPath(soundFilePath);
+
                 Files.walk(soundFilePath).forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         String fileName = filePath.getFileName().toString();
@@ -337,5 +342,10 @@ public class SoundPlayerImpl {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        availableSounds = getFileList();
     }
 }

@@ -1,5 +1,8 @@
 package net.dirtydeeds.discordsoundboard;
 
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -19,8 +22,10 @@ import java.util.Observable;
 /**
  * @author dfurrer.
  */
+@Service
 public class MainWatch extends Observable {
 
+    @Async
     public void watchDirectoryPath(Path path) {
         // Sanity check - Check if path is a folder
         try {
@@ -58,10 +63,12 @@ public class MainWatch extends Observable {
                     kind = watchEvent.kind();
                     if (OVERFLOW == kind) {
                         continue; //loop
-                    } else if (ENTRY_CREATE == kind) {
+                    } else if (ENTRY_CREATE == kind || ENTRY_DELETE == kind || ENTRY_MODIFY == kind) {
                         // A new Path was created 
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
                         // Output
+                        //Mark the observable object as changed.
+                        this.setChanged();
                         System.out.println("New path created: " + newPath);
                         
                         notifyObservers();
