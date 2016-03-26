@@ -43,6 +43,7 @@ public class SoundPlayerImpl implements Observer {
     private float playerVolume = (float) .75;
     private Map<String, SoundFile> availableSounds;
     private final MainWatch mainWatch;
+    private boolean initialized = false;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch) {
@@ -52,6 +53,8 @@ public class SoundPlayerImpl implements Observer {
         initializeDiscordBot();
         availableSounds = getFileList();
         setSoundPlayerVolume(75);
+
+        initialized = false;
     }
     
     public void setBotListener(ChatSoundBoardListener listener) {
@@ -222,7 +225,9 @@ public class SoundPlayerImpl implements Observer {
             LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
             Path soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
 
-            mainWatch.watchDirectoryPath(soundFilePath);
+            if (!initialized) {
+                mainWatch.watchDirectoryPath(soundFilePath);
+            }
 
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
