@@ -6,7 +6,6 @@ import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.hooks.ListenerAdapter;
 import net.dv8tion.jda.utils.SimpleLog;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Set;
 

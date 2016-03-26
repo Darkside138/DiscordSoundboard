@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +22,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/soundsApi")
+@SuppressWarnings("unused")
 public class SoundboardRestController {
     
     SoundPlayerImpl soundPlayer;

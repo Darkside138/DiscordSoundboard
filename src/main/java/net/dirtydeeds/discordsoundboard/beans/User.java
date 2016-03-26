@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard.beans;
 /**
  * @author dfurrer.
  */
+@SuppressWarnings("unused")
 public class User {
     String id;
     String username;

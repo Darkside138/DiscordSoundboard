@@ -7,6 +7,7 @@ import java.io.File;
 /**
  * @author dfurrer.
  */
+@SuppressWarnings("unused")
 public class SoundFile {
     
     final String soundFileId;

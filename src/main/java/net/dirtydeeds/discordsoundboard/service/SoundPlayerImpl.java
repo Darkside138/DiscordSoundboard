@@ -23,8 +23,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,13 +40,9 @@ public class SoundPlayerImpl implements Observer {
     
     private Properties appProperties;
     private JDA bot;
-    private Player player;
     private float playerVolume = (float) .75;
     private Map<String, SoundFile> availableSounds;
     private final MainWatch mainWatch;
-    
-    private final String resourceDir = "sounds";
-    private Path soundFilePath;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch) {
@@ -58,10 +52,6 @@ public class SoundPlayerImpl implements Observer {
         initializeDiscordBot();
         availableSounds = getFileList();
         setSoundPlayerVolume(75);
-    }
-    
-    public Properties getProperties() {
-        return appProperties;
     }
     
     public void setBotListener(ChatSoundBoardListener listener) {
@@ -158,13 +148,6 @@ public class SoundPlayerImpl implements Observer {
     }
 
     /**
-     * @return Returns the path that sound files were loaded from.
-     */
-    public Path getSoundFilePath() {
-        return soundFilePath;
-    }
-
-    /**
      * Play file name requested. Will first try to load the file from the map of available sounds.
      * @param fileName - fileName to play.
      */
@@ -197,7 +180,7 @@ public class SoundPlayerImpl implements Observer {
     //Play the file provided.
     private void playFile(File audioFile) {
         try {
-            player = new FilePlayer(audioFile);
+            Player player = new FilePlayer(audioFile);
 
             //Provide the handler to send audio.
             //NOTE: You don't have to set the handler each time you create an audio connection with the
@@ -214,9 +197,7 @@ public class SoundPlayerImpl implements Observer {
             // client joins a VoiceChannel. You appear in the channel lobby immediately, but it takes a few
             // moments before you can start communicating.
             player.play();
-            if (player != null) {
-                player.setVolume(playerVolume);
-            }
+            player.setVolume(playerVolume);
         }
         catch (IOException | UnsupportedAudioFileException e) {
             e.printStackTrace();
@@ -238,61 +219,28 @@ public class SoundPlayerImpl implements Observer {
     private Map<String,SoundFile> getFileList() {
         Map<String,SoundFile> returnFiles = new TreeMap<>();
         try {
-//            final File jarFile = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath());
-            
-//            if(jarFile.isFile()) {  // Run with JAR file
-                LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
-                soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
+            LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
+            Path soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
 
-                mainWatch.watchDirectoryPath(soundFilePath);
+            mainWatch.watchDirectoryPath(soundFilePath);
 
-                Files.walk(soundFilePath).forEach(filePath -> {
-                    if (Files.isRegularFile(filePath)) {
-                        String fileName = filePath.getFileName().toString();
-                        fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
-                        fileName = fileName.substring(0, fileName.indexOf("."));
-                        LOG.info(fileName);
-                        File file = filePath.toFile();
-                        String parent = file.getParentFile().getName();
-                        SoundFile soundFile = new SoundFile(fileName, filePath.toFile(), parent);
-                        returnFiles.put(fileName, soundFile);
-                    }
-                });
-//            } else {
-//                LOG.info("Loading from classpath resources /" + resourceDir);
-//                final URL url = SoundPlayerImpl.class.getResource("/" + resourceDir);
-//                try {
-//                    soundFilePath = Paths.get(url.toURI());
-//                } catch (URISyntaxException e) {
-//                    e.printStackTrace();
-//                }
-//                try {
-//                    final File apps = new File(url.toURI());
-//                    for (File app : apps.listFiles()) {
-//                        if (returnFiles.get(app.getName()) == null) {
-//                            String fileName = app.getName();
-//                            fileName = fileName.substring(0, fileName.indexOf("."));
-//                            String parent = app.getParentFile().getName();
-//                            SoundFile soundFile = new SoundFile(fileName, app, parent);
-//                            returnFiles.put(fileName, soundFile);
-//                            LOG.info(app);
-//                        }
-//                    }
-//                } catch (URISyntaxException ex) {
-//                    // never happens
-//                }
-//            }
+            Files.walk(soundFilePath).forEach(filePath -> {
+                if (Files.isRegularFile(filePath)) {
+                    String fileName = filePath.getFileName().toString();
+                    fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
+                    fileName = fileName.substring(0, fileName.indexOf("."));
+                    LOG.info(fileName);
+                    File file = filePath.toFile();
+                    String parent = file.getParentFile().getName();
+                    SoundFile soundFile = new SoundFile(fileName, filePath.toFile(), parent);
+                    returnFiles.put(fileName, soundFile);
+                }
+            });
         } catch (IOException e) {
             LOG.fatal(e.toString());
             e.printStackTrace();
         }
         return returnFiles;
-    }
-
-    //Not used right now, but I plan to use this when I implement folder monitoring, When a change is detected this
-    //would be called.
-    private void updateAvailableSoundFiles() {
-        availableSounds = getFileList();
     }
 
     //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
