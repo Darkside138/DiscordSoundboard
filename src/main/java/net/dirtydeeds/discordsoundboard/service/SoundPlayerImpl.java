@@ -222,6 +222,22 @@ public class SoundPlayerImpl implements Observer {
             LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
             Path soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
 
+            if (!soundFilePath.toFile().exists()) {
+                System.out.println("creating directory: " + soundFilePath.toFile().toString());
+                boolean result = false;
+
+                try{
+                    soundFilePath.toFile().mkdir();
+                    result = true;
+                }
+                catch(SecurityException se){
+                    LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
+                }
+                if(result) {
+                    LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
+                }
+            }
+
             mainWatch.watchDirectoryPath(soundFilePath);
 
             Files.walk(soundFilePath).forEach(filePath -> {

@@ -1,0 +1,1 @@
+java -jar DiscordSoundboard-1.1.1.jar net.dirtydeeds.discordsoundboard.MainController

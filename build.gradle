@@ -1,19 +1,25 @@
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '1.1.0'
+version = '1.1.1'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 buildscript {
+    ext {
+        springBootVersion = '1.3.3.RELEASE'
+    }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+        classpath("org.springframework.boot:spring-boot-starter-jersey:${springBootVersion}")
     }
 }
 
@@ -27,10 +33,10 @@ repositories {
 dependencies {
     compile('net.dv8tion:JDA:1.3.0_188')
     compile("commons-io:commons-io:2.4")
+
     compile("org.springframework.boot:spring-boot-starter-web")
-    compile("org.springframework.boot:spring-boot-starter-tomcat")
+//    compile("org.springframework.boot:spring-boot-starter-tomcat")
     compile("org.springframework.boot:spring-boot-starter-jersey")
-    compile("org.springframework.boot:spring-boot-gradle-plugin")
     
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
@@ -46,12 +52,32 @@ jar {
     exclude('sounds/**')
 }
 
-distributions {
-    main {
-        baseName = 'discordSoundboard'
-        contents {
-            from { 'src/main/resources/app.propertries.example' }
-        }
-    }
+def distributionsCopySpec = copySpec {
+    def baseName = "${jar.baseName}"
+    def fileName = "${baseName}-$version"
+    from file("$projectDir/src/main/resources")
+    include "app.properties.example"
+    include "soundboard.bat"
+    rename "app.properties.example", "app.properties"
+    from file("$buildDir/libs")
+    include "${fileName}.jar"
+    rename "${fileName}.jar", "${baseName}.jar"
+}
+
+task zip(type: Zip, dependsOn: 'bootRepackage') {
+    def fileName = "${baseName}-$version"
+    with distributionsCopySpec
+    archiveName "${fileName}.zip"
+}
+task tar(type: Tar, dependsOn: 'bootRepackage') {
+    def fileName = "${baseName}-$version"
+    with distributionsCopySpec
+    archiveName "${fileName}.tar"
+}
+
+build.dependsOn(zip,tar)
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
 }
 
