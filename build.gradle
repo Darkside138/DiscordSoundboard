@@ -35,7 +35,6 @@ dependencies {
     compile("commons-io:commons-io:2.4")
 
     compile("org.springframework.boot:spring-boot-starter-web")
-//    compile("org.springframework.boot:spring-boot-starter-tomcat")
     compile("org.springframework.boot:spring-boot-starter-jersey")
     
     testCompile('org.springframework.boot:spring-boot-starter-test')
@@ -48,8 +47,11 @@ jar {
         'Implementation-Version': version
     }
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    exclude('**/app.properties**')
-    exclude('sounds/**')
+    jar.into('static') {
+        from('src/main/webapp')
+    }
+    exclude('/src/main/java/**')
+    exclude('/src/main/resources/**')
 }
 
 def distributionsCopySpec = copySpec {
