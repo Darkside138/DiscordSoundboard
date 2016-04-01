@@ -57,12 +57,12 @@ jar {
 def distributionsCopySpec = copySpec {
     def baseName = "${jar.baseName}"
     def fileName = "${baseName}-$version"
-    from file("$projectDir/src/main/resources")
-    include "app.properties.example"
-    include "soundboard.bat"
-    rename "app.properties.example", "app.properties"
     from file("$buildDir/libs")
+    from file("$buildDir/resources/main")
+    include "**/app.properties.example"
+    include "soundboard.bat"
     include "${fileName}.jar"
+    rename ("app.properties.example", "app.properties")
     rename "${fileName}.jar", "${baseName}.jar"
 }
 
