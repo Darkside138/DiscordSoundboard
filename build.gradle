@@ -1,6 +1,5 @@
 apply plugin: 'java'
 apply plugin: 'idea'
-apply plugin: 'eclipse'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
@@ -36,7 +35,7 @@ dependencies {
 
     compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-starter-jersey")
-    
+
     testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
