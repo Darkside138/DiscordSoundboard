@@ -229,6 +229,24 @@ public class SoundPlayerImpl implements Observer {
                 mainWatch.watchDirectoryPath(soundFilePath);
             }
 
+            if (!soundFilePath.toFile().exists()) {
+                System.out.println("creating directory: " + soundFilePath.toFile().toString());
+                boolean result = false;
+
+                try{
+                    soundFilePath.toFile().mkdir();
+                    result = true;
+                }
+                catch(SecurityException se){
+                    LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
+                }
+                if(result) {
+                    LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
+                }
+            }
+
+            mainWatch.watchDirectoryPath(soundFilePath);
+
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
                     String fileName = filePath.getFileName().toString();
