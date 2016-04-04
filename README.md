@@ -20,6 +20,9 @@ app_width=400
 app_height=400
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
+
+#Spring boot configuration
+server.port = 8080
 ```
 
 ## Usage
