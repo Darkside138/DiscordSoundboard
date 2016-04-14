@@ -1,6 +1,8 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
 /**
+ * Class that represents a user of discord.
+ *
  * @author dfurrer.
  */
 @SuppressWarnings("unused")

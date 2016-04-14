@@ -54,7 +54,7 @@ public class SoundPlayerImpl implements Observer {
         availableSounds = getFileList();
         setSoundPlayerVolume(75);
 
-        initialized = false;
+        initialized = true;
     }
     
     public void setBotListener(ChatSoundBoardListener listener) {
@@ -234,8 +234,7 @@ public class SoundPlayerImpl implements Observer {
                 boolean result = false;
 
                 try{
-                    soundFilePath.toFile().mkdir();
-                    result = true;
+                    result = soundFilePath.toFile().mkdir();
                 }
                 catch(SecurityException se){
                     LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());

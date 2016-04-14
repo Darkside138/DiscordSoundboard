@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard.web;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dirtydeeds.discordsoundboard.util.SortIgnoreCase;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -10,14 +11,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
+ * REST Controller.
+ *
  * @author dfurrer.
  */
 @RestController
@@ -39,16 +38,16 @@ public class SoundboardRestController {
     @RequestMapping("/getAvailableSounds")
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        return soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
+        List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
+        Collections.sort(returnSounds, new SortIgnoreCase());
+        return returnSounds;
     }
     
     @RequestMapping("/getSoundCategories")
     public Set<String> getSoundCategories() {
         Set<String> categories = new HashSet<>();
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        for (Map.Entry<String, SoundFile> entry : soundMap.entrySet()) {
-            categories.add(entry.getValue().getCategory());
-        }
+        categories.addAll(soundMap.entrySet().stream().map(entry -> entry.getValue().getCategory()).collect(Collectors.toList()));
         return categories;
     }
 

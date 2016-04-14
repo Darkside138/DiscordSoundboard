@@ -7,7 +7,6 @@ import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -20,12 +19,15 @@ import java.nio.file.WatchService;
 import java.util.Observable;
 
 /**
+ * Observable class used to watch changes to files in a given directory
+ *
  * @author dfurrer.
  */
 @Service
 public class MainWatch extends Observable {
 
     @Async
+    @SuppressWarnings("unchecked")
     public void watchDirectoryPath(Path path) {
         // Sanity check - Check if path is a folder
         try {
@@ -61,9 +63,7 @@ public class MainWatch extends Observable {
                 for(WatchEvent<?> watchEvent : key.pollEvents()) {
                     // Get the type of the event
                     kind = watchEvent.kind();
-                    if (OVERFLOW == kind) {
-                        continue; //loop
-                    } else if (ENTRY_CREATE == kind || ENTRY_DELETE == kind || ENTRY_MODIFY == kind) {
+                    if (ENTRY_CREATE == kind || ENTRY_DELETE == kind || ENTRY_MODIFY == kind) {
                         // A new Path was created 
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
                         // Output
@@ -79,10 +79,8 @@ public class MainWatch extends Observable {
                     break; //loop
                 }
             }
-        } catch(IOException ioe) {
+        } catch(IOException | InterruptedException ioe) {
             ioe.printStackTrace();
-        } catch(InterruptedException ie) {
-            ie.printStackTrace();
         }
     }
 }
