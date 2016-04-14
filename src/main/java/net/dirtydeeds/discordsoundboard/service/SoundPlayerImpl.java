@@ -12,6 +12,7 @@ import net.dv8tion.jda.audio.player.Player;
 import net.dv8tion.jda.entities.Guild;
 import net.dv8tion.jda.entities.VoiceChannel;
 import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
@@ -79,9 +80,10 @@ public class SoundPlayerImpl implements Observer {
             userName = appProperties.getProperty("username_to_join_channel");
         }
         try {
-            joinCurrentChannel(userName);
+            Guild guild = getUsersGuild(userName);
+            joinUsersCurrentChannel(userName);
             
-            playFile(fileName);
+            playFile(fileName, guild);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -96,8 +98,9 @@ public class SoundPlayerImpl implements Observer {
      */
     public void playFileForEvent(String fileName, GuildMessageReceivedEvent event) throws Exception {
         if (event != null) {
-            moveToUserIdsChannel(event);
-            playFile(fileName);
+            Guild guild = event.getGuild();
+            moveToUserIdsChannel(event, guild);
+            playFile(fileName, guild);
         }
     }
 
@@ -105,14 +108,15 @@ public class SoundPlayerImpl implements Observer {
      * Moves to the specified voice channel.
      * @param channel - The channel specified.
      */
-    public void moveToChannel(VoiceChannel channel){
-        if (bot.getAudioManager().isConnected()) {
-            if (bot.getAudioManager().isAttemptingToConnect()) {
-                bot.getAudioManager().closeAudioConnection();
+    public void moveToChannel(VoiceChannel channel, Guild guild){
+        AudioManager audioManager = bot.getAudioManager(guild);
+        if (audioManager.isConnected()) {
+            if (audioManager.isAttemptingToConnect()) {
+                audioManager.closeAudioConnection();
             }
-            bot.getAudioManager().moveAudioConnection(channel);
+            audioManager.moveAudioConnection(channel);
         } else {
-            bot.getAudioManager().openAudioConnection(channel);
+            audioManager.openAudioConnection(channel);
         }
     }
 
@@ -121,11 +125,11 @@ public class SoundPlayerImpl implements Observer {
      * @param event - The event
      * @throws Exception
      */
-    public void moveToUserIdsChannel(GuildMessageReceivedEvent event) throws Exception {
+    public void moveToUserIdsChannel(GuildMessageReceivedEvent event, Guild guild) throws Exception {
         VoiceChannel channel = null;
 
         outerloop:
-        for (VoiceChannel channel1 : event.getGuild().getVoiceChannels()) {
+        for (VoiceChannel channel1 : guild.getVoiceChannels()) {
             for (net.dv8tion.jda.entities.User user : channel1.getUsers()) {
                 if (user.getId().equals(event.getAuthor().getId())) {
                     channel = channel1;
@@ -139,7 +143,7 @@ public class SoundPlayerImpl implements Observer {
             throw new Exception("Problem moving to requested users channel" + event.getAuthor().getId());
         }
 
-        moveToChannel(channel);
+        moveToChannel(channel, guild);
     }
 
     /**
@@ -154,10 +158,10 @@ public class SoundPlayerImpl implements Observer {
      * Play file name requested. Will first try to load the file from the map of available sounds.
      * @param fileName - fileName to play.
      */
-    public void playFile(String fileName) {
+    public void playFile(String fileName, Guild guild) {
         SoundFile fileToPlay = availableSounds.get(fileName);
         if (fileToPlay != null) {
-            playFile(fileToPlay.getSoundFile());
+            playFile(fileToPlay.getSoundFile(), guild);
         }
     }
 
@@ -181,7 +185,7 @@ public class SoundPlayerImpl implements Observer {
     }
 
     //Play the file provided.
-    private void playFile(File audioFile) {
+    private void playFile(File audioFile, Guild guild) {
         try {
             Player player = new FilePlayer(audioFile);
 
@@ -193,7 +197,7 @@ public class SoundPlayerImpl implements Observer {
             // you could just call the pause() method. Otherwise, make canProvide() return false).
             // Once again, you don't HAVE to pause before severing an audio connection,
             // but it probably would be good to do.
-            bot.getAudioManager().setSendingHandler(player);
+            bot.getAudioManager(guild).setSendingHandler(player);
 
             //Start playback. This will only start after the AudioConnection has completely connected.
             //NOTE: "completely connected" is not just joining the VoiceChannel. Think about when your Discord
@@ -206,13 +210,26 @@ public class SoundPlayerImpl implements Observer {
             e.printStackTrace();
         }
     }
+    
+    private Guild getUsersGuild(String userName) {
+        for (Guild guild : bot.getGuilds()) {
+            for (VoiceChannel channel : guild.getVoiceChannels()) {
+                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
+                    if (user.getUsername().equalsIgnoreCase(userName)) {
+                        return guild;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     //Join the users current channel.
-    private void joinCurrentChannel(String userName) {
+    private void joinUsersCurrentChannel(String userName) {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 channel.getUsers().stream().filter(user -> user.getUsername()
-                        .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel));
+                        .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel, guild));
             }
         }
     }
@@ -268,13 +285,17 @@ public class SoundPlayerImpl implements Observer {
     //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
     private void initializeDiscordBot() {
         try {
+            String botToken = appProperties.getProperty("bot_token");
             bot = new JDABuilder()
-                    .setEmail(appProperties.getProperty("username"))
-                    .setPassword(appProperties.getProperty("password"))
+                    .setAudioEnabled(true)
+                    .setAutoReconnect(true)
+                    .setBotToken(botToken)
                     .buildBlocking();
 
             if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this);
+                String commandCharacter = appProperties.getProperty("command_character");
+                String mesageSizeLimit = appProperties.getProperty("message_size_limit");
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, mesageSizeLimit);
                 this.setBotListener(chatListener);
             }
         }

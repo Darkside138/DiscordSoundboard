@@ -63,7 +63,7 @@ public class MainWatch extends Observable {
                 for(WatchEvent<?> watchEvent : key.pollEvents()) {
                     // Get the type of the event
                     kind = watchEvent.kind();
-                    if (ENTRY_CREATE == kind || ENTRY_DELETE == kind || ENTRY_MODIFY == kind) {
+                    if (kind == ENTRY_CREATE || kind == ENTRY_DELETE || kind == ENTRY_MODIFY) {
                         // A new Path was created 
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
                         // Output

@@ -1,6 +1,8 @@
+##Soundboard Specific configuration##
+
 #Your bots username and password
-username=yourbotsemail@email.com
-password=password
+bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
+
 #The username to look for and join their channel when a sound is played from the UI
 username_to_join_channel=yourDiscordUsername
 #The title to be used for the app
@@ -10,6 +12,8 @@ app_width=400
 app_height=400
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
+command_character=?
+message_size_limit=2000
 
-#Spring boot config
+##Spring Boot Configuration##
 server.port = 8080
