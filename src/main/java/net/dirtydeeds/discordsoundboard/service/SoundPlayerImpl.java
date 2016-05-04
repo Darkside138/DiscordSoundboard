@@ -15,6 +15,7 @@ import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
 import net.dv8tion.jda.player.source.LocalSource;
+import net.dv8tion.jda.utils.AvatarUtil;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -265,8 +267,13 @@ public class SoundPlayerImpl implements Observer {
     private Map<String,SoundFile> getFileList() {
         Map<String,SoundFile> returnFiles = new TreeMap<>();
         try {
-            LOG.info("Loading from " + System.getProperty("user.dir") + "/sounds");
-            Path soundFilePath = Paths.get(System.getProperty("user.dir") + "/sounds");
+            
+            String soundFileDir = appProperties.getProperty("sounds_directory");
+            if (soundFileDir == null || soundFileDir.isEmpty())  {
+                soundFileDir = System.getProperty("user.dir") + "/sounds";
+            }
+            LOG.info("Loading from " + soundFileDir);
+            Path soundFilePath = Paths.get(soundFileDir);
 
             if (!initialized) {
                 mainWatch.watchDirectoryPath(soundFilePath);
@@ -285,8 +292,6 @@ public class SoundPlayerImpl implements Observer {
                     LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
                 }
             }
-
-            mainWatch.watchDirectoryPath(soundFilePath);
 
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
@@ -323,6 +328,10 @@ public class SoundPlayerImpl implements Observer {
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, messageSizeLimit);
                 this.setBotListener(chatListener);
             }
+            
+            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
+            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
+            bot.getAccountManager().setAvatar(avatar).update();
         }
         catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
@@ -330,7 +339,9 @@ public class SoundPlayerImpl implements Observer {
         catch (LoginException e) {
             LOG.warn("The provided email / password combination was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.fatal("Login Interrupted.");
+        } catch (UnsupportedEncodingException e) {
+            LOG.warn("Could not update avatar with provided file.");
         }
     }
 

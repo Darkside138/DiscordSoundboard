@@ -71,7 +71,7 @@ public class MainWatch extends Observable {
                         this.setChanged();
                         System.out.println("New path created: " + newPath);
                         
-                        notifyObservers();
+                        notifyObservers(this);
                     }
                 }
 

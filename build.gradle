@@ -30,14 +30,14 @@ repositories {
 }
 
 dependencies {
-    compile 'net.dv8tion:JDA:2.0.0_251'
-    compile files('lib/jda-player-0.2.0_DEV.jar')
-    compile("commons-io:commons-io:2.4")
+    compile 'net.dv8tion:JDA:2.0.0_256'
+    compile 'net.dv8tion:jda-player:0.2.1_5'
+    compile 'commons-io:commons-io:2.4'
 
-    compile("org.springframework.boot:spring-boot-starter-web")
-    compile("org.springframework.boot:spring-boot-starter-jersey")
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-jersey'
 
-    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile 'org.springframework.boot:spring-boot-starter-test' 
 }
 
 jar {
@@ -61,6 +61,10 @@ def distributionsCopySpec = copySpec {
     from file("$buildDir/resources/main")
     include "**/app.properties.example"
     include "soundboard.bat"
+    include "ffmpeg.exe"
+    include "ffprobe.exe"
+    include "youtube-dl"
+    include "avatar.jpg"
     include "${fileName}.jar"
     rename ("app.properties.example", "app.properties")
     rename "${fileName}.jar", "${baseName}.jar"

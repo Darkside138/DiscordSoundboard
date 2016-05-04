@@ -1,23 +1,30 @@
 ##Soundboard Specific configuration##
 
-#Your bots username and password
+#Your bots token. If you don't have a token for your bot visit this link to get one. https://discordapp.com/developers/applications/me
+#For more information on how to create an application and bot account visit this link https://discordapp.com/developers/docs/topics/oauth2
 bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
 
 #The username to look for and join their channel when a sound is played from the UI
 username_to_join_channel=yourDiscordUsername
+
 #The title to be used for the app
 app_title=Sound Board
-#The window width/height in pixels
-app_width=400
-app_height=400
+
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
 command_character=?
 message_size_limit=2000
+
 #The player that should be used. The valid options are musicPlayer or JDAPlayer. If using musicPlayer you
 #need extra dependencies: ffmpeg.exe, ffprobe.exe, youtube-dl, and python 2.5+ (I've tested with 3.5).
 #If using JDAPlayer, it seems to have issues with mono files, if you run into this convert the file to stereo.
 player=JDAPlayer
+
+#Specify the directory where your sound files are located. If left empty it will look for a
+#directory called "sounds/" in same directory the app was executed from.
+#If you specify a directory that does not exist yet the application will attempt to create it.
+#Example: C:/Users/someUser/Music
+sounds_directory=
 
 ##Spring Boot Configuration##
 server.port = 8080
