@@ -8,11 +8,13 @@ import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.OnlineStatus;
 import net.dv8tion.jda.audio.player.FilePlayer;
-import net.dv8tion.jda.audio.player.Player;
 import net.dv8tion.jda.entities.Guild;
 import net.dv8tion.jda.entities.VoiceChannel;
 import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.managers.AudioManager;
+import net.dv8tion.jda.player.MusicPlayer;
+import net.dv8tion.jda.player.source.AudioSource;
+import net.dv8tion.jda.player.source.LocalSource;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +39,7 @@ import java.util.*;
 @Service
 public class SoundPlayerImpl implements Observer {
 
-    public static final SimpleLog LOG = SimpleLog.getLog("SoundPlayerImpl");
+    private static final SimpleLog LOG = SimpleLog.getLog("SoundPlayerImpl");
     
     private Properties appProperties;
     private JDA bot;
@@ -45,6 +47,9 @@ public class SoundPlayerImpl implements Observer {
     private Map<String, SoundFile> availableSounds;
     private final MainWatch mainWatch;
     private boolean initialized = false;
+    private MusicPlayer player;
+    private Guild guild;
+    private String playerSetting;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch) {
@@ -55,10 +60,15 @@ public class SoundPlayerImpl implements Observer {
         availableSounds = getFileList();
         setSoundPlayerVolume(75);
 
+        playerSetting = appProperties.getProperty("player");
+        if (isMusicPlayer()) {
+            player = new MusicPlayer();
+        }
+
         initialized = true;
     }
-    
-    public void setBotListener(ChatSoundBoardListener listener) {
+
+    private void setBotListener(ChatSoundBoardListener listener) {
         bot.addEventListener(listener);
     }
 
@@ -80,7 +90,7 @@ public class SoundPlayerImpl implements Observer {
             userName = appProperties.getProperty("username_to_join_channel");
         }
         try {
-            Guild guild = getUsersGuild(userName);
+            guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
             
             playFile(fileName, guild);
@@ -98,7 +108,7 @@ public class SoundPlayerImpl implements Observer {
      */
     public void playFileForEvent(String fileName, GuildMessageReceivedEvent event) throws Exception {
         if (event != null) {
-            Guild guild = event.getGuild();
+            guild = event.getGuild();
             moveToUserIdsChannel(event, guild);
             playFile(fileName, guild);
         }
@@ -108,7 +118,7 @@ public class SoundPlayerImpl implements Observer {
      * Moves to the specified voice channel.
      * @param channel - The channel specified.
      */
-    public void moveToChannel(VoiceChannel channel, Guild guild){
+    private void moveToChannel(VoiceChannel channel, Guild guild){
         AudioManager audioManager = bot.getAudioManager(guild);
         if (audioManager.isConnected()) {
             if (audioManager.isAttemptingToConnect()) {
@@ -125,7 +135,7 @@ public class SoundPlayerImpl implements Observer {
      * @param event - The event
      * @throws Exception
      */
-    public void moveToUserIdsChannel(GuildMessageReceivedEvent event, Guild guild) throws Exception {
+    private void moveToUserIdsChannel(GuildMessageReceivedEvent event, Guild guild) throws Exception {
         VoiceChannel channel = null;
 
         outerloop:
@@ -158,7 +168,7 @@ public class SoundPlayerImpl implements Observer {
      * Play file name requested. Will first try to load the file from the map of available sounds.
      * @param fileName - fileName to play.
      */
-    public void playFile(String fileName, Guild guild) {
+    private void playFile(String fileName, Guild guild) {
         SoundFile fileToPlay = availableSounds.get(fileName);
         if (fileToPlay != null) {
             playFile(fileToPlay.getSoundFile(), guild);
@@ -186,29 +196,45 @@ public class SoundPlayerImpl implements Observer {
 
     //Play the file provided.
     private void playFile(File audioFile, Guild guild) {
-        try {
-            Player player = new FilePlayer(audioFile);
+        if (guild == null) {
+            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+        } else {
+            if (isMusicPlayer()) {
+                if (bot.getAudioManager(guild).getSendingHandler() == null) {
+                    bot.getAudioManager(guild).setSendingHandler(player);
+                }
 
-            //Provide the handler to send audio.
-            //NOTE: You don't have to set the handler each time you create an audio connection with the
-            // AudioManager. Handlers persist between audio connections. Furthermore, handler playback is also
-            // paused when a connection is severed (closeAudioConnection), however it would probably be better
-            // to pause the play back yourself before severing the connection (If you are using a player class
-            // you could just call the pause() method. Otherwise, make canProvide() return false).
-            // Once again, you don't HAVE to pause before severing an audio connection,
-            // but it probably would be good to do.
-            bot.getAudioManager(guild).setSendingHandler(player);
+                player.stop();
+                player.getAudioQueue().clear();
 
-            //Start playback. This will only start after the AudioConnection has completely connected.
-            //NOTE: "completely connected" is not just joining the VoiceChannel. Think about when your Discord
-            // client joins a VoiceChannel. You appear in the channel lobby immediately, but it takes a few
-            // moments before you can start communicating.
-            player.play();
-            player.setVolume(playerVolume);
+                AudioSource audioSource = new LocalSource(audioFile);
+                player.getAudioQueue().add(audioSource);
+
+                player.setVolume(playerVolume);
+                bot.getAudioManager(guild).setConnectTimeout(100L);
+
+                player.play();
+            } else {
+                try {
+                    FilePlayer player = new FilePlayer(audioFile);
+
+                    bot.getAudioManager(guild).setSendingHandler(player);
+
+                    player.stop();
+
+                    player.setVolume(playerVolume);
+                    bot.getAudioManager(guild).setConnectTimeout(100L);
+
+                    player.play();
+                } catch (IOException | UnsupportedAudioFileException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        catch (IOException | UnsupportedAudioFileException e) {
-            e.printStackTrace();
-        }
+    }
+
+    private boolean isMusicPlayer() {
+        return playerSetting != null && playerSetting.equals("musicPlayer");
     }
     
     private Guild getUsersGuild(String userName) {
@@ -250,10 +276,9 @@ public class SoundPlayerImpl implements Observer {
                 System.out.println("creating directory: " + soundFilePath.toFile().toString());
                 boolean result = false;
 
-                try{
+                try {
                     result = soundFilePath.toFile().mkdir();
-                }
-                catch(SecurityException se){
+                } catch(SecurityException se) {
                     LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
                 }
                 if(result) {
@@ -294,8 +319,8 @@ public class SoundPlayerImpl implements Observer {
 
             if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
                 String commandCharacter = appProperties.getProperty("command_character");
-                String mesageSizeLimit = appProperties.getProperty("message_size_limit");
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, mesageSizeLimit);
+                String messageSizeLimit = appProperties.getProperty("message_size_limit");
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, messageSizeLimit);
                 this.setBotListener(chatListener);
             }
         }
@@ -327,8 +352,13 @@ public class SoundPlayerImpl implements Observer {
             LOG.warn("Loading app.properties file from resources folder");
             try {
                 stream = this.getClass().getResourceAsStream("/app.properties");
-                appProperties.load(stream);
-                stream.close();
+                if (stream != null) {
+                    appProperties.load(stream);
+                    stream.close();
+                } else {
+                    //TODO: Would be nice if we could auto create a default app.properties here.
+                    LOG.fatal("You do not have an app.properties file. Please create one.");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -338,5 +368,9 @@ public class SoundPlayerImpl implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         availableSounds = getFileList();
+    }
+
+    public void stop() {
+        player.stop();
     }
 }

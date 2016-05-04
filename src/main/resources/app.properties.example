@@ -14,6 +14,10 @@ app_height=400
 respond_to_chat_commands=true
 command_character=?
 message_size_limit=2000
+#The player that should be used. The valid options are musicPlayer or JDAPlayer. If using musicPlayer you
+#need extra dependencies: ffmpeg.exe, ffprobe.exe, youtube-dl, and python 2.5+ (I've tested with 3.5).
+#If using JDAPlayer, it seems to have issues with mono files, if you run into this convert the file to stereo.
+player=JDAPlayer
 
 ##Spring Boot Configuration##
 server.port = 8080

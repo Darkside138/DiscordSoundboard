@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '1.2.0'
+version = '1.3.1'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -30,7 +30,8 @@ repositories {
 }
 
 dependencies {
-    compile files('lib/JDA-withDependencies-2.0.0_DEV.jar')
+    compile 'net.dv8tion:JDA:2.0.0_251'
+    compile files('lib/jda-player-0.2.0_DEV.jar')
     compile("commons-io:commons-io:2.4")
 
     compile("org.springframework.boot:spring-boot-starter-web")

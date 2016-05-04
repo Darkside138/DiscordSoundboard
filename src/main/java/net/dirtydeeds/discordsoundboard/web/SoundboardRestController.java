@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class SoundboardRestController {
     
-    SoundPlayerImpl soundPlayer;
+    private SoundPlayerImpl soundPlayer;
 
     @SuppressWarnings("unused") //Damn spring and it's need for empty constructors
     public SoundboardRestController() {
@@ -59,6 +59,12 @@ public class SoundboardRestController {
     @RequestMapping("/playFile")
     public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
         soundPlayer.playFileForUser(soundFileId, username);
+        return HttpStatus.OK;
+    }
+
+    @RequestMapping("/stop")
+    public HttpStatus stopPlayback() {
+        soundPlayer.stop();
         return HttpStatus.OK;
     }
     

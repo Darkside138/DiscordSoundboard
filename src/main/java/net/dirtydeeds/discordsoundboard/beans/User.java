@@ -7,9 +7,9 @@ package net.dirtydeeds.discordsoundboard.beans;
  */
 @SuppressWarnings("unused")
 public class User {
-    String id;
-    String username;
-    boolean selected;
+    private String id;
+    private String username;
+    private boolean selected;
 
     public User(String id, String username) {
         this.id = id;

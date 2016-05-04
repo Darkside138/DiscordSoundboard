@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class ChatSoundBoardListener extends ListenerAdapter {
     
-    public static final SimpleLog LOG = SimpleLog.getLog("ChatListener");
+    private static final SimpleLog LOG = SimpleLog.getLog("ChatListener");
     
     private SoundPlayerImpl soundPlayer;
     private String commandCharacter = "?";

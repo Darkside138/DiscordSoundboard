@@ -12,9 +12,9 @@ import java.io.File;
 @SuppressWarnings("unused")
 public class SoundFile {
     
-    final String soundFileId;
-    final File soundFile;
-    final String category;
+    private final String soundFileId;
+    private final File soundFile;
+    private final String category;
 
     public SoundFile(String soundFileId, File soundFile, String category) {
         this.soundFileId = soundFileId;
