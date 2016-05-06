@@ -12,7 +12,11 @@ app_title=Sound Board
 
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
+
+#This is what you want your commands to start with. Ex: If configured to ? the bot with respond to anyone typing ?list
 command_character=?
+
+#Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
 message_size_limit=2000
 
 #The player that should be used. The valid options are musicPlayer or JDAPlayer. If using musicPlayer you
