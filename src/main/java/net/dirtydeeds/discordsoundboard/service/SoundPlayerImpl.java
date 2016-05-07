@@ -10,7 +10,7 @@ import net.dv8tion.jda.OnlineStatus;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.entities.Guild;
 import net.dv8tion.jda.entities.VoiceChannel;
-import net.dv8tion.jda.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
@@ -108,7 +108,7 @@ public class SoundPlayerImpl implements Observer {
      *              the sound back in.
      * @throws Exception
      */
-    public void playFileForEvent(String fileName, GuildMessageReceivedEvent event) throws Exception {
+    public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
         if (event != null) {
             guild = event.getGuild();
             moveToUserIdsChannel(event, guild);
@@ -137,7 +137,7 @@ public class SoundPlayerImpl implements Observer {
      * @param event - The event
      * @throws Exception
      */
-    private void moveToUserIdsChannel(GuildMessageReceivedEvent event, Guild guild) throws Exception {
+    private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) throws Exception {
         VoiceChannel channel = null;
 
         outerloop:
