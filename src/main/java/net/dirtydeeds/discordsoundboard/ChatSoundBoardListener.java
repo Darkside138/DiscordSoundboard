@@ -53,8 +53,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 if (commandString.length() > maxLineLength) {
                     replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```?list pageNumber``` to request a specific page of results.");
                 } else {
-                    replyByPrivateMessage(event, "```Type any of the following into the chat to play the sound:\n```");
-                    replyByPrivateMessage(event, "```" + soundList.get(0) + "```");
+                    replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:\n");
+                    replyByPrivateMessage(event, soundList.get(0));
                 }
             } else {
                 String[] messageSplit = message.split(" ");
