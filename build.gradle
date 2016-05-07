@@ -51,7 +51,6 @@ jar {
         from('src/main/webapp')
     }
     exclude('/src/main/java/**')
-    exclude('/src/main/resources/**')
 }
 
 def distributionsCopySpec = copySpec {
@@ -60,6 +59,7 @@ def distributionsCopySpec = copySpec {
     from file("$buildDir/libs")
     from file("$buildDir/resources/main")
     include "**/app.properties.example"
+    from file("/distFiles")
     include "soundboard.bat"
     include "ffmpeg.exe"
     include "ffprobe.exe"
