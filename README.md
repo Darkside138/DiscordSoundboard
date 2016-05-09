@@ -25,6 +25,13 @@ sounds into folders and a dropdown should appear in the UI to allow filtering. A
 on the sounds directory so that if you add or remove sounds all you have to do is refresh your browser to see the 
 changes, no need to restart the app.
 
+## Installation and Setup Video
+Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
+This will walk you through the process of getting your bot up and running.
+
+## Donations
+If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
+
 ##app.properties file
 The contents of the app.properties file are below with sample values:
 ```
