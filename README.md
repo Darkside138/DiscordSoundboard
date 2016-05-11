@@ -77,6 +77,13 @@ join that channel, then play the sound that was clicked. For local usage sounds 
 Once you've compiled the jar file you will need to place the .jar file, the app.properties file, and your sounds/ 
 directory in a folder then simply execute the .jar file or the provided .bat file.
 
+###Available commands
+?help
+?list
+?volume
+?stop
+PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
+
 ###Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
 be the name of the sound file minus extension. When a user types one of the sound file commands listed the bot 
