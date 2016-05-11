@@ -79,9 +79,13 @@ directory in a folder then simply execute the .jar file or the provided .bat fil
 
 ###Available commands
 ?help
+
 ?list
+
 ?volume
+
 ?stop
+
 PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
 
 ###Playing sounds by text commands
