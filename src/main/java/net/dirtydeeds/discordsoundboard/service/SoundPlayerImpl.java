@@ -49,8 +49,8 @@ public class SoundPlayerImpl implements Observer {
     private Map<String, SoundFile> availableSounds;
     private final MainWatch mainWatch;
     private boolean initialized = false;
-    private MusicPlayer player;
-    private Guild guild;
+    private MusicPlayer musicPlayer;
+    private FilePlayer player;
     private String playerSetting;
 
     @Inject
@@ -64,16 +64,25 @@ public class SoundPlayerImpl implements Observer {
 
         playerSetting = appProperties.getProperty("player");
         if (isMusicPlayer()) {
-            player = new MusicPlayer();
+            musicPlayer = new MusicPlayer();
         }
 
         initialized = true;
     }
 
-    private void setBotListener(ChatSoundBoardListener listener) {
-        bot.addEventListener(listener);
+    @Override
+    public void update(Observable o, Object arg) {
+        availableSounds = getFileList();
     }
-
+    
+    /**
+     * Gets a Map of the loaded sound files.
+     * @return Map of sound files that have been loaded.
+     */
+    public Map<String, SoundFile> getAvailableSoundFiles() {
+        return availableSounds;
+    }
+    
     /**
      * Sets volume of the player.
      * @param volume - The volume value to set.
@@ -92,7 +101,7 @@ public class SoundPlayerImpl implements Observer {
             userName = appProperties.getProperty("username_to_join_channel");
         }
         try {
-            guild = getUsersGuild(userName);
+            Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
             
             playFile(fileName, guild);
@@ -110,70 +119,39 @@ public class SoundPlayerImpl implements Observer {
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
         if (event != null) {
-            guild = event.getGuild();
-            moveToUserIdsChannel(event, guild);
-            playFile(fileName, guild);
+            Guild guild = event.getGuild();
+            if (guild == null) {
+                guild = getUsersGuild(event.getAuthor().getUsername());
+            }
+            if (guild != null) {
+                moveToUserIdsChannel(event, guild);
+                playFile(fileName, guild);
+            } else {
+                event.getAuthor().getPrivateChannel().sendMessage("I can not find a voice channel you are connected to.");
+                LOG.warn("no guild to play to.");
+            }
         }
     }
 
     /**
-     * Moves to the specified voice channel.
-     * @param channel - The channel specified.
+     * Stops sound playback and returns true or false depending on if playback was stopped.
+     * @return boolean representing whether playback was stopped.
      */
-    private void moveToChannel(VoiceChannel channel, Guild guild){
-        AudioManager audioManager = bot.getAudioManager(guild);
-        if (audioManager.isConnected()) {
-            if (audioManager.isAttemptingToConnect()) {
-                audioManager.closeAudioConnection();
+    public boolean stop() {
+        if (isMusicPlayer()) {
+            if (musicPlayer != null && musicPlayer.isPlaying()) {
+                musicPlayer.stop();
+                return true;
+            } else {
+                return false;
             }
-            audioManager.moveAudioConnection(channel);
         } else {
-            audioManager.openAudioConnection(channel);
-        }
-    }
-
-    /**
-     * Find the "author" of the event and join the voice channel they are in.
-     * @param event - The event
-     * @throws Exception
-     */
-    private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) throws Exception {
-        VoiceChannel channel = null;
-
-        outerloop:
-        for (VoiceChannel channel1 : guild.getVoiceChannels()) {
-            for (net.dv8tion.jda.entities.User user : channel1.getUsers()) {
-                if (user.getId().equals(event.getAuthor().getId())) {
-                    channel = channel1;
-                    break outerloop;
-                }
+            if (player != null && player.isPlaying()) {
+                player.stop();
+                return true;
+            } else {
+                return false;
             }
-        }
-
-        if (channel == null) {
-            event.getChannel().sendMessage("There isn't a VoiceChannel in this Guild with the name: event.getMessage().getChannelId() ");
-            throw new Exception("Problem moving to requested users channel" + event.getAuthor().getId());
-        }
-
-        moveToChannel(channel, guild);
-    }
-
-    /**
-     * Gets a Map of the loaded sound files.
-     * @return Map of sound files that have been loaded.
-     */
-    public Map<String, SoundFile> getAvailableSoundFiles() {
-        return availableSounds;
-    }
-
-    /**
-     * Play file name requested. Will first try to load the file from the map of available sounds.
-     * @param fileName - fileName to play.
-     */
-    private void playFile(String fileName, Guild guild) {
-        SoundFile fileToPlay = availableSounds.get(fileName);
-        if (fileToPlay != null) {
-            playFile(fileToPlay.getSoundFile(), guild);
         }
     }
 
@@ -196,30 +174,128 @@ public class SoundPlayerImpl implements Observer {
         return users;
     }
 
-    //Play the file provided.
+    /**
+     * Find the "author" of the event and join the voice channel they are in.
+     * @param event - The event
+     * @throws Exception
+     */
+    private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) throws Exception {
+        VoiceChannel channel = findUsersChannel(event, guild);
+
+        if (channel == null) {
+            event.getAuthor().getPrivateChannel().sendMessage("Hello @"+ event.getAuthor().getUsername() +"! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getUsername() + " is not connected to Voice?");
+        } else {
+            moveToChannel(channel, guild);
+        }
+    }
+
+    /**
+     * Moves to the specified voice channel.
+     * @param channel - The channel specified.
+     */
+    private void moveToChannel(VoiceChannel channel, Guild guild){
+        AudioManager audioManager = bot.getAudioManager(guild);
+        if (audioManager.isConnected()) {
+            if (audioManager.isAttemptingToConnect()) {
+                audioManager.closeAudioConnection();
+            }
+            audioManager.moveAudioConnection(channel);
+        } else {
+            audioManager.openAudioConnection(channel);
+        }
+    }
+
+    /**
+     * Finds a users voice channel based on event and what guild to look in.
+     * @param event - The event that triggered this search. This is used to get th events author.
+     * @param guild - The guild (discord server) to look in for the author.
+     * @return The VoiceChannel if one is found. Otherwise return null.
+     */
+    private VoiceChannel findUsersChannel(MessageReceivedEvent event, Guild guild) {
+        VoiceChannel channel = null;
+
+        outerloop:
+        for (VoiceChannel channel1 : guild.getVoiceChannels()) {
+            for (net.dv8tion.jda.entities.User user : channel1.getUsers()) {
+                if (user.getId().equals(event.getAuthor().getId())) {
+                    channel = channel1;
+                    break outerloop;
+                }
+            }
+        }
+
+        return channel;
+    }
+
+    //Join the users current channel.
+    private void joinUsersCurrentChannel(String userName) {
+        for (Guild guild : bot.getGuilds()) {
+            for (VoiceChannel channel : guild.getVoiceChannels()) {
+                channel.getUsers().stream().filter(user -> user.getUsername()
+                        .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel, guild));
+            }
+        }
+    }
+
+    /**
+     * Looks through all the guilds the bot has access to and returns the VoiceChannel the requested user is connected to.
+     * @param userName - The username to look for.
+     * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
+     */
+    private Guild getUsersGuild(String userName) {
+        for (Guild guild : bot.getGuilds()) {
+            for (VoiceChannel channel : guild.getVoiceChannels()) {
+                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
+                    if (user.getUsername().equalsIgnoreCase(userName)) {
+                        return guild;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Play file name requested. Will first try to load the file from the map of available sounds.
+     * @param fileName - fileName to play.
+     */
+    private void playFile(String fileName, Guild guild) {
+        SoundFile fileToPlay = availableSounds.get(fileName);
+        if (fileToPlay != null) {
+            File soundFile = new File(fileToPlay.getSoundFileLocation());
+            playFile(soundFile, guild);
+        }
+    }
+
+    /**
+     * Play the provided File object
+     * @param audioFile - The File object to play.
+     * @param guild - The guild (discord server) the playback is going to happen in.
+     */
     private void playFile(File audioFile, Guild guild) {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
             if (isMusicPlayer()) {
                 if (bot.getAudioManager(guild).getSendingHandler() == null) {
-                    bot.getAudioManager(guild).setSendingHandler(player);
+                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
                 }
 
-                player.stop();
-                player.getAudioQueue().clear();
+                musicPlayer.stop();
+                musicPlayer.getAudioQueue().clear();
 
                 AudioSource audioSource = new LocalSource(audioFile);
-                player.getAudioQueue().add(audioSource);
+                musicPlayer.getAudioQueue().add(audioSource);
 
-                player.setVolume(playerVolume);
+                musicPlayer.setVolume(playerVolume);
                 bot.getAudioManager(guild).setConnectTimeout(100L);
 
-                player.play();
+                musicPlayer.play();
             } else {
                 try {
-                    FilePlayer player = new FilePlayer(audioFile);
-
+                    player = new FilePlayer(audioFile);
+                    
                     bot.getAudioManager(guild).setSendingHandler(player);
 
                     player.stop();
@@ -235,31 +311,12 @@ public class SoundPlayerImpl implements Observer {
         }
     }
 
+    /**
+     * Helper method that tells us if we are using MusicPlayer. If false we are using FilePlayer.
+     * @return boolean
+     */
     private boolean isMusicPlayer() {
         return playerSetting != null && playerSetting.equals("musicPlayer");
-    }
-    
-    private Guild getUsersGuild(String userName) {
-        for (Guild guild : bot.getGuilds()) {
-            for (VoiceChannel channel : guild.getVoiceChannels()) {
-                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
-                    if (user.getUsername().equalsIgnoreCase(userName)) {
-                        return guild;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    //Join the users current channel.
-    private void joinUsersCurrentChannel(String userName) {
-        for (Guild guild : bot.getGuilds()) {
-            for (VoiceChannel channel : guild.getVoiceChannels()) {
-                channel.getUsers().stream().filter(user -> user.getUsername()
-                        .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel, guild));
-            }
-        }
     }
 
     //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
@@ -301,7 +358,7 @@ public class SoundPlayerImpl implements Observer {
                     LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
-                    SoundFile soundFile = new SoundFile(fileName, filePath.toFile(), parent);
+                    SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
                     returnFiles.put(fileName, soundFile);
                 }
             });
@@ -376,12 +433,8 @@ public class SoundPlayerImpl implements Observer {
         }
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        availableSounds = getFileList();
-    }
-
-    public void stop() {
-        player.stop();
+    //Sets listeners
+    private void setBotListener(ChatSoundBoardListener listener) {
+        bot.addEventListener(listener);
     }
 }

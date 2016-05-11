@@ -13,12 +13,12 @@ import java.io.File;
 public class SoundFile {
     
     private final String soundFileId;
-    private final File soundFile;
+    private final String soundFileLocation;
     private final String category;
 
-    public SoundFile(String soundFileId, File soundFile, String category) {
+    public SoundFile(String soundFileId, String soundFileLocation, String category) {
         this.soundFileId = soundFileId;
-        this.soundFile = soundFile;
+        this.soundFileLocation = soundFileLocation;
         this.category = category;
     }
 
@@ -27,16 +27,11 @@ public class SoundFile {
     }
 
     public String getSoundFileLocation() {
-        return soundFile.toString();
+        return soundFileLocation;
     }
 
     public String getCategory() {
         return category;
-    }
-
-    @JsonIgnore
-    public File getSoundFile() {
-        return soundFile;
     }
 
     @Override
