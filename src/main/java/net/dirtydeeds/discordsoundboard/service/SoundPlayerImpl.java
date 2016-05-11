@@ -8,8 +8,7 @@ import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.OnlineStatus;
 import net.dv8tion.jda.audio.player.FilePlayer;
-import net.dv8tion.jda.entities.Guild;
-import net.dv8tion.jda.entities.VoiceChannel;
+import net.dv8tion.jda.entities.*;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
@@ -52,6 +51,7 @@ public class SoundPlayerImpl implements Observer {
     private MusicPlayer musicPlayer;
     private FilePlayer player;
     private String playerSetting;
+    private String soundFileDir;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch) {
@@ -175,6 +175,14 @@ public class SoundPlayerImpl implements Observer {
     }
 
     /**
+     * Get the path the application is using for sound files.
+     * @return String representation of the sound file path.
+     */
+    public String getSoundsPath() {
+        return soundFileDir;
+    }
+
+    /**
      * Find the "author" of the event and join the voice channel they are in.
      * @param event - The event
      * @throws Exception
@@ -203,6 +211,17 @@ public class SoundPlayerImpl implements Observer {
             audioManager.moveAudioConnection(channel);
         } else {
             audioManager.openAudioConnection(channel);
+        }
+
+        //Wait for the audio connection to be ready before proceeding.
+        synchronized (this) {
+            while(audioManager.isAttemptingToConnect()) {
+                try {
+                    wait(100);
+                } catch (InterruptedException e) {
+                    LOG.warn("Waiting for audio connection was interrupted.");
+                }
+            }
         }
     }
 
@@ -325,7 +344,7 @@ public class SoundPlayerImpl implements Observer {
         Map<String,SoundFile> returnFiles = new TreeMap<>();
         try {
             
-            String soundFileDir = appProperties.getProperty("sounds_directory");
+            soundFileDir = appProperties.getProperty("sounds_directory");
             if (soundFileDir == null || soundFileDir.isEmpty())  {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }

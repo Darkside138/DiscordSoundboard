@@ -2,10 +2,12 @@ package net.dirtydeeds.discordsoundboard;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dv8tion.jda.entities.Message;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.hooks.ListenerAdapter;
 import net.dv8tion.jda.utils.SimpleLog;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private String commandCharacter = "?";
     private Integer messageSizeLimit = 2000;
     private boolean muted;
+    private static final int MAX_FILE_SIZE_IN_BYTES = 1000000; // 1 MB
 
     public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit) {
         this.soundPlayer = soundPlayer;
@@ -109,8 +112,24 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
                 }
             } else {
-                if (message.startsWith(commandCharacter) || event.isPrivate()) {
-                    nonRecognizedCommand(event, requestingUser);
+                List<Message.Attachment> attachments = event.getMessage().getAttachments();
+                if (attachments.size() > 0 && event.isPrivate()) {
+                    for (Message.Attachment attachment : attachments) {
+                        String name = attachment.getFileName();
+                        String extension = name.substring(name.indexOf(".") + 1);
+                        if (extension.equals("wav") || extension.equals("mp3")) {
+                            if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
+                                attachment.download(new File(soundPlayer.getSoundsPath(), name));
+                                event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
+                            } else {
+                                replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
+                            }
+                        }
+                    }
+                } else {
+                    if (message.startsWith(commandCharacter) || event.isPrivate()) {
+                        nonRecognizedCommand(event, requestingUser);
+                    }
                 }
             }
         }
