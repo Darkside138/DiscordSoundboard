@@ -6,7 +6,7 @@ and play sounds. The bot can only play sounds/respond to commands for servers it
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
 ##Current Release
-[discordSoundboard-v1.3.2.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/1.3.2/DiscordSoundboard-1.3.2.zip). 
+[discordSoundboard-v1.4.0.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/1.4.0/DiscordSoundboard-1.4.0.zip). 
 Download the zip file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the app.properties). Put all the clips you 
@@ -76,6 +76,17 @@ join that channel, then play the sound that was clicked. For local usage sounds 
 ###Executing the jar file
 Once you've compiled the jar file you will need to place the .jar file, the app.properties file, and your sounds/ 
 directory in a folder then simply execute the .jar file or the provided .bat file.
+
+###Available commands
+?help
+
+?list
+
+?volume
+
+?stop
+
+PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
 
 ###Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
