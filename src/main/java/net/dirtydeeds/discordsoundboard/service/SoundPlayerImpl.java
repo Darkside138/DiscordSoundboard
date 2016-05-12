@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.service;
 
 import net.dirtydeeds.discordsoundboard.ChatSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.MainWatch;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
@@ -10,6 +11,7 @@ import net.dv8tion.jda.OnlineStatus;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.entities.*;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.events.voice.VoiceJoinEvent;
 import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
@@ -134,6 +136,20 @@ public class SoundPlayerImpl implements Observer {
     }
 
     /**
+     * Plays the fileName requested for a voice channel entrance.
+     * @param fileName - The name of the file to play.
+     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *              the sound back in.
+     * @throws Exception
+     */
+    public void playFileForEntrance(String fileName, VoiceJoinEvent event) throws Exception {
+        if (event == null) return;
+        moveToChannel(event.getChannel(), event.getGuild());
+        LOG.info("Playing file for entrance of user: " + fileName);
+        playFile(fileName, event.getGuild());
+    }
+
+    /**
      * Stops sound playback and returns true or false depending on if playback was stopped.
      * @return boolean representing whether playback was stopped.
      */
@@ -213,11 +229,18 @@ public class SoundPlayerImpl implements Observer {
             audioManager.openAudioConnection(channel);
         }
 
+        int i = 0;
+        int waitTime = 100;
+        int maxIterations = 40;
         //Wait for the audio connection to be ready before proceeding.
         synchronized (this) {
-            while(audioManager.isAttemptingToConnect()) {
+            while(!audioManager.isConnected()) {
                 try {
-                    wait(100);
+                    wait(waitTime);
+                    i++;
+                    if (i >= maxIterations) {
+                        break; //break out if after 1 second it doesn't get a connection;
+                    }
                 } catch (InterruptedException e) {
                     LOG.warn("Waiting for audio connection was interrupted.");
                 }
@@ -335,7 +358,7 @@ public class SoundPlayerImpl implements Observer {
      * @return boolean
      */
     private boolean isMusicPlayer() {
-        return playerSetting != null && playerSetting.equals("musicPlayer");
+        return playerSetting != null && playerSetting.equalsIgnoreCase("musicPlayer");
     }
 
     //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
@@ -402,7 +425,9 @@ public class SoundPlayerImpl implements Observer {
                 String commandCharacter = appProperties.getProperty("command_character");
                 String messageSizeLimit = appProperties.getProperty("message_size_limit");
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, messageSizeLimit);
-                this.setBotListener(chatListener);
+                this.addBotListener(chatListener);
+                EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
+                this.addBotListener(entranceListener);
             }
             
             File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
@@ -413,7 +438,7 @@ public class SoundPlayerImpl implements Observer {
             LOG.warn("The config was not populated. Please enter an email and password.");
         }
         catch (LoginException e) {
-            LOG.warn("The provided email / password combination was incorrect. Please provide valid details.");
+            LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
             LOG.fatal("Login Interrupted.");
         } catch (UnsupportedEncodingException e) {
@@ -453,7 +478,7 @@ public class SoundPlayerImpl implements Observer {
     }
 
     //Sets listeners
-    private void setBotListener(ChatSoundBoardListener listener) {
+    private void addBotListener(Object listener) {
         bot.addEventListener(listener);
     }
 }
