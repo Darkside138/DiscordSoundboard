@@ -40,7 +40,8 @@ import java.util.*;
 /**
  * @author dfurrer.
  *
- * This class handles moving into channels and playing sounds. Also, it loads the available sound files.
+ * This class handles moving into channels and playing sounds. Also, it loads the available sound files
+ * and the configuration properties.
  */
 @Service
 public class SoundPlayerImpl implements Observer {
@@ -194,6 +195,7 @@ public class SoundPlayerImpl implements Observer {
 
     /**
      * Get a list of users
+     * @return List of soundboard users.
      */
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
         String userNameToSelect = appProperties.getProperty("username_to_join_channel");
@@ -296,7 +298,9 @@ public class SoundPlayerImpl implements Observer {
         return channel;
     }
 
-    //Join the users current channel.
+    /**
+     * Join the users current channel.
+     */
     private void joinUsersCurrentChannel(String userName) {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
@@ -395,8 +399,11 @@ public class SoundPlayerImpl implements Observer {
         return playerSetting != null && playerSetting.equalsIgnoreCase("musicPlayer");
     }
 
-    //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
-    //to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
+    /**
+     * This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
+     * to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
+     * @return Map of the current list of available sound files.
+     */
     private Map<String,SoundFile> getFileList() {
         Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try {
@@ -445,7 +452,9 @@ public class SoundPlayerImpl implements Observer {
         return returnFiles;
     }
 
-    //Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
+    /**
+     * Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
+     */
     private void initializeDiscordBot() {
         try {
             String botToken = appProperties.getProperty("bot_token");
@@ -480,7 +489,9 @@ public class SoundPlayerImpl implements Observer {
         }
     }
 
-    //Loads in the properties from the app.properties file
+    /**
+     * Loads in the properties from the app.properties file
+     */
     private void loadProperties() {
         appProperties = new Properties();
         InputStream stream = null;
@@ -511,7 +522,10 @@ public class SoundPlayerImpl implements Observer {
         }
     }
 
-    //Sets listeners
+    /**
+     * Sets listeners
+     * @param listener - The listener object to set.
+     */
     private void addBotListener(Object listener) {
         bot.addEventListener(listener);
     }

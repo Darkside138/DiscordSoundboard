@@ -3,9 +3,11 @@ package net.dirtydeeds.discordsoundboard;
 import com.sun.management.OperatingSystemMXBean;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dv8tion.jda.Permission;
 import net.dv8tion.jda.entities.Message;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.hooks.ListenerAdapter;
+import net.dv8tion.jda.utils.PermissionUtil;
 import net.dv8tion.jda.utils.SimpleLog;
 
 import java.io.File;
@@ -172,8 +174,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             } else if (message.startsWith(commandCharacter + "remove")) {
                 String[] messageSplit = message.split(" ");
                 String soundToRemove = messageSplit[1];
-                //TODO: Allow certain roles to remove any soundFile requested
-                if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)) {
+                boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)
+                        || hasManageServerPerm) {
                     SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
                     if (soundFileToRemove != null) {
                         try {
@@ -218,8 +221,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                     attachment.download(newSoundFile);
                                     event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
                                 } else {
-                                    //TODO: Allow certain role(s) to update this file even if it's not their entrance sound.
-                                    if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0,name.indexOf(".")))) {
+                                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                                    if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0,name.indexOf("."))) 
+                                            || hasManageServerPerm) {
                                         try {
                                             Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
                                             File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
