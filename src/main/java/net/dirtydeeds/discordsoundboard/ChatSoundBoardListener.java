@@ -8,6 +8,9 @@ import net.dv8tion.jda.hooks.ListenerAdapter;
 import net.dv8tion.jda.utils.SimpleLog;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +100,28 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 } else {
                     replyByPrivateMessage(event, "Nothing was playing.");
                 }
-                
+            } else if (message.startsWith(commandCharacter + "remove")) {
+                String[] messageSplit = message.split(" ");
+                String soundToRemove = messageSplit[1];
+                //TODO: Allow certain roles to remove any soundFile requested
+                if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)) {
+                    SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
+                    if (soundFileToRemove != null) {
+                        try {
+                            boolean fileRemoved = Files.deleteIfExists(Paths.get(soundFileToRemove.getSoundFileLocation()));
+                            if (fileRemoved) {
+                                replyByPrivateMessage(event, "Sound file " + soundToRemove + " was removed.");
+                            } else {
+                                replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
+                            }
+                        } catch (IOException e) {
+                            LOG.fatal("Could not remove sound file " + soundToRemove);
+                        }
+                    }
+                } else {
+                    replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
+                }
+
             } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
                 if(!muted) {
                     try {
@@ -119,8 +143,25 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         String extension = name.substring(name.indexOf(".") + 1);
                         if (extension.equals("wav") || extension.equals("mp3")) {
                             if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
-                                attachment.download(new File(soundPlayer.getSoundsPath(), name));
-                                event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
+                                if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
+                                    File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+                                    attachment.download(newSoundFile);
+                                    event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
+                                } else {
+                                    //TODO: Allow certain role(s) to update this file even if it's not their entrance sound.
+                                    if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0,name.indexOf(".")))) {
+                                        try {
+                                            Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
+                                            File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+                                            attachment.download(newSoundFile);
+                                            event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
+                                        } catch (IOException e1) {
+                                            LOG.fatal("Problem deleting and re-adding sound file: " + name);
+                                        }
+                                    } else {
+                                        event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.");
+                                    }
+                                }
                             } else {
                                 replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
                             }

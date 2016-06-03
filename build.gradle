@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '1.4.1'
+version = '1.4.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -38,6 +38,10 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-jersey'
 
     testCompile 'org.springframework.boot:spring-boot-starter-test' 
+}
+
+processResources{
+    exclude 'app.properties'
 }
 
 jar {

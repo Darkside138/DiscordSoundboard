@@ -126,8 +126,14 @@ public class SoundPlayerImpl implements Observer {
                 guild = getUsersGuild(event.getAuthor().getUsername());
             }
             if (guild != null) {
-                moveToUserIdsChannel(event, guild);
-                playFile(fileName, guild);
+                SoundFile fileToPlay = availableSounds.get(fileName);
+                if (fileToPlay != null) {
+                    moveToUserIdsChannel(event, guild);
+                    File soundFile = new File(fileToPlay.getSoundFileLocation());
+                    playFile(soundFile, guild);
+                } else {
+                    event.getAuthor().getPrivateChannel().sendMessage("Could not find sound to play. Requested sound: " + fileName + ".");
+                }
             } else {
                 event.getAuthor().getPrivateChannel().sendMessage("I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to play to.");
@@ -364,7 +370,7 @@ public class SoundPlayerImpl implements Observer {
     //This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
     //to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
     private Map<String,SoundFile> getFileList() {
-        Map<String,SoundFile> returnFiles = new TreeMap<>();
+        Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         try {
             
             soundFileDir = appProperties.getProperty("sounds_directory");

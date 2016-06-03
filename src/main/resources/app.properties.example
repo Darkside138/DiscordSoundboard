@@ -29,6 +29,3 @@ player=JDAPlayer
 #If you specify a directory that does not exist yet the application will attempt to create it.
 #Example: C:/Users/someUser/Music
 sounds_directory=
-
-##Spring Boot Configuration##
-server.port = 8080
