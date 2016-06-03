@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.web;
 
+import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
@@ -58,8 +59,12 @@ public class SoundboardRestController {
     
     @RequestMapping("/playFile")
     public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
-        soundPlayer.playFileForUser(soundFileId, username);
-        return HttpStatus.OK;
+        try {
+            soundPlayer.playFileForUser(soundFileId, username);
+            return HttpStatus.OK;
+        } catch (SoundPlaybackException e) {
+            return HttpStatus.NOT_FOUND;
+        }
     }
 
     @RequestMapping("/stop")

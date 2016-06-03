@@ -3,11 +3,13 @@ package net.dirtydeeds.discordsoundboard.service;
 import net.dirtydeeds.discordsoundboard.ChatSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.MainWatch;
+import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.OnlineStatus;
+import net.dv8tion.jda.Permission;
 import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.entities.*;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
@@ -17,6 +19,7 @@ import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
 import net.dv8tion.jda.player.source.LocalSource;
 import net.dv8tion.jda.utils.AvatarUtil;
+import net.dv8tion.jda.utils.PermissionUtil;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
@@ -98,7 +101,7 @@ public class SoundPlayerImpl implements Observer {
      * @param fileName - The name of the file to play.
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      */
-    public void playFileForUser(String fileName, String userName) {
+    public void playFileForUser(String fileName, String userName) throws SoundPlaybackException {
         if (userName == null || userName.isEmpty()) {
             userName = appProperties.getProperty("username_to_join_channel");
         }
@@ -115,20 +118,24 @@ public class SoundPlayerImpl implements Observer {
     /**
      * Plays the fileName requested.
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
+     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
      *              the sound back in.
      * @throws Exception
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
+        SoundFile fileToPlay = availableSounds.get(fileName);
         if (event != null) {
             Guild guild = event.getGuild();
             if (guild == null) {
                 guild = getUsersGuild(event.getAuthor().getUsername());
             }
             if (guild != null) {
-                SoundFile fileToPlay = availableSounds.get(fileName);
                 if (fileToPlay != null) {
-                    moveToUserIdsChannel(event, guild);
+                    try {
+                        moveToUserIdsChannel(event, guild);
+                    } catch (SoundPlaybackException e) {
+                        event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
+                    }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile, guild);
                 } else {
@@ -150,9 +157,17 @@ public class SoundPlayerImpl implements Observer {
      */
     public void playFileForEntrance(String fileName, VoiceJoinEvent event) throws Exception {
         if (event == null) return;
-        moveToChannel(event.getChannel(), event.getGuild());
-        LOG.info("Playing file for entrance of user: " + fileName);
-        playFile(fileName, event.getGuild());
+        try {
+            moveToChannel(event.getChannel(), event.getGuild());
+            LOG.info("Playing file for entrance of user: " + fileName);
+            try {
+                playFile(fileName, event.getGuild());
+            } catch (SoundPlaybackException e) {
+                LOG.info("Could not find any sound to play for entrance of user: " + fileName);
+            }
+        } catch (SoundPlaybackException e) {
+            LOG.debug(e.toString());
+        }
     }
 
     /**
@@ -224,33 +239,38 @@ public class SoundPlayerImpl implements Observer {
      * Moves to the specified voice channel.
      * @param channel - The channel specified.
      */
-    private void moveToChannel(VoiceChannel channel, Guild guild){
-        AudioManager audioManager = bot.getAudioManager(guild);
-        if (audioManager.isConnected()) {
-            if (audioManager.isAttemptingToConnect()) {
-                audioManager.closeAudioConnection();
+    private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
+        boolean hasPermissionToSoeak = PermissionUtil.checkPermission(bot.getUserById(bot.getSelfInfo().getId()), Permission.VOICE_SPEAK, channel);
+        if (hasPermissionToSoeak) {
+            AudioManager audioManager = bot.getAudioManager(guild);
+            if (audioManager.isConnected()) {
+                if (audioManager.isAttemptingToConnect()) {
+                    audioManager.closeAudioConnection();
+                }
+                audioManager.moveAudioConnection(channel);
+            } else {
+                audioManager.openAudioConnection(channel);
             }
-            audioManager.moveAudioConnection(channel);
-        } else {
-            audioManager.openAudioConnection(channel);
-        }
 
-        int i = 0;
-        int waitTime = 100;
-        int maxIterations = 40;
-        //Wait for the audio connection to be ready before proceeding.
-        synchronized (this) {
-            while(!audioManager.isConnected()) {
-                try {
-                    wait(waitTime);
-                    i++;
-                    if (i >= maxIterations) {
-                        break; //break out if after 1 second it doesn't get a connection;
+            int i = 0;
+            int waitTime = 100;
+            int maxIterations = 40;
+            //Wait for the audio connection to be ready before proceeding.
+            synchronized (this) {
+                while (!audioManager.isConnected()) {
+                    try {
+                        wait(waitTime);
+                        i++;
+                        if (i >= maxIterations) {
+                            break; //break out if after 1 second it doesn't get a connection;
+                        }
+                    } catch (InterruptedException e) {
+                        LOG.warn("Waiting for audio connection was interrupted.");
                     }
-                } catch (InterruptedException e) {
-                    LOG.warn("Waiting for audio connection was interrupted.");
                 }
             }
+        } else {
+            throw new SoundPlaybackException("The bot does not have permission to speak in the requested channel: " + channel.getName() + ".");
         }
     }
 
@@ -281,7 +301,13 @@ public class SoundPlayerImpl implements Observer {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 channel.getUsers().stream().filter(user -> user.getUsername()
-                        .equalsIgnoreCase(userName)).forEach(user -> moveToChannel(channel, guild));
+                        .equalsIgnoreCase(userName)).forEach(user -> {
+                    try {
+                        moveToChannel(channel, guild);
+                    } catch (SoundPlaybackException e) {
+                        LOG.fatal(e.toString());
+                    }
+                });
             }
         }
     }
@@ -308,11 +334,13 @@ public class SoundPlayerImpl implements Observer {
      * Play file name requested. Will first try to load the file from the map of available sounds.
      * @param fileName - fileName to play.
      */
-    private void playFile(String fileName, Guild guild) {
+    private void playFile(String fileName, Guild guild) throws SoundPlaybackException {
         SoundFile fileToPlay = availableSounds.get(fileName);
         if (fileToPlay != null) {
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             playFile(soundFile, guild);
+        } else {
+            throw new SoundPlaybackException("Could not find sound file that was requested.");
         }
     }
 

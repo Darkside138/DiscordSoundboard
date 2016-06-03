@@ -1,9 +1,5 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.io.File;
-
 /**
  * Class that represents a sound file.
  *

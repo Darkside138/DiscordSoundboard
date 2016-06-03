@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard;
 
+import com.sun.management.OperatingSystemMXBean;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.entities.Message;
@@ -8,6 +9,12 @@ import net.dv8tion.jda.hooks.ListenerAdapter;
 import net.dv8tion.jda.utils.SimpleLog;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.text.DecimalFormat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -15,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author dfurrer.
@@ -29,6 +37,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private String commandCharacter = "?";
     private Integer messageSizeLimit = 2000;
     private boolean muted;
+    private static DecimalFormat df2 = new DecimalFormat("#.##");
     private static final int MAX_FILE_SIZE_IN_BYTES = 1000000; // 1 MB
 
     public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit) {
@@ -57,7 +66,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 StringBuilder commandString = getCommandListString();
                 List<String> soundList = getCommandList(commandString);
 
-                LOG.info("Responding to " + message + " command. Requested by " + requestingUser + ".");
+                LOG.info("Responding to list command. Requested by " + requestingUser + ".");
                 if (message.equals(commandCharacter + "list")) {
                     if (commandString.length() > maxLineLength) {
                         replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
@@ -79,7 +88,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 //If the command is not list and starts with the specified command character try and play that "command" or sound file.
             } else if (message.startsWith(commandCharacter + "help")) {
                 LOG.info("Responding to help command. Requested by " + requestingUser + ".");
-                replyByPrivateMessage(event, "Type ```" + commandCharacter + "list``` to get a list of available sound files. Type ```" + commandCharacter + "soundFileName``` to play the a sound from the list.");
+                replyByPrivateMessage(event, "You can type any of the following commands:" +
+                    "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
+                       "\n" + commandCharacter + "soundFileName    - Plays a sound from the list." + 
+                       "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." + 
+                       "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
+                       "\n" + commandCharacter + "info             - Returns info about the bot.```");
             } else if(message.startsWith(commandCharacter + "volume")) {
                 int newVol = Integer.parseInt(message.substring(8));
                 if(newVol >= 1 && newVol <= 100) {
@@ -92,14 +106,69 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     soundPlayer.setSoundPlayerVolume(newVol);
                     replyByPrivateMessage(event, requestingUser + " muted me.");
                     LOG.info("Bot muted by " + requestingUser + ".");
-                    soundPlayer.playFileForUser("stop",requestingUser);
                 }
             } else if (message.startsWith(commandCharacter + "stop")) {
+                LOG.info("Stop requested by " + requestingUser + ".");
                 if (soundPlayer.stop()) {
                     replyByPrivateMessage(event, "Playback stopped.");    
                 } else {
                     replyByPrivateMessage(event, "Nothing was playing.");
                 }
+                
+            } else if (message.startsWith(commandCharacter + "info")) {
+                LOG.info("Responding to info request by " + requestingUser + ".");
+                
+                OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+                RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+                int availableProcessors = operatingSystemMXBean.getAvailableProcessors();
+                long prevUpTime = runtimeMXBean.getUptime();
+                long prevProcessCpuTime = operatingSystemMXBean.getProcessCpuTime();
+                double cpuUsage;
+                try
+                {
+                    Thread.sleep(500);
+                }
+                catch (Exception ignored) { }
+
+                long upTime = runtimeMXBean.getUptime();
+                long processCpuTime = operatingSystemMXBean.getProcessCpuTime();
+                long elapsedCpu = processCpuTime - prevProcessCpuTime;
+                long elapsedTime = upTime - prevUpTime;
+
+                cpuUsage = Math.min(99F, elapsedCpu / (elapsedTime * 10000F * availableProcessors));
+
+                List<MemoryPoolMXBean> memoryPools = new ArrayList<>(ManagementFactory.getMemoryPoolMXBeans()); 
+                long usedHeapMemoryAfterLastGC = 0; 
+                for (MemoryPoolMXBean memoryPool : memoryPools) { 
+                    if (memoryPool.getType().equals(MemoryType.HEAP)) { 
+                        MemoryUsage poolCollectionMemoryUsage = memoryPool.getCollectionUsage(); 
+                        usedHeapMemoryAfterLastGC += poolCollectionMemoryUsage.getUsed(); 
+                    }
+                }
+                
+                Package thisPackage = getClass().getPackage();
+                String version = null;
+                if (thisPackage != null) {
+                    version = getClass().getPackage().getImplementationVersion();
+                }
+                if (version == null) {
+                    version = "DEVELOPMENT";
+                }
+
+                long uptimeDays = TimeUnit.DAYS.convert(upTime, TimeUnit.MILLISECONDS);
+                long uptimeHours = TimeUnit.HOURS.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(upTime));
+                long uptimeMinutes = TimeUnit.MINUTES.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(upTime));
+                long upTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(upTime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(upTime));
+
+                replyByPrivateMessage(event, "DiscordSoundboard info: ```" +
+                        "CPU: " + df2.format(cpuUsage) + "%" +
+                        "\nMemory: " + humanReadableByteCount(usedHeapMemoryAfterLastGC, true) +
+                        "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
+                        "\nVersion: " + version +
+                        "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() + 
+                        "\nCommand Prefix: " + commandCharacter +
+                        "\nSound File Path: " + soundPlayer.getSoundsPath() + 
+                        "```");
             } else if (message.startsWith(commandCharacter + "remove")) {
                 String[] messageSplit = message.split(" ");
                 String soundToRemove = messageSplit[1];
@@ -127,6 +196,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     try {
                         String fileNameRequested = message.substring(1, message.length());
                         LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");
+
                         soundPlayer.playFileForEvent(fileNameRequested, event);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -178,7 +248,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     
     private void nonRecognizedCommand(MessageReceivedEvent event, String requestingUser) {
         replyByPrivateMessage(event, "Hello @" + requestingUser + ". I don't know how to respond to this message!");
-        replyByPrivateMessage(event, "You can type " + commandCharacter + "list to see a list of all playable Sounds. Type " + commandCharacter + "volume 0 - 100 to set the bots volume.");
+        replyByPrivateMessage(event, "You can type " + commandCharacter + "help to see a list of recognized commands.");
         LOG.info("Responding to PM of " + requestingUser + ". Unknown Command. Sending help text.");
     }
 
@@ -231,5 +301,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     
     private void replyByPrivateMessage(MessageReceivedEvent event, String message) {
         event.getAuthor().getPrivateChannel().sendMessage(message);
+    }
+
+    public static String humanReadableByteCount(long bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 }
