@@ -1,37 +1,39 @@
 $(document).ready(function() {
     $.ajax({
-        url: "/soundsApi/getAvailableSounds",
+        url: "/soundsApi/availableSounds",
         success: function( data ) {
             $(".buttonContainer").empty();
             $.each(data, function(i, obj) {
+                var buttonContainerSelector = $(".buttonContainer");
                 //use obj.id and obj.name here, for example:
-                $(".buttonContainer").append($("<button></button>")
+                buttonContainerSelector.append($("<button></button>")
                     .attr("class", 'soundButton')
                     .attr("id", obj.soundFileId)
                     .attr("value", obj.soundFileId)
                     .attr("data-category", obj.category)
                     .text(obj.soundFileId));
-                $(".buttonContainer").append("<div class='divider'/>");
+                buttonContainerSelector.append("<div class='divider'/>");
             });
             $("button, input:button").button();
 
             $(".soundButton").click(function() {
                 var volume = $('#volume').slider("option", "value");
                 $.ajax({
-                    url: "/soundsApi/setVolume?volume=" + volume,
+                    url: "/soundsApi/volume?volume=" + volume,
                     method: 'POST'
                 });
 
                 var username = $(".userNameSelect option:selected").text();
                 $.ajax({
-                    url: "/soundsApi/playFile?soundFileId=" + this.value + "&username=" + username
+                    url: "/soundsApi/playFile?soundFileId=" + this.value + "&username=" + username,
+                    method: 'POST'
                 });
             });
         }
     });
 
     $.ajax({
-        url: "/soundsApi/getUsers",
+        url: "/soundsApi/users",
         success: function(data) {
             $.each(data, function(i, obj) {
                 $('.userNameSelect')
@@ -47,7 +49,7 @@ $(document).ready(function() {
     });
 
     $.ajax({
-        url: "/soundsApi/getSoundCategories",
+        url: "/soundsApi/soundCategories",
         success: function(data) {
             if (data.length > 1) {
                 $.each(data, function(i, obj) {
@@ -59,14 +61,15 @@ $(document).ready(function() {
                 $('.categorySelect').selectmenu({
                     width : 'auto',
                     change: function( event, ui ) {
+                        var soundButtonSelector = $('.soundButton');
                         if (ui.item.value) {
-                            var matching = $('.soundButton').filter(function(){
+                            var matching = soundButtonSelector.filter(function(){
                                 return $(this).attr('data-category') == ui.item.value
                             });
-                            $('.soundButton').hide();
+                            soundButtonSelector.hide();
                             matching.prop('selected', true).show();
                         } else {
-                            $('.soundButton').show();
+                            soundButtonSelector.show();
                         }
 
                     }
@@ -87,7 +90,7 @@ $(document).ready(function() {
         slide: function(event, ui) {
             var volume = ui.value;
             $.ajax({
-                url: "/soundsApi/setVolume?volume=" + volume,
+                url: "/soundsApi/volume?volume=" + volume,
                 method: 'POST'
             });
         }

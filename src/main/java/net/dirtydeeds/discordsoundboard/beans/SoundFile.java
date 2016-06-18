@@ -1,16 +1,23 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
 /**
  * Class that represents a sound file.
  *
  * @author dfurrer.
  */
 @SuppressWarnings("unused")
+@Entity
 public class SoundFile {
     
-    private final String soundFileId;
-    private final String soundFileLocation;
-    private final String category;
+    @Id
+    private String soundFileId;
+    private String soundFileLocation;
+    private String category;
+    
+    protected SoundFile() {}
 
     public SoundFile(String soundFileId, String soundFileLocation, String category) {
         this.soundFileId = soundFileId;

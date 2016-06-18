@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -126,8 +127,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 long prevUpTime = runtimeMXBean.getUptime();
                 long prevProcessCpuTime = operatingSystemMXBean.getProcessCpuTime();
                 double cpuUsage;
-                try
-                {
+                try {
                     Thread.sleep(500);
                 }
                 catch (Exception ignored) { }
@@ -194,8 +194,19 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
                 }
 
+            } else if (message.startsWith(commandCharacter + "random")) {
+                Map<String, SoundFile> sounds = soundPlayer.getAvailableSoundFiles();
+                int randomSoundIndex = ThreadLocalRandom.current().nextInt(0, sounds.size() + 1);
+                Object[] entries = sounds.entrySet().toArray();
+                SoundFile randomValue = (SoundFile) entries[randomSoundIndex];
+                LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
+                try {
+                    soundPlayer.playFileForEvent(randomValue.getSoundFileId(), event);
+                } catch (Exception e) {
+                    LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+                }
             } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
-                if(!muted) {
+                if (!muted) {
                     try {
                         String fileNameRequested = message.substring(1, message.length());
                         LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");

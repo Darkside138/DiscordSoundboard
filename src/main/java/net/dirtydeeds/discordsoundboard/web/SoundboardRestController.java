@@ -36,7 +36,7 @@ public class SoundboardRestController {
         this.soundPlayer = soundPlayer;
     }
 
-    @RequestMapping("/getAvailableSounds")
+    @RequestMapping(value = "/availableSounds", method = RequestMethod.GET)
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
@@ -44,7 +44,7 @@ public class SoundboardRestController {
         return returnSounds;
     }
     
-    @RequestMapping("/getSoundCategories")
+    @RequestMapping(value = "/soundCategories", method = RequestMethod.GET)
     public Set<String> getSoundCategories() {
         Set<String> categories = new HashSet<>();
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
@@ -52,12 +52,12 @@ public class SoundboardRestController {
         return categories;
     }
 
-    @RequestMapping("/getUsers")
+    @RequestMapping(value = "/users", method = RequestMethod.GET)
     public List<User> getUsers() {
         return soundPlayer.getUsers();
     }
     
-    @RequestMapping("/playFile")
+    @RequestMapping(value = "/playFile", method = RequestMethod.POST)
     public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
         try {
             soundPlayer.playFileForUser(soundFileId, username);
@@ -67,13 +67,13 @@ public class SoundboardRestController {
         }
     }
 
-    @RequestMapping("/stop")
+    @RequestMapping(value = "/stop", method = RequestMethod.POST)
     public HttpStatus stopPlayback() {
         soundPlayer.stop();
         return HttpStatus.OK;
     }
     
-    @RequestMapping(value = "/setVolume", method = RequestMethod.POST)
+    @RequestMapping(value = "/volume", method = RequestMethod.POST)
     public HttpStatus setVolume(@RequestParam Integer volume) {
         soundPlayer.setSoundPlayerVolume(volume);
         return HttpStatus.OK;

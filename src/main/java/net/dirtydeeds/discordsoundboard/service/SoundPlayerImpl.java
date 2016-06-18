@@ -6,6 +6,7 @@ import net.dirtydeeds.discordsoundboard.MainWatch;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.OnlineStatus;
@@ -51,21 +52,22 @@ public class SoundPlayerImpl implements Observer {
     private Properties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
-    private Map<String, SoundFile> availableSounds;
     private final MainWatch mainWatch;
     private boolean initialized = false;
     private MusicPlayer musicPlayer;
     private FilePlayer player;
     private String playerSetting;
     private String soundFileDir;
+    private SoundFileRepository repository;
 
     @Inject
-    public SoundPlayerImpl(MainWatch mainWatch) {
+    public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
         this.mainWatch = mainWatch;
         this.mainWatch.addObserver(this);
+        this.repository = repository;
         loadProperties();
         initializeDiscordBot();
-        availableSounds = getFileList();
+        getFileList();
         setSoundPlayerVolume(75);
 
         playerSetting = appProperties.getProperty("player");
@@ -78,7 +80,7 @@ public class SoundPlayerImpl implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        availableSounds = getFileList();
+        getFileList();
     }
     
     /**
@@ -86,7 +88,15 @@ public class SoundPlayerImpl implements Observer {
      * @return Map of sound files that have been loaded.
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
-        return availableSounds;
+        Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (SoundFile soundFile : repository.findAll()) {
+            returnFiles.put(soundFile.getSoundFileId(), soundFile);
+        }
+        return returnFiles;
+    }
+    
+    public SoundFile getSoundFileById(String soundFileId) {
+        return repository.findOne(soundFileId);
     }
     
     /**
@@ -124,7 +134,7 @@ public class SoundPlayerImpl implements Observer {
      * @throws Exception
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
-        SoundFile fileToPlay = availableSounds.get(fileName);
+        SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
             Guild guild = event.getGuild();
             if (guild == null) {
@@ -339,7 +349,7 @@ public class SoundPlayerImpl implements Observer {
      * @param fileName - fileName to play.
      */
     private void playFile(String fileName, Guild guild) throws SoundPlaybackException {
-        SoundFile fileToPlay = availableSounds.get(fileName);
+        SoundFile fileToPlay = getSoundFileById(fileName);
         if (fileToPlay != null) {
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             playFile(soundFile, guild);
@@ -442,6 +452,7 @@ public class SoundPlayerImpl implements Observer {
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
                     SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                    repository.save(soundFile);
                     returnFiles.put(fileName, soundFile);
                 }
             });

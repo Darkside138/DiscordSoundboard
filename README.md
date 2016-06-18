@@ -5,7 +5,7 @@ choose the sound from the web UI. You will need to create a bot account that the
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
-##Current Release
+## Current Release
 [discordSoundboard-v1.4.0.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/1.4.0/DiscordSoundboard-1.4.0.zip). 
 Download the zip file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
@@ -18,12 +18,7 @@ channel that user is in. If you don't have this configured properly the bot will
 respond to text channel commands. See below for information on those commands. Once this is complete execute 
 the .jar file or the .bat file. You should see a bunch of logging and eventually something like 
 "Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by 
-opening a browser and navigating to "http://localhost:8080" (port is configurable in the app.properties 8080 
-is the default). In this release I've added a feature that allows 
-you to filter the sounds displayed based on the folder they are in so if you would like you can separate your 
-sounds into folders and a dropdown should appear in the UI to allow filtering. Also, I've implemented a "watch" 
-on the sounds directory so that if you add or remove sounds all you have to do is refresh your browser to see the 
-changes, no need to restart the app.
+opening a browser and navigating to "http://localhost:8080".
 
 ## Installation and Setup Video
 Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
@@ -32,7 +27,10 @@ This will walk you through the process of getting your bot up and running.
 ## Donations
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
 
-##app.properties file
+## Planned Future Features
+White listing users that can use the bot.
+
+## app.properties file
 The contents of the app.properties file are below with sample values:
 ```
 ##Soundboard Specific configuration##
@@ -70,15 +68,17 @@ server.port = 8080
 ## Usage
 Running locally from an IDE: Update the app.properties file with the login information for your "bot". Property 
 "username_to_join_channel" is used by the application when a button in the UI is clicked. Before playing the 
-sound file the bot will look for the username specifiedin all the servers the bot account has access to and 
+sound file the bot will look for the username specified in all the servers the bot account has access to and 
 join that channel, then play the sound that was clicked. For local usage sounds can be placed in src/main/resources/sounds/.
 
-###Executing the jar file
+### Executing the jar file
 Once you've compiled the jar file you will need to place the .jar file, the app.properties file, and your sounds/ 
 directory in a folder then simply execute the .jar file or the provided .bat file.
 
-###Available commands
+### Available commands
 ?help
+
+?info
 
 ?list
 
@@ -86,9 +86,17 @@ directory in a folder then simply execute the .jar file or the provided .bat fil
 
 ?stop
 
+?random
+
+Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
+Responses will be sent to the requesting user via direct message also.
+
 PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
 
-###Playing sounds by text commands
+If the there is a file with the same name as a user added to the soundboard that sound will play every time a user
+enters a channel.
+
+### Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
 be the name of the sound file minus extension. When a user types one of the sound file commands listed the bot 
 will join that users channel and then play the requested sound file. The bot remains in that channel unless the 
