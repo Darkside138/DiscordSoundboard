@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author dfurrer.
@@ -105,6 +106,31 @@ public class SoundPlayerImpl implements Observer {
      */
     public void setSoundPlayerVolume(int volume) {
         playerVolume = (float) volume / 100;
+    }
+
+    /**
+     * Returns the current volume
+     * @return float representing the current volume.
+     */
+    public float getSoundPlayerVolume() {
+        return playerVolume;
+    }
+    
+    public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) {
+        Map<String, SoundFile> sounds = getAvailableSoundFiles();
+        int randomSoundIndex = ThreadLocalRandom.current().nextInt(0, sounds.size() + 1);
+        Object[] entries = sounds.entrySet().toArray();
+        SoundFile randomValue = (SoundFile) entries[randomSoundIndex];
+        LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
+        try {
+            if (event != null) {
+                playFileForEvent(randomValue.getSoundFileId(), event);
+            } else {
+                playFileForUser(randomValue.getSoundFileId(), requestingUser);
+            }
+        } catch (Exception e) {
+            LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+        }
     }
 
     /**

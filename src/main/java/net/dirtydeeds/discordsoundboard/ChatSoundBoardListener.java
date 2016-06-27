@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,7 +58,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if(!event.getAuthor().isBot()) {
+        if (!event.getAuthor().isBot()) {
             String message = event.getMessage().getContent();
             String requestingUser = event.getAuthor().getUsername();
             final int maxLineLength = messageSizeLimit;
@@ -88,7 +87,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         replyByPrivateMessage(event, "The page number argument must be a number.");
                     }
                 }
-                //If the command is not list and starts with the specified command character try and play that "command" or sound file.
+            //If the command is not list and starts with the specified command character try and play that "command" or sound file.
             } else if (message.startsWith(commandCharacter + "help")) {
                 LOG.info("Responding to help command. Requested by " + requestingUser + ".");
                 replyByPrivateMessage(event, "You can type any of the following commands:" +
@@ -195,16 +194,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 }
 
             } else if (message.startsWith(commandCharacter + "random")) {
-                Map<String, SoundFile> sounds = soundPlayer.getAvailableSoundFiles();
-                int randomSoundIndex = ThreadLocalRandom.current().nextInt(0, sounds.size() + 1);
-                Object[] entries = sounds.entrySet().toArray();
-                SoundFile randomValue = (SoundFile) entries[randomSoundIndex];
-                LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
-                try {
-                    soundPlayer.playFileForEvent(randomValue.getSoundFileId(), event);
-                } catch (Exception e) {
-                    LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
-                }
+                soundPlayer.playRandomSoundFile(requestingUser, event);
             } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
                 if (!muted) {
                     try {

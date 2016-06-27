@@ -66,6 +66,12 @@ public class SoundboardRestController {
             return HttpStatus.NOT_FOUND;
         }
     }
+    
+    @RequestMapping(value = "/playRandom", method = RequestMethod.POST)
+    public HttpStatus playRandomSoundFile(@RequestParam String username) {
+        soundPlayer.playRandomSoundFile(username, null);
+        return HttpStatus.OK;
+    }
 
     @RequestMapping(value = "/stop", method = RequestMethod.POST)
     public HttpStatus stopPlayback() {
@@ -77,5 +83,10 @@ public class SoundboardRestController {
     public HttpStatus setVolume(@RequestParam Integer volume) {
         soundPlayer.setSoundPlayerVolume(volume);
         return HttpStatus.OK;
+    }
+    
+    @RequestMapping(value = "/volume", method = RequestMethod.GET) 
+    public float getVolume() {
+        return soundPlayer.getSoundPlayerVolume();
     }
 }
