@@ -535,14 +535,20 @@ public class SoundPlayerImpl implements Observer {
                 this.addBotListener(entranceListener);
             }
 
-            String[] allowedUsersArray = appProperties.getProperty("allowedUsers").split(",");
-            if (allowedUsersArray.length > 0) {
-                allowedUsers = Arrays.asList(allowedUsersArray);
+            String allowedUsersString = appProperties.getProperty("allowedUsers");
+            if (allowedUsersString != null) {
+                String[] allowedUsersArray = allowedUsersString.split(",");
+                if (allowedUsersArray.length > 0) {
+                    allowedUsers = Arrays.asList(allowedUsersArray);
+                }
             }
 
-            String[] bannedUsersArray = appProperties.getProperty("bannedUsers").split(",");
-            if (bannedUsersArray.length > 0) {
-                bannedUsers = Arrays.asList(bannedUsersArray);
+            String bannedUsersString = appProperties.getProperty("bannedUsers");
+            if (bannedUsersString != null) {
+                String[] bannedUsersArray = bannedUsersString.split(",");
+                if (bannedUsersArray.length > 0) {
+                    bannedUsers = Arrays.asList(bannedUsersArray);
+                }
             }
 
             File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");

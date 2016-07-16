@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '1.4.3'
+version = '1.4.4'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -30,8 +30,8 @@ repositories {
 }
 
 dependencies {
-    compile 'net.dv8tion:JDA:2.0.0_256'
-    compile 'net.dv8tion:jda-player:0.2.1_5'
+    compile 'net.dv8tion:JDA:2.1.3_327'
+    compile 'net.dv8tion:jda-player:0.2.1_9'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
@@ -61,6 +61,7 @@ jar {
         from('src/main/webapp')
     }
     exclude('/src/main/java/**')
+    exclude("/src/main/resources/*")
 }
 
 def distributionsCopySpec = copySpec {
@@ -76,6 +77,7 @@ def distributionsCopySpec = copySpec {
     include "youtube-dl"
     include "avatar.jpg"
     include "${fileName}.jar"
+    exclude 'app.properties'
     rename ("app.properties.example", "app.properties")
     rename "${fileName}.jar", "${baseName}.jar"
 }

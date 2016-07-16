@@ -7,9 +7,6 @@ bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
 #The username to look for and join their channel when a sound is played from the UI
 username_to_join_channel=yourDiscordUsername
 
-#The title to be used for the app
-app_title=Sound Board
-
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
 
@@ -32,8 +29,8 @@ sounds_directory=
 
 #List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
 #repsond to all users.
-allowedUsers=Darkside123
+allowedUsers=
 
 #List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
 #bot through chat.
-bannedUsers=Darkside
+bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
