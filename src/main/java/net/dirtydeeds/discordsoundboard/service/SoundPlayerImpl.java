@@ -24,6 +24,7 @@ import net.dv8tion.jda.utils.PermissionUtil;
 import net.dv8tion.jda.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -59,6 +60,8 @@ public class SoundPlayerImpl implements Observer {
     private FilePlayer player;
     private String playerSetting;
     private String soundFileDir;
+    private List<String> allowedUsers;
+    private List<String> bannedUsers;
     private SoundFileRepository repository;
 
     @Inject
@@ -66,10 +69,16 @@ public class SoundPlayerImpl implements Observer {
         this.mainWatch = mainWatch;
         this.mainWatch.addObserver(this);
         this.repository = repository;
+
+        setSoundPlayerVolume(75);
+
+        init();
+    }
+
+    private void init() {
         loadProperties();
         initializeDiscordBot();
         getFileList();
-        setSoundPlayerVolume(75);
 
         playerSetting = appProperties.getProperty("player");
         if (isMusicPlayer()) {
@@ -245,6 +254,14 @@ public class SoundPlayerImpl implements Observer {
         return users;
     }
 
+    public boolean isUserAllowed(String username) {
+        return !allowedUsers.isEmpty() || allowedUsers.contains(username);
+    }
+
+    public boolean isUserBanned(String username) {
+        return !bannedUsers.isEmpty() && bannedUsers.contains(username);
+    }
+
     /**
      * Get the path the application is using for sound files.
      * @return String representation of the sound file path.
@@ -254,7 +271,7 @@ public class SoundPlayerImpl implements Observer {
     }
 
     private SoundFile getSoundFileById(String soundFileId) {
-        return repository.findOne(soundFileId);
+        return repository.findOneBySoundFileIdIgnoreCase(soundFileId);
     }
 
     /**
@@ -498,6 +515,10 @@ public class SoundPlayerImpl implements Observer {
      */
     private void initializeDiscordBot() {
         try {
+            if (bot != null) {
+                bot.shutdown();
+            }
+
             String botToken = appProperties.getProperty("bot_token");
             bot = new JDABuilder()
                     .setAudioEnabled(true)
@@ -513,7 +534,17 @@ public class SoundPlayerImpl implements Observer {
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
                 this.addBotListener(entranceListener);
             }
-            
+
+            String[] allowedUsersArray = appProperties.getProperty("allowedUsers").split(",");
+            if (allowedUsersArray.length > 0) {
+                allowedUsers = Arrays.asList(allowedUsersArray);
+            }
+
+            String[] bannedUsersArray = appProperties.getProperty("bannedUsers").split(",");
+            if (bannedUsersArray.length > 0) {
+                bannedUsers = Arrays.asList(bannedUsersArray);
+            }
+
             File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
             AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
             bot.getAccountManager().setAvatar(avatar).update();
@@ -561,6 +592,13 @@ public class SoundPlayerImpl implements Observer {
                 e.printStackTrace();
             }
         }
+    }
+
+    @PreDestroy
+    @SuppressWarnings("unused")
+    public void cleanUp() throws Exception {
+        System.out.println("SoundPlayer is shutting down. Cleaning up.");
+        bot.shutdown();
     }
 
     /**

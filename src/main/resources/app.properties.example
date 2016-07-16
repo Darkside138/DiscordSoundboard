@@ -29,3 +29,11 @@ player=JDAPlayer
 #If you specify a directory that does not exist yet the application will attempt to create it.
 #Example: C:/Users/someUser/Music
 sounds_directory=
+
+#List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
+#repsond to all users.
+allowedUsers=Darkside123
+
+#List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
+#bot through chat.
+bannedUsers=Darkside

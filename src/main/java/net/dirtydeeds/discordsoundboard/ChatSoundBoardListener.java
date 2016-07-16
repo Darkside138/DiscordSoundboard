@@ -58,194 +58,203 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        String requestingUser = event.getAuthor().getUsername();
         if (!event.getAuthor().isBot()) {
-            String message = event.getMessage().getContent().toLowerCase();
-            String requestingUser = event.getAuthor().getUsername();
-            final int maxLineLength = messageSizeLimit;
+            if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
+                String message = event.getMessage().getContent().toLowerCase();
+                final int maxLineLength = messageSizeLimit;
 
-            //Respond
-            if (message.startsWith(commandCharacter + "list")) {
-                StringBuilder commandString = getCommandListString();
-                List<String> soundList = getCommandList(commandString);
+                //Respond
+                if (message.startsWith(commandCharacter + "list")) {
+                    StringBuilder commandString = getCommandListString();
+                    List<String> soundList = getCommandList(commandString);
 
-                LOG.info("Responding to list command. Requested by " + requestingUser + ".");
-                if (message.equals(commandCharacter + "list")) {
-                    if (commandString.length() > maxLineLength) {
-                        replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
+                    LOG.info("Responding to list command. Requested by " + requestingUser + ".");
+                    if (message.equals(commandCharacter + "list")) {
+                        if (commandString.length() > maxLineLength) {
+                            replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
+                        } else {
+                            replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:");
+                            replyByPrivateMessage(event, soundList.get(0));
+                        }
                     } else {
-                        replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:");
-                        replyByPrivateMessage(event, soundList.get(0));
-                    }
-                } else {
-                    String[] messageSplit = message.split(" ");
-                    try {
-                        Integer pageNumber = Integer.parseInt(messageSplit[1]);
-                        replyByPrivateMessage(event, soundList.get(pageNumber - 1));
-                    } catch (IndexOutOfBoundsException e) {
-                        replyByPrivateMessage(event, "The page number you entered is not valid.");
-                    } catch (NumberFormatException e) {
-                        replyByPrivateMessage(event, "The page number argument must be a number.");
-                    }
-                }
-            //If the command is not list and starts with the specified command character try and play that "command" or sound file.
-            } else if (message.startsWith(commandCharacter + "help")) {
-                LOG.info("Responding to help command. Requested by " + requestingUser + ".");
-                replyByPrivateMessage(event, "You can type any of the following commands:" +
-                    "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
-                       "\n" + commandCharacter + "soundFileName    - Plays a sound from the list." + 
-                       "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." + 
-                       "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
-                       "\n" + commandCharacter + "info             - Returns info about the bot.```");
-            } else if(message.startsWith(commandCharacter + "volume")) {
-                int newVol = Integer.parseInt(message.substring(8));
-                if(newVol >= 1 && newVol <= 100) {
-                    muted = false;
-                    soundPlayer.setSoundPlayerVolume(newVol);
-                    replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
-                    LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
-                } else if(newVol == 0) {
-                    muted = true;
-                    soundPlayer.setSoundPlayerVolume(newVol);
-                    replyByPrivateMessage(event, requestingUser + " muted me.");
-                    LOG.info("Bot muted by " + requestingUser + ".");
-                }
-            } else if (message.startsWith(commandCharacter + "stop")) {
-                LOG.info("Stop requested by " + requestingUser + ".");
-                if (soundPlayer.stop()) {
-                    replyByPrivateMessage(event, "Playback stopped.");    
-                } else {
-                    replyByPrivateMessage(event, "Nothing was playing.");
-                }
-                
-            } else if (message.startsWith(commandCharacter + "info")) {
-                LOG.info("Responding to info request by " + requestingUser + ".");
-                
-                OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-                RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-                int availableProcessors = operatingSystemMXBean.getAvailableProcessors();
-                long prevUpTime = runtimeMXBean.getUptime();
-                long prevProcessCpuTime = operatingSystemMXBean.getProcessCpuTime();
-                double cpuUsage;
-                try {
-                    Thread.sleep(500);
-                }
-                catch (Exception ignored) { }
-
-                long upTime = runtimeMXBean.getUptime();
-                long processCpuTime = operatingSystemMXBean.getProcessCpuTime();
-                long elapsedCpu = processCpuTime - prevProcessCpuTime;
-                long elapsedTime = upTime - prevUpTime;
-
-                cpuUsage = Math.min(99F, elapsedCpu / (elapsedTime * 10000F * availableProcessors));
-
-                List<MemoryPoolMXBean> memoryPools = new ArrayList<>(ManagementFactory.getMemoryPoolMXBeans()); 
-                long usedHeapMemoryAfterLastGC = 0; 
-                for (MemoryPoolMXBean memoryPool : memoryPools) { 
-                    if (memoryPool.getType().equals(MemoryType.HEAP)) { 
-                        MemoryUsage poolCollectionMemoryUsage = memoryPool.getCollectionUsage(); 
-                        usedHeapMemoryAfterLastGC += poolCollectionMemoryUsage.getUsed(); 
-                    }
-                }
-                
-                Package thisPackage = getClass().getPackage();
-                String version = null;
-                if (thisPackage != null) {
-                    version = getClass().getPackage().getImplementationVersion();
-                }
-                if (version == null) {
-                    version = "DEVELOPMENT";
-                }
-
-                long uptimeDays = TimeUnit.DAYS.convert(upTime, TimeUnit.MILLISECONDS);
-                long uptimeHours = TimeUnit.HOURS.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(upTime));
-                long uptimeMinutes = TimeUnit.MINUTES.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(upTime));
-                long upTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(upTime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(upTime));
-
-                replyByPrivateMessage(event, "DiscordSoundboard info: ```" +
-                        "CPU: " + df2.format(cpuUsage) + "%" +
-                        "\nMemory: " + humanReadableByteCount(usedHeapMemoryAfterLastGC, true) +
-                        "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
-                        "\nVersion: " + version +
-                        "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() + 
-                        "\nCommand Prefix: " + commandCharacter +
-                        "\nSound File Path: " + soundPlayer.getSoundsPath() + 
-                        "```");
-            } else if (message.startsWith(commandCharacter + "remove")) {
-                String[] messageSplit = message.split(" ");
-                String soundToRemove = messageSplit[1];
-                boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
-                if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)
-                        || hasManageServerPerm) {
-                    SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
-                    if (soundFileToRemove != null) {
+                        String[] messageSplit = message.split(" ");
                         try {
-                            boolean fileRemoved = Files.deleteIfExists(Paths.get(soundFileToRemove.getSoundFileLocation()));
-                            if (fileRemoved) {
-                                replyByPrivateMessage(event, "Sound file " + soundToRemove + " was removed.");
-                            } else {
-                                replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
-                            }
-                        } catch (IOException e) {
-                            LOG.fatal("Could not remove sound file " + soundToRemove);
+                            Integer pageNumber = Integer.parseInt(messageSplit[1]);
+                            replyByPrivateMessage(event, soundList.get(pageNumber - 1));
+                        } catch (IndexOutOfBoundsException e) {
+                            replyByPrivateMessage(event, "The page number you entered is not valid.");
+                        } catch (NumberFormatException e) {
+                            replyByPrivateMessage(event, "The page number argument must be a number.");
                         }
                     }
-                } else {
-                    replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
-                }
+                    //If the command is not list and starts with the specified command character try and play that "command" or sound file.
+                } else if (message.startsWith(commandCharacter + "help")) {
+                    LOG.info("Responding to help command. Requested by " + requestingUser + ".");
+                    replyByPrivateMessage(event, "You can type any of the following commands:" +
+                            "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
+                            "\n" + commandCharacter + "soundFileName    - Plays a sound from the list." +
+                            "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
+                            "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
+                            "\n" + commandCharacter + "info             - Returns info about the bot.```");
+                } else if (message.startsWith(commandCharacter + "volume")) {
+                    int newVol = Integer.parseInt(message.substring(8));
+                    if (newVol >= 1 && newVol <= 100) {
+                        muted = false;
+                        soundPlayer.setSoundPlayerVolume(newVol);
+                        replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
+                        LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
+                    } else if (newVol == 0) {
+                        muted = true;
+                        soundPlayer.setSoundPlayerVolume(newVol);
+                        replyByPrivateMessage(event, requestingUser + " muted me.");
+                        LOG.info("Bot muted by " + requestingUser + ".");
+                    }
+                } else if (message.startsWith(commandCharacter + "stop")) {
+                    LOG.info("Stop requested by " + requestingUser + ".");
+                    if (soundPlayer.stop()) {
+                        replyByPrivateMessage(event, "Playback stopped.");
+                    } else {
+                        replyByPrivateMessage(event, "Nothing was playing.");
+                    }
 
-            } else if (message.startsWith(commandCharacter + "random")) {
-                soundPlayer.playRandomSoundFile(requestingUser, event);
-            } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
-                if (!muted) {
+                } else if (message.startsWith(commandCharacter + "info")) {
+                    LOG.info("Responding to info request by " + requestingUser + ".");
+
+                    OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+                    RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+                    int availableProcessors = operatingSystemMXBean.getAvailableProcessors();
+                    long prevUpTime = runtimeMXBean.getUptime();
+                    long prevProcessCpuTime = operatingSystemMXBean.getProcessCpuTime();
+                    double cpuUsage;
                     try {
-                        String fileNameRequested = message.substring(1, message.length());
-                        LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");
+                        Thread.sleep(500);
+                    } catch (Exception ignored) {
+                    }
 
-                        soundPlayer.playFileForEvent(fileNameRequested, event);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    long upTime = runtimeMXBean.getUptime();
+                    long processCpuTime = operatingSystemMXBean.getProcessCpuTime();
+                    long elapsedCpu = processCpuTime - prevProcessCpuTime;
+                    long elapsedTime = upTime - prevUpTime;
+
+                    cpuUsage = Math.min(99F, elapsedCpu / (elapsedTime * 10000F * availableProcessors));
+
+                    List<MemoryPoolMXBean> memoryPools = new ArrayList<>(ManagementFactory.getMemoryPoolMXBeans());
+                    long usedHeapMemoryAfterLastGC = 0;
+                    for (MemoryPoolMXBean memoryPool : memoryPools) {
+                        if (memoryPool.getType().equals(MemoryType.HEAP)) {
+                            MemoryUsage poolCollectionMemoryUsage = memoryPool.getCollectionUsage();
+                            usedHeapMemoryAfterLastGC += poolCollectionMemoryUsage.getUsed();
+                        }
+                    }
+
+                    Package thisPackage = getClass().getPackage();
+                    String version = null;
+                    if (thisPackage != null) {
+                        version = getClass().getPackage().getImplementationVersion();
+                    }
+                    if (version == null) {
+                        version = "DEVELOPMENT";
+                    }
+
+                    long uptimeDays = TimeUnit.DAYS.convert(upTime, TimeUnit.MILLISECONDS);
+                    long uptimeHours = TimeUnit.HOURS.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.DAYS.toHours(TimeUnit.MILLISECONDS.toDays(upTime));
+                    long uptimeMinutes = TimeUnit.MINUTES.convert(upTime, TimeUnit.MILLISECONDS) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(upTime));
+                    long upTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(upTime) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(upTime));
+
+                    replyByPrivateMessage(event, "DiscordSoundboard info: ```" +
+                            "CPU: " + df2.format(cpuUsage) + "%" +
+                            "\nMemory: " + humanReadableByteCount(usedHeapMemoryAfterLastGC, true) +
+                            "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
+                            "\nVersion: " + version +
+                            "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
+                            "\nCommand Prefix: " + commandCharacter +
+                            "\nSound File Path: " + soundPlayer.getSoundsPath() +
+                            "```");
+                } else if (message.startsWith(commandCharacter + "remove")) {
+                    String[] messageSplit = message.split(" ");
+                    String soundToRemove = messageSplit[1];
+                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                    if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)
+                            || hasManageServerPerm) {
+                        SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
+                        if (soundFileToRemove != null) {
+                            try {
+                                boolean fileRemoved = Files.deleteIfExists(Paths.get(soundFileToRemove.getSoundFileLocation()));
+                                if (fileRemoved) {
+                                    replyByPrivateMessage(event, "Sound file " + soundToRemove + " was removed.");
+                                } else {
+                                    replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
+                                }
+                            } catch (IOException e) {
+                                LOG.fatal("Could not remove sound file " + soundToRemove);
+                            }
+                        }
+                    } else {
+                        replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
+                    }
+
+                } else if (message.startsWith(commandCharacter + "random")) {
+                    soundPlayer.playRandomSoundFile(requestingUser, event);
+                } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
+                    if (!muted) {
+                        try {
+                            String fileNameRequested = message.substring(1, message.length());
+                            LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");
+
+                            soundPlayer.playFileForEvent(fileNameRequested, event);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
+                        LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
                     }
                 } else {
-                    replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
-                    LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
+                    List<Message.Attachment> attachments = event.getMessage().getAttachments();
+                    if (attachments.size() > 0 && event.isPrivate()) {
+                        for (Message.Attachment attachment : attachments) {
+                            String name = attachment.getFileName();
+                            String extension = name.substring(name.indexOf(".") + 1);
+                            if (extension.equals("wav") || extension.equals("mp3")) {
+                                if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
+                                    if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
+                                        File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+                                        attachment.download(newSoundFile);
+                                        event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
+                                    } else {
+                                        boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                                        if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
+                                                || hasManageServerPerm) {
+                                            try {
+                                                Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
+                                                File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+                                                attachment.download(newSoundFile);
+                                                event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
+                                            } catch (IOException e1) {
+                                                LOG.fatal("Problem deleting and re-adding sound file: " + name);
+                                            }
+                                        } else {
+                                            event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.");
+                                        }
+                                    }
+                                } else {
+                                    replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
+                                }
+                            }
+                        }
+                    } else {
+                        if (message.startsWith(commandCharacter) || event.isPrivate()) {
+                            nonRecognizedCommand(event, requestingUser);
+                        }
+                    }
                 }
             } else {
-                List<Message.Attachment> attachments = event.getMessage().getAttachments();
-                if (attachments.size() > 0 && event.isPrivate()) {
-                    for (Message.Attachment attachment : attachments) {
-                        String name = attachment.getFileName();
-                        String extension = name.substring(name.indexOf(".") + 1);
-                        if (extension.equals("wav") || extension.equals("mp3")) {
-                            if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
-                                if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
-                                    File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
-                                    attachment.download(newSoundFile);
-                                    event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
-                                } else {
-                                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
-                                    if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0,name.indexOf("."))) 
-                                            || hasManageServerPerm) {
-                                        try {
-                                            Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
-                                            File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
-                                            attachment.download(newSoundFile);
-                                            event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
-                                        } catch (IOException e1) {
-                                            LOG.fatal("Problem deleting and re-adding sound file: " + name);
-                                        }
-                                    } else {
-                                        event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.");
-                                    }
-                                }
-                            } else {
-                                replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
-                            }
-                        }
-                    }
-                } else {
-                    if (message.startsWith(commandCharacter) || event.isPrivate()) {
-                        nonRecognizedCommand(event, requestingUser);
-                    }
+                if (!soundPlayer.isUserAllowed(requestingUser)) {
+                    replyByPrivateMessage(event, "I don't take orders from you.");
+                }
+                if (soundPlayer.isUserBanned(requestingUser)) {
+                    replyByPrivateMessage(event, "You've been banned from using this soundboard bot.");
                 }
             }
         }
