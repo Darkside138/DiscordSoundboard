@@ -96,10 +96,6 @@ public class SoundPlayerImpl implements Observer {
         return returnFiles;
     }
     
-    public SoundFile getSoundFileById(String soundFileId) {
-        return repository.findOne(soundFileId);
-    }
-    
     /**
      * Sets volume of the player.
      * @param volume - The volume value to set.
@@ -257,6 +253,10 @@ public class SoundPlayerImpl implements Observer {
         return soundFileDir;
     }
 
+    private SoundFile getSoundFileById(String soundFileId) {
+        return repository.findOne(soundFileId);
+    }
+
     /**
      * Find the "author" of the event and join the voice channel they are in.
      * @param event - The event
@@ -266,7 +266,8 @@ public class SoundPlayerImpl implements Observer {
         VoiceChannel channel = findUsersChannel(event, guild);
 
         if (channel == null) {
-            event.getAuthor().getPrivateChannel().sendMessage("Hello @"+ event.getAuthor().getUsername() +"! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            event.getAuthor().getPrivateChannel()
+                    .sendMessage("Hello @"+ event.getAuthor().getUsername() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
             LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getUsername() + " is not connected to Voice?");
         } else {
             moveToChannel(channel, guild);
@@ -278,8 +279,9 @@ public class SoundPlayerImpl implements Observer {
      * @param channel - The channel specified.
      */
     private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
-        boolean hasPermissionToSoeak = PermissionUtil.checkPermission(bot.getUserById(bot.getSelfInfo().getId()), Permission.VOICE_SPEAK, channel);
-        if (hasPermissionToSoeak) {
+        boolean hasPermissionToSpeak = PermissionUtil.checkPermission(bot.getUserById(bot.getSelfInfo().getId()),
+                                                                                    Permission.VOICE_SPEAK, channel);
+        if (hasPermissionToSpeak) {
             AudioManager audioManager = bot.getAudioManager(guild);
             if (audioManager.isConnected()) {
                 if (audioManager.isAttemptingToConnect()) {
@@ -337,17 +339,19 @@ public class SoundPlayerImpl implements Observer {
     /**
      * Join the users current channel.
      */
-    private void joinUsersCurrentChannel(String userName) {
+    private void joinUsersCurrentChannel(String userName) throws SoundPlaybackException {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
-                channel.getUsers().stream().filter(user -> user.getUsername()
-                        .equalsIgnoreCase(userName)).forEach(user -> {
-                    try {
-                        moveToChannel(channel, guild);
-                    } catch (SoundPlaybackException e) {
-                        LOG.fatal(e.toString());
+                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
+                    if(user.getUsername().equalsIgnoreCase(userName)) {
+                        try {
+                            moveToChannel(channel, guild);
+                        } catch (SoundPlaybackException e) {
+                            LOG.fatal(e.toString());
+                            throw e;
+                        }
                     }
-                });
+                }
             }
         }
     }

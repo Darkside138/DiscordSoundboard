@@ -59,7 +59,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (!event.getAuthor().isBot()) {
-            String message = event.getMessage().getContent();
+            String message = event.getMessage().getContent().toLowerCase();
             String requestingUser = event.getAuthor().getUsername();
             final int maxLineLength = messageSizeLimit;
 
@@ -308,7 +308,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         event.getAuthor().getPrivateChannel().sendMessage(message);
     }
 
-    public static String humanReadableByteCount(long bytes, boolean si) {
+    private static String humanReadableByteCount(long bytes, boolean si) {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(unit));
