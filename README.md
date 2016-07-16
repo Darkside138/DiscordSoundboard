@@ -6,7 +6,7 @@ and play sounds. The bot can only play sounds/respond to commands for servers it
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
 ## Current Release
-[discordSoundboard-v1.4.3.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.3/DiscordSoundboard-1.4.3.zip). 
+[discordSoundboard-v1.4.4.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.4/DiscordSoundboard-1.4.4.zip). 
 Download the zip file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the app.properties). Put all the clips you 
@@ -61,8 +61,13 @@ player=JDAPlayer
 #Example: C:/Users/someUser/Music
 sounds_directory=
 
-##Spring Boot Configuration##
-server.port = 8080
+#List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
+#repsond to all users.
+allowedUsers=
+
+#List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
+#bot through chat.
+bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 ```
 
 ## Usage
