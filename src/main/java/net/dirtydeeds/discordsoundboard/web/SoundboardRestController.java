@@ -69,7 +69,11 @@ public class SoundboardRestController {
     
     @RequestMapping(value = "/playRandom", method = RequestMethod.POST)
     public HttpStatus playRandomSoundFile(@RequestParam String username) {
-        soundPlayer.playRandomSoundFile(username, null);
+        try {
+            soundPlayer.playRandomSoundFile(username, null);
+        } catch (SoundPlaybackException e) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
         return HttpStatus.OK;
     }
 

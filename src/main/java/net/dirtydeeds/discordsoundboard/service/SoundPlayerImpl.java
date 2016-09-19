@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author dfurrer.
@@ -120,21 +119,27 @@ public class SoundPlayerImpl implements Observer {
     public float getSoundPlayerVolume() {
         return playerVolume;
     }
-    
-    public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) {
-        Map<String, SoundFile> sounds = getAvailableSoundFiles();
-        int randomSoundIndex = ThreadLocalRandom.current().nextInt(0, sounds.size() + 1);
-        Object[] entries = sounds.entrySet().toArray();
-        SoundFile randomValue = (SoundFile) entries[randomSoundIndex];
-        LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
+
+    @SuppressWarnings("unchecked")
+    public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
         try {
-            if (event != null) {
-                playFileForEvent(randomValue.getSoundFileId(), event);
-            } else {
-                playFileForUser(randomValue.getSoundFileId(), requestingUser);
+            Map<String, SoundFile> sounds = getAvailableSoundFiles();
+            List<String> keysAsArray = new ArrayList(sounds.keySet());
+            Random r = new Random();
+            SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
+
+            LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
+            try {
+                if (event != null) {
+                    playFileForEvent(randomValue.getSoundFileId(), event);
+                } else {
+                    playFileForUser(randomValue.getSoundFileId(), requestingUser);
+                }
+            } catch (Exception e) {
+                LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
             }
         } catch (Exception e) {
-            LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+            throw new SoundPlaybackException("Problem playing random file.");
         }
     }
 
@@ -162,7 +167,7 @@ public class SoundPlayerImpl implements Observer {
      * @param fileName - The name of the file to play.
      * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
      *              the sound back in.
-     * @throws Exception
+     * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
@@ -195,7 +200,7 @@ public class SoundPlayerImpl implements Observer {
      * @param fileName - The name of the file to play.
      * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
      *              the sound back in.
-     * @throws Exception
+     * @throws Exception Throws exception if entrance sounds couldn't be played
      */
     public void playFileForEntrance(String fileName, VoiceJoinEvent event) throws Exception {
         if (event == null) return;
@@ -277,7 +282,7 @@ public class SoundPlayerImpl implements Observer {
     /**
      * Find the "author" of the event and join the voice channel they are in.
      * @param event - The event
-     * @throws Exception
+     * @throws Exception Throws exception if the bot couldn't join the users channel.
      */
     private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) throws Exception {
         VoiceChannel channel = findUsersChannel(event, guild);

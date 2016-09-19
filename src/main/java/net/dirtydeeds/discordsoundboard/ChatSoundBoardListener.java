@@ -93,7 +93,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     LOG.info("Responding to help command. Requested by " + requestingUser + ".");
                     replyByPrivateMessage(event, "You can type any of the following commands:" +
                             "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
-                            "\n" + commandCharacter + "soundFileName    - Plays a sound from the list." +
+                            "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
+                            "\n" + commandCharacter + "random           - Plays a random sound from the list." +
                             "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
                             "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
                             "\n" + commandCharacter + "info             - Returns info about the bot.```");
@@ -195,7 +196,11 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     }
 
                 } else if (message.startsWith(commandCharacter + "random")) {
-                    soundPlayer.playRandomSoundFile(requestingUser, event);
+                    try {
+                        soundPlayer.playRandomSoundFile(requestingUser, event);
+                    } catch (SoundPlaybackException e) {
+                        replyByPrivateMessage(event, "Problem playing random file:" + e);
+                    }
                 } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
                     if (!muted) {
                         try {
