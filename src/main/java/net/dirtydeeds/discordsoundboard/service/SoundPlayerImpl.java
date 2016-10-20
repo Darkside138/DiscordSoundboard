@@ -19,6 +19,7 @@ import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
 import net.dv8tion.jda.player.source.LocalSource;
+import net.dv8tion.jda.player.source.RemoteSource;
 import net.dv8tion.jda.utils.AvatarUtil;
 import net.dv8tion.jda.utils.PermissionUtil;
 import net.dv8tion.jda.utils.SimpleLog;
@@ -157,6 +158,20 @@ public class SoundPlayerImpl implements Observer {
             joinUsersCurrentChannel(userName);
             
             playFile(fileName, guild);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void playUrlForUser(String url, String userName) {
+        if (userName == null || userName.isEmpty()) {
+            userName = appProperties.getProperty("username_to_join_channel");
+        }
+        try {
+            Guild guild = getUsersGuild(userName);
+            joinUsersCurrentChannel(userName);
+
+            playUrl(url, guild);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -301,8 +316,8 @@ public class SoundPlayerImpl implements Observer {
      * @param channel - The channel specified.
      */
     private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
-        boolean hasPermissionToSpeak = PermissionUtil.checkPermission(bot.getUserById(bot.getSelfInfo().getId()),
-                                                                                    Permission.VOICE_SPEAK, channel);
+        boolean hasPermissionToSpeak = PermissionUtil.checkPermission(channel, bot.getUserById(bot.getSelfInfo().getId()),
+                                                                                    Permission.VOICE_SPEAK);
         if (hasPermissionToSpeak) {
             AudioManager audioManager = bot.getAudioManager(guild);
             if (audioManager.isConnected()) {
@@ -449,6 +464,31 @@ public class SoundPlayerImpl implements Observer {
                 } catch (IOException | UnsupportedAudioFileException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    private void playUrl(String url, Guild guild) throws SoundPlaybackException {
+        if (guild == null) {
+            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+        } else {
+            if (isMusicPlayer()) {
+                if (bot.getAudioManager(guild).getSendingHandler() == null) {
+                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
+                }
+
+                musicPlayer.stop();
+                musicPlayer.getAudioQueue().clear();
+
+                AudioSource audioSource = new RemoteSource(url);
+                musicPlayer.getAudioQueue().add(audioSource);
+
+                musicPlayer.setVolume(playerVolume);
+                bot.getAudioManager(guild).setConnectTimeout(100L);
+
+                musicPlayer.play();
+            } else {
+                throw new SoundPlaybackException("URL playback not supported by this player");
             }
         }
     }

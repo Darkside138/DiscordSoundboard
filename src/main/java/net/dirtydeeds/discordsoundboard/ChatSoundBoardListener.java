@@ -175,7 +175,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 } else if (message.startsWith(commandCharacter + "remove")) {
                     String[] messageSplit = message.split(" ");
                     String soundToRemove = messageSplit[1];
-                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getAuthor(), Permission.MANAGE_SERVER);
                     if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)
                             || hasManageServerPerm) {
                         SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
@@ -228,7 +228,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                         attachment.download(newSoundFile);
                                         event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
                                     } else {
-                                        boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getAuthor(), Permission.MANAGE_SERVER, event.getGuild());
+                                        boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getAuthor(), Permission.MANAGE_SERVER);
                                         if (event.getAuthor().getUsername().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
                                                 || hasManageServerPerm) {
                                             try {

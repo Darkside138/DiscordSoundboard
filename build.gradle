@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '1.4.5'
+version = '1.4.6'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -30,7 +30,7 @@ repositories {
 }
 
 dependencies {
-    compile 'net.dv8tion:JDA:2.1.3_327'
+    compile 'net.dv8tion:JDA:2.2.1_353'
     compile 'net.dv8tion:jda-player:0.2.1_9'
     compile 'commons-io:commons-io:2.4'
 

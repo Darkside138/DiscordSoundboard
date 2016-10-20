@@ -1,4 +1,5 @@
 #!/bin/sh
+USER="userToRunSounboardAs"
 SERVER_PORT=8080
 SERVICE_NAME=Soundboard
 PATH_TO_JAR=/home/yourUsername/discordSoundboard
@@ -8,7 +9,7 @@ case $1 in
         echo "Starting $SERVICE_NAME ..."
         if [ ! -f $PID_PATH_NAME ]; then
             cd $PATH_TO_JAR
-            nohup java -Dserver.port=$SERVER_PORT -jar $PATH_TO_JAR/DiscordSoundboard.jar /tmp 2>> /dev/null >> /dev/null &
+            sudo -u $USER nohup java -Dserver.port=$SERVER_PORT -jar $PATH_TO_JAR/DiscordSoundboard.jar /tmp 2>> /dev/null >> /dev/null &
                 echo $! > $PID_PATH_NAME
             echo "$SERVICE_NAME started ..."
         else
@@ -35,7 +36,7 @@ case $1 in
             rm $PID_PATH_NAME
             echo "$SERVICE_NAME starting ..."
             cd $PATH_TO_JAR
-            nohup java -Dserver.port=$SERVER_PORT -jar $PATH_TO_JAR/DiscordSoundboard.jar /tmp 2>> /dev/null >> /dev/null &
+            sudo -u $USER nohup java -Dserver.port=$SERVER_PORT -jar $PATH_TO_JAR/DiscordSoundboard.jar /tmp 2>> /dev/null >> /dev/null &
                 echo $! > $PID_PATH_NAME
             echo "$SERVICE_NAME started ..."
         else

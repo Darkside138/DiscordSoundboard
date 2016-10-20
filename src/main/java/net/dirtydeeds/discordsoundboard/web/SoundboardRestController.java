@@ -66,6 +66,12 @@ public class SoundboardRestController {
             return HttpStatus.NOT_FOUND;
         }
     }
+
+    @RequestMapping(value = "/playUrl", method = RequestMethod.POST)
+    public HttpStatus playSoundUrl(@RequestParam String url, @RequestParam String username) {
+            soundPlayer.playUrlForUser(url, username);
+            return HttpStatus.OK;
+    }
     
     @RequestMapping(value = "/playRandom", method = RequestMethod.POST)
     public HttpStatus playRandomSoundFile(@RequestParam String username) {
