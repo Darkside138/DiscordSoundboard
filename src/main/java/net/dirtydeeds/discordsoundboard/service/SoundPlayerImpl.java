@@ -1,9 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service;
 
-import net.dirtydeeds.discordsoundboard.ChatSoundBoardListener;
-import net.dirtydeeds.discordsoundboard.EntranceSoundBoardListener;
-import net.dirtydeeds.discordsoundboard.MainWatch;
-import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
+import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
@@ -15,6 +12,7 @@ import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.entities.*;
 import net.dv8tion.jda.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.events.voice.VoiceJoinEvent;
+import net.dv8tion.jda.events.voice.VoiceLeaveEvent;
 import net.dv8tion.jda.managers.AudioManager;
 import net.dv8tion.jda.player.MusicPlayer;
 import net.dv8tion.jda.player.source.AudioSource;
@@ -63,6 +61,7 @@ public class SoundPlayerImpl implements Observer {
     private List<String> allowedUsers;
     private List<String> bannedUsers;
     private SoundFileRepository repository;
+    private boolean leaveAfterPlayback = false;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
@@ -84,6 +83,8 @@ public class SoundPlayerImpl implements Observer {
         if (isMusicPlayer()) {
             musicPlayer = new MusicPlayer();
         }
+
+        leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
 
         initialized = true;
     }
@@ -136,6 +137,12 @@ public class SoundPlayerImpl implements Observer {
                 } else {
                     playFileForUser(randomValue.getSoundFileId(), requestingUser);
                 }
+
+                if (leaveAfterPlayback) {
+                    if (event != null) {
+                        disconnectFromChannel(event.getGuild());
+                    }
+                }
             } catch (Exception e) {
                 LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
             }
@@ -158,6 +165,10 @@ public class SoundPlayerImpl implements Observer {
             joinUsersCurrentChannel(userName);
             
             playFile(fileName, guild);
+
+            if (leaveAfterPlayback) {
+                disconnectFromChannel(guild);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -172,6 +183,10 @@ public class SoundPlayerImpl implements Observer {
             joinUsersCurrentChannel(userName);
 
             playUrl(url, guild);
+
+            if (leaveAfterPlayback) {
+                disconnectFromChannel(guild);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -200,6 +215,10 @@ public class SoundPlayerImpl implements Observer {
                     }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile, guild);
+
+                    if (leaveAfterPlayback) {
+                        disconnectFromChannel(event.getGuild());
+                    }
                 } else {
                     event.getAuthor().getPrivateChannel().sendMessage("Could not find sound to play. Requested sound: " + fileName + ".");
                 }
@@ -226,6 +245,34 @@ public class SoundPlayerImpl implements Observer {
                 playFile(fileName, event.getGuild());
             } catch (SoundPlaybackException e) {
                 LOG.info("Could not find any sound to play for entrance of user: " + fileName);
+            }
+            if (leaveAfterPlayback) {
+                disconnectFromChannel(event.getGuild());
+            }
+        } catch (SoundPlaybackException e) {
+            LOG.debug(e.toString());
+        }
+    }
+
+    /**
+     * Plays the fileName requested for a voice channel disconnect.
+     * @param fileName - The name of the file to play.
+     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *              the sound back in.
+     * @throws Exception Throws exception if disconnect sounds couldn't be played
+     */
+    public void playFileForDisconnect(String fileName, VoiceLeaveEvent event) throws Exception {
+        if (event == null) return;
+        try {
+            moveToChannel(event.getOldChannel(), event.getGuild());
+            LOG.info("Playing file for disconnect of user: " + fileName);
+            try {
+                playFile(fileName, event.getGuild());
+            } catch (SoundPlaybackException e) {
+                LOG.info("Could not find any sound to play for disconnect of user: " + fileName);
+            }
+            if (leaveAfterPlayback) {
+                disconnectFromChannel(event.getGuild());
             }
         } catch (SoundPlaybackException e) {
             LOG.debug(e.toString());
@@ -574,10 +621,15 @@ public class SoundPlayerImpl implements Observer {
             if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
                 String commandCharacter = appProperties.getProperty("command_character");
                 String messageSizeLimit = appProperties.getProperty("message_size_limit");
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter, messageSizeLimit);
+                String leaveSuffix = appProperties.getProperty("leave_suffix");
+                Boolean respondToDms = Boolean.valueOf(appProperties.getProperty("respond_to_dm"));
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
+                                                                                    messageSizeLimit, respondToDms);
                 this.addBotListener(chatListener);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
                 this.addBotListener(entranceListener);
+                this.addBotListener(leaveSoundBoardListener);
             }
 
             String allowedUsersString = appProperties.getProperty("allowedUsers");
@@ -610,6 +662,11 @@ public class SoundPlayerImpl implements Observer {
         } catch (UnsupportedEncodingException e) {
             LOG.warn("Could not update avatar with provided file.");
         }
+    }
+
+    private void disconnectFromChannel(Guild guild) {
+        bot.getAudioManager(guild).closeAudioConnection();
+        LOG.info("Disconnecting from channel.");
     }
 
     /**

@@ -32,6 +32,10 @@ body {
     margin-top: 10px;
 }
 
+.randomButton {
+    vertical-align: top;
+}
+
 .userNameSelect {
     width: 150px;
 }

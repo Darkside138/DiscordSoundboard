@@ -37,6 +37,7 @@ public class SoundboardRestController {
     }
 
     @RequestMapping(value = "/availableSounds", method = RequestMethod.GET)
+    @Deprecated
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
@@ -45,6 +46,7 @@ public class SoundboardRestController {
     }
     
     @RequestMapping(value = "/soundCategories", method = RequestMethod.GET)
+    @Deprecated
     public Set<String> getSoundCategories() {
         Set<String> categories = new HashSet<>();
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
@@ -74,6 +76,7 @@ public class SoundboardRestController {
     }
     
     @RequestMapping(value = "/playRandom", method = RequestMethod.POST)
+    @Deprecated
     public HttpStatus playRandomSoundFile(@RequestParam String username) {
         try {
             soundPlayer.playRandomSoundFile(username, null);
@@ -81,6 +84,37 @@ public class SoundboardRestController {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         }
         return HttpStatus.OK;
+    }
+
+    @RequestMapping(value = "/sounds", method = RequestMethod.GET)
+    public List<SoundFile> getSoundFileListNew() {
+        Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
+        List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
+        Collections.sort(returnSounds, new SortIgnoreCase());
+        return returnSounds;
+    }
+
+    @RequestMapping(value = "/sounds", method = RequestMethod.POST)
+    public HttpStatus soundCommand(@RequestParam String username, @RequestParam String command) {
+        switch (command) {
+            case "random":
+                try {
+                    soundPlayer.playRandomSoundFile(username, null);
+                } catch (SoundPlaybackException e) {
+                    return HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+                return HttpStatus.OK;
+            default:
+                return HttpStatus.NOT_IMPLEMENTED;
+        }
+    }
+
+    @RequestMapping(value = "/sounds/category", method = RequestMethod.GET)
+    public Set<String> getSoundCategoriesNew() {
+        Set<String> categories = new HashSet<>();
+        Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
+        categories.addAll(soundMap.entrySet().stream().map(entry -> entry.getValue().getCategory()).collect(Collectors.toList()));
+        return categories;
     }
 
     @RequestMapping(value = "/stop", method = RequestMethod.POST)

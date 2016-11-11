@@ -38,11 +38,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private SoundPlayerImpl soundPlayer;
     private String commandCharacter = "?";
     private Integer messageSizeLimit = 2000;
+    private boolean respondToDms = true;
     private boolean muted;
     private static DecimalFormat df2 = new DecimalFormat("#.##");
     private static final int MAX_FILE_SIZE_IN_BYTES = 1000000; // 1 MB
 
-    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit) {
+    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit,
+                                  Boolean respondToDms) {
         this.soundPlayer = soundPlayer;
         if (commandCharacter != null && !commandCharacter.isEmpty()) {
             this.commandCharacter = commandCharacter;
@@ -54,12 +56,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             }
         }
         muted=false;
+        this.respondToDms = respondToDms;
     }
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         String requestingUser = event.getAuthor().getUsername();
-        if (!event.getAuthor().isBot()) {
+        if (!event.getAuthor().isBot() && ((respondToDms && event.isPrivate()) || !event.isPrivate())) {
             if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
                 String message = event.getMessage().getContent().toLowerCase();
                 final int maxLineLength = messageSizeLimit;
@@ -198,6 +201,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 } else if (message.startsWith(commandCharacter + "random")) {
                     try {
                         soundPlayer.playRandomSoundFile(requestingUser, event);
+                        deleteMessage(event);
                     } catch (SoundPlaybackException e) {
                         replyByPrivateMessage(event, "Problem playing random file:" + e);
                     }
@@ -208,6 +212,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");
 
                             soundPlayer.playFileForEvent(fileNameRequested, event);
+                            deleteMessage(event);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -320,6 +325,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     
     private void replyByPrivateMessage(MessageReceivedEvent event, String message) {
         event.getAuthor().getPrivateChannel().sendMessage(message);
+        deleteMessage(event);
     }
 
     private static String humanReadableByteCount(long bytes, boolean si) {
@@ -328,5 +334,11 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         int exp = (int) (Math.log(bytes) / Math.log(unit));
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+    }
+
+    private void deleteMessage(MessageReceivedEvent event) {
+        if (!event.isPrivate()) {
+            event.getMessage().deleteMessage();
+        }
     }
 }
