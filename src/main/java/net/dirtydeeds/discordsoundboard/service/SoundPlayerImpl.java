@@ -622,7 +622,11 @@ public class SoundPlayerImpl implements Observer {
                 String commandCharacter = appProperties.getProperty("command_character");
                 String messageSizeLimit = appProperties.getProperty("message_size_limit");
                 String leaveSuffix = appProperties.getProperty("leave_suffix");
-                Boolean respondToDms = Boolean.valueOf(appProperties.getProperty("respond_to_dm"));
+                String respondToDmsString = appProperties.getProperty("respond_to_dm");
+                Boolean respondToDms = true;
+                if (respondToDmsString != null) {
+                    respondToDms = Boolean.valueOf(respondToDmsString);
+                }
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
                                                                                     messageSizeLimit, respondToDms);
                 this.addBotListener(chatListener);
