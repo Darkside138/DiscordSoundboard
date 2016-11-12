@@ -89,6 +89,20 @@ $(document).ready(function() {
         }
     });
 
+    $(".randomButton").click(function() {
+        var volume = $('#volume').slider("option", "value");
+        $.ajax({
+            url: "/soundsApi/volume?volume=" + volume,
+            method: 'POST'
+        });
+
+        var username = $(".userNameSelect option:selected").text();
+        $.ajax({
+            url: "/soundsApi/playRandom?username=" + username,
+            method: 'POST'
+        });
+    });
+
     $("#volume").slider({
         min: 0,
         max: 100,
