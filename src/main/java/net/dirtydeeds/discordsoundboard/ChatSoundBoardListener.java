@@ -208,8 +208,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
                     if (!muted) {
                         try {
-                            String fileNameRequested = message.substring(1, message.length());
-                            LOG.info("Attempting to play file: " + fileNameRequested + ". Requested by " + requestingUser + ".");
+                            int repeatIndex = message.indexOf('~');
+                            if (repeatIndex > -1) {
+                                int repeatNumber = Integer.parseInt(message.substring(repeatIndex, message.length()));
+                                String fileNameRequested = message.substring(1, repeatIndex - 1);
+                            } else {
+                                int repeatNumber = 1;
+                                String fileNameRequested = message.substring(1, message.length());
+                            }
+                            LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");
 
                             soundPlayer.playFileForEvent(fileNameRequested, event);
                             deleteMessage(event);
