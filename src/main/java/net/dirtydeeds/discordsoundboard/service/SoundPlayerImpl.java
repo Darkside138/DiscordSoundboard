@@ -477,7 +477,7 @@ public class SoundPlayerImpl implements Observer {
      * @param audioFile - The File object to play.
      * @param guild - The guild (discord server) the playback is going to happen in.
      */
-    private void playFile(File audioFile, Guild guild) {
+    private void playFile(File audioFile, Guild guild, int repeatNumber = 1) {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
@@ -490,7 +490,10 @@ public class SoundPlayerImpl implements Observer {
                 musicPlayer.getAudioQueue().clear();
 
                 AudioSource audioSource = new LocalSource(audioFile);
-                musicPlayer.getAudioQueue().add(audioSource);
+                
+                for (i = 0; i < repeatNumber; i++) {
+                    musicPlayer.getAudioQueue().add(audioSource);    
+                }
 
                 musicPlayer.setVolume(playerVolume);
                 bot.getAudioManager(guild).setConnectTimeout(100L);
