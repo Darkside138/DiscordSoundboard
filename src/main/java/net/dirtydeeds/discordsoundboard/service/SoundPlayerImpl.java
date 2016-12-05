@@ -499,7 +499,7 @@ public class SoundPlayerImpl implements Observer {
      * @param guild - The guild (discord server) the playback is going to happen in.
      * @param repeatNumber - The number of times to repeat the audio file.
      */
-    private void playFile(File audioFile, Guild guild, int repeatNumber = 1) {
+    private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
