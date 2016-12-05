@@ -219,7 +219,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             }
                             LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");
 
-                            soundPlayer.playFileForEvent(fileNameRequested, event);
+                            soundPlayer.playFileForEvent(fileNameRequested, event, repeatNumber);
                             deleteMessage(event);
                         } catch (Exception e) {
                             e.printStackTrace();
