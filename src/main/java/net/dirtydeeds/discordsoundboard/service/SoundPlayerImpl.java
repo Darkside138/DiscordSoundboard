@@ -200,7 +200,7 @@ public class SoundPlayerImpl implements Observer {
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
-	    playFileForEntrance(fileName, event, 1);
+	    playFileForEvent(fileName, event, 1);
     }
 
     /**
