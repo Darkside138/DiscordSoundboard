@@ -112,6 +112,9 @@ public class SoundPlayerImpl implements Observer {
      */
     public void setSoundPlayerVolume(int volume) {
         playerVolume = (float) volume / 100;
+        if (isMusicPlayer()) {
+            musicPlayer.setVolume(playerVolume);
+        }
     }
 
     /**
