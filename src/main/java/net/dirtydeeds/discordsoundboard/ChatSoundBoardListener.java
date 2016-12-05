@@ -214,8 +214,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                        // If there is the repeat character (~) then cut up the message string.
                             int repeatIndex = message.indexOf('~');
                             if (repeatIndex > -1) {
-                                repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1, message.length())); // +1 to ignore the ~ character
-                                fileNameRequested = message.substring(1, repeatIndex - 1); // -1 to ignore the previous space
+								fileNameRequested = message.substring(1, repeatIndex - 1); // -1 to ignore the previous space
+                            	if (repeatIndex + 1 == message.length()) { // If there is only a ~ then repeat-infinite
+	                            	repeatNumber = -1;
+                            	} else { // If there is something after the ~ then repeat for that value
+                                	repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1, message.length())); // +1 to ignore the ~ character
+                            	}
                             }
                             LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");
 

@@ -510,19 +510,25 @@ public class SoundPlayerImpl implements Observer {
                 if (bot.getAudioManager(guild).getSendingHandler() == null) {
                     bot.getAudioManager(guild).setSendingHandler(musicPlayer);
                 }
-
+                
                 musicPlayer.stop();
                 musicPlayer.getAudioQueue().clear();
 
                 AudioSource audioSource = new LocalSource(audioFile);
-                
-                for (int i = 0; i < repeatNumber; i++) {
-                    musicPlayer.getAudioQueue().add(audioSource);    
+
+				if (repeatNumber > 0) {
+	                for (int i = 0; i < repeatNumber; i++) {
+	                    musicPlayer.getAudioQueue().add(audioSource);
+	                }
+					musicPlayer.setRepeat(false);
+                } else {
+	                musicPlayer.getAudioQueue().add(audioSource);
+	                musicPlayer.setRepeat(true);
                 }
 
                 musicPlayer.setVolume(playerVolume);
                 bot.getAudioManager(guild).setConnectTimeout(100L);
-
+                
                 musicPlayer.play();
             } else {
                 try {
