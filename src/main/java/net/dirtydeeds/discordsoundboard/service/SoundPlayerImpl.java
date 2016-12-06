@@ -112,6 +112,9 @@ public class SoundPlayerImpl implements Observer {
      */
     public void setSoundPlayerVolume(int volume) {
         playerVolume = (float) volume / 100;
+        if (isMusicPlayer()) {
+            musicPlayer.setVolume(playerVolume);
+        }
     }
 
     /**
@@ -200,6 +203,18 @@ public class SoundPlayerImpl implements Observer {
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
+	    playFileForEvent(fileName, event, 1);
+    }
+
+    /**
+     * Plays the fileName requested.
+     * @param fileName - The name of the file to play.
+     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
+     *              the sound back in.
+     * @param repeatNumber - the number of times to repeat the sound file
+     * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
+     */
+    public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
             Guild guild = event.getGuild();
@@ -214,7 +229,7 @@ public class SoundPlayerImpl implements Observer {
                         event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
                     }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
-                    playFile(soundFile, guild);
+                    playFile(soundFile, guild, repeatNumber);
 
                     if (leaveAfterPlayback) {
                         disconnectFromChannel(event.getGuild());
@@ -477,7 +492,17 @@ public class SoundPlayerImpl implements Observer {
      * @param audioFile - The File object to play.
      * @param guild - The guild (discord server) the playback is going to happen in.
      */
-    private void playFile(File audioFile, Guild guild, int repeatNumber = 1) {
+    private void playFile(File audioFile, Guild guild) {
+	    playFile(audioFile, guild, 1);
+    }
+
+    /**
+     * Play the provided File object
+     * @param audioFile - The File object to play.
+     * @param guild - The guild (discord server) the playback is going to happen in.
+     * @param repeatNumber - The number of times to repeat the audio file.
+     */
+    private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
@@ -485,19 +510,25 @@ public class SoundPlayerImpl implements Observer {
                 if (bot.getAudioManager(guild).getSendingHandler() == null) {
                     bot.getAudioManager(guild).setSendingHandler(musicPlayer);
                 }
-
+                
                 musicPlayer.stop();
                 musicPlayer.getAudioQueue().clear();
 
                 AudioSource audioSource = new LocalSource(audioFile);
-                
-                for (i = 0; i < repeatNumber; i++) {
-                    musicPlayer.getAudioQueue().add(audioSource);    
+
+				if (repeatNumber > 0) {
+	                for (int i = 0; i < repeatNumber; i++) {
+	                    musicPlayer.getAudioQueue().add(audioSource);
+	                }
+					musicPlayer.setRepeat(false);
+                } else {
+	                musicPlayer.getAudioQueue().add(audioSource);
+	                musicPlayer.setRepeat(true);
                 }
 
                 musicPlayer.setVolume(playerVolume);
                 bot.getAudioManager(guild).setConnectTimeout(100L);
-
+                
                 musicPlayer.play();
             } else {
                 try {
