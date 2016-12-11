@@ -104,21 +104,31 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                            "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
 	                            "\n" + commandCharacter + "info             - Returns info about the bot.```");
 	                } else if (message.startsWith(commandCharacter + "volume")) {
-	                    int newVol = Integer.parseInt(message.substring(8));
+		                int fadeoutIndex = message.indexOf('~');
+	                    int newVol = Integer.parseInt(message.substring(8, (fadeoutIndex > -1) ? fadeoutIndex - 1 : message.length()));
+	                    int fadeoutTimeout =  0;
+	                    if (fadeoutIndex > -1) {
+	                    	fadeoutTimeout = Integer.parseInt(message.substring(fadeoutIndex + 1, message.length()));
+	                    }
 	                    if (newVol >= 1 && newVol <= 100) {
 	                        muted = false;
-	                        soundPlayer.setSoundPlayerVolume(newVol);
+	                        soundPlayer.setSoundPlayerVolume(newVol, fadeoutTimeout * 1000);
 	                        replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
 	                        LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
 	                    } else if (newVol == 0) {
 	                        muted = true;
-	                        soundPlayer.setSoundPlayerVolume(newVol);
+	                        soundPlayer.setSoundPlayerVolume(newVol, fadeoutTimeout * 1000);
 	                        replyByPrivateMessage(event, requestingUser + " muted me.");
 	                        LOG.info("Bot muted by " + requestingUser + ".");
 	                    }
 	                } else if (message.startsWith(commandCharacter + "stop")) {
-	                    LOG.info("Stop requested by " + requestingUser + ".");
-	                    if (soundPlayer.stop()) {
+		                int fadeoutIndex = message.indexOf('~');
+	                    int fadeoutTimeout =  0;
+	                    if (fadeoutIndex > -1) {
+	                    	fadeoutTimeout = Integer.parseInt(message.substring(fadeoutIndex + 1, message.length()));
+	                    }
+	                    LOG.info("Stop requested by " + requestingUser + " with a fadeout of " + fadeoutTimeout + " seconds");
+	                    if (soundPlayer.stop(fadeoutTimeout * 1000)) {
 	                        replyByPrivateMessage(event, "Playback stopped.");
 	                    } else {
 	                        replyByPrivateMessage(event, "Nothing was playing.");
