@@ -337,11 +337,11 @@ public class SoundPlayerImpl implements Observer {
     }
 
     public boolean isUserAllowed(String username) {
-        return allowedUsers.isEmpty() || allowedUsers.contains(username);
+        return allowedUsers == null || allowedUsers.isEmpty() || allowedUsers.contains(username);
     }
 
     public boolean isUserBanned(String username) {
-        return !bannedUsers.isEmpty() && bannedUsers.contains(username);
+        return bannedUsers != null && !bannedUsers.isEmpty() && bannedUsers.contains(username);
     }
 
     /**
@@ -561,7 +561,7 @@ public class SoundPlayerImpl implements Observer {
                 musicPlayer.stop();
                 musicPlayer.getAudioQueue().clear();
 
-                AudioSource audioSource = new RemoteSource(url);
+                AudioSource audioSource = new RemoteSource(url, guild.getId());
                 musicPlayer.getAudioQueue().add(audioSource);
 
                 musicPlayer.setVolume(playerVolume);
@@ -686,9 +686,9 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
-            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
-            bot.getAccountManager().setAvatar(avatar).update();
+//            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
+//            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
+//            bot.getAccountManager().setAvatar(avatar).update();
         }
         catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
@@ -697,9 +697,9 @@ public class SoundPlayerImpl implements Observer {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
             LOG.fatal("Login Interrupted.");
-        } catch (UnsupportedEncodingException e) {
-            LOG.warn("Could not update avatar with provided file.");
-        }
+        } //catch (UnsupportedEncodingException e) {
+//            LOG.warn("Could not update avatar with provided file.");
+//        }
     }
 
     private void disconnectFromChannel(Guild guild) {

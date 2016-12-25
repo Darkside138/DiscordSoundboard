@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
     compile 'net.dv8tion:JDA:2.2.1_353'
-    compile 'net.dv8tion:jda-player:0.2.1_9'
+    compile 'net.dv8tion:jda-player:0.2.3_25'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
