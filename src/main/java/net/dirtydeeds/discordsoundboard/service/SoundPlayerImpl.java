@@ -678,7 +678,7 @@ public class SoundPlayerImpl implements Observer {
 
             String allowedUsersString = appProperties.getProperty("allowedUsers");
             if (allowedUsersString != null) {
-                String[] allowedUsersArray = allowedUsersString.split(",");
+                String[] allowedUsersArray = allowedUsersString.trim().split(",");
                 if (allowedUsersArray.length > 0) {
                     allowedUsers = Arrays.asList(allowedUsersArray);
                 }
