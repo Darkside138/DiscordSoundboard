@@ -337,7 +337,13 @@ public class SoundPlayerImpl implements Observer {
     }
 
     public boolean isUserAllowed(String username) {
-        return allowedUsers == null || allowedUsers.isEmpty() || allowedUsers.contains(username);
+        if (allowedUsers == null) {
+            return true;
+        } else if (!allowedUsers.isEmpty() && allowedUsers.contains(username)){
+            return true;
+        } else {
+            return true;
+        }
     }
 
     public boolean isUserBanned(String username) {
@@ -685,6 +691,8 @@ public class SoundPlayerImpl implements Observer {
                     bannedUsers = Arrays.asList(bannedUsersArray);
                 }
             }
+
+            bot.getAccountManager().setGame("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
 
 //            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
 //            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
