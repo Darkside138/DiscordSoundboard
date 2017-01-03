@@ -1,38 +1,37 @@
 package net.dirtydeeds.discordsoundboard.service;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dv8tion.jda.JDA;
-import net.dv8tion.jda.JDABuilder;
-import net.dv8tion.jda.OnlineStatus;
-import net.dv8tion.jda.Permission;
-import net.dv8tion.jda.audio.player.FilePlayer;
-import net.dv8tion.jda.entities.*;
-import net.dv8tion.jda.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.events.voice.VoiceJoinEvent;
-import net.dv8tion.jda.events.voice.VoiceLeaveEvent;
-import net.dv8tion.jda.managers.AudioManager;
-import net.dv8tion.jda.player.MusicPlayer;
-import net.dv8tion.jda.player.source.AudioSource;
-import net.dv8tion.jda.player.source.LocalSource;
-import net.dv8tion.jda.player.source.RemoteSource;
-import net.dv8tion.jda.utils.AvatarUtil;
-import net.dv8tion.jda.utils.PermissionUtil;
-import net.dv8tion.jda.utils.SimpleLog;
+import net.dv8tion.jda.core.*;
+import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.entities.impl.GameImpl;
+import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.PermissionException;
+import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import net.dv8tion.jda.core.managers.AudioManager;
+import net.dv8tion.jda.core.utils.SimpleLog;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,39 +53,43 @@ public class SoundPlayerImpl implements Observer {
     private float playerVolume = (float) .75;
     private final MainWatch mainWatch;
     private boolean initialized = false;
-    private MusicPlayer musicPlayer;
-    private FilePlayer player;
-    private String playerSetting;
+    private AudioPlayerManager playerManager;
     private String soundFileDir;
     private List<String> allowedUsers;
     private List<String> bannedUsers;
     private SoundFileRepository repository;
     private boolean leaveAfterPlayback = false;
+    private final Map<String, GuildMusicManager> musicManagers;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
+        this.musicManagers = new HashMap<>();
+
         this.mainWatch = mainWatch;
         this.mainWatch.addObserver(this);
         this.repository = repository;
 
-        setSoundPlayerVolume(75);
-
-        init();
-    }
-
-    private void init() {
         loadProperties();
         initializeDiscordBot();
         getFileList();
 
-        playerSetting = appProperties.getProperty("player");
-        if (isMusicPlayer()) {
-            musicPlayer = new MusicPlayer();
+        this.playerManager = new DefaultAudioPlayerManager();
+        this.playerManager.registerSourceManager(new LocalAudioSourceManager());
+
+        this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
+
+        this.initialized = true;
+    }
+
+    private GuildMusicManager getGuildAudioPlayer(Guild guild) {
+        String guildId = guild.getId();
+        GuildMusicManager mng = musicManagers.get(guildId);
+        if (mng == null) {
+            synchronized (musicManagers) {
+                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager));
+            }
         }
-
-        leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
-
-        initialized = true;
+        return mng;
     }
 
     @Override
@@ -110,11 +113,11 @@ public class SoundPlayerImpl implements Observer {
      * Sets volume of the player.
      * @param volume - The volume value to set.
      */
-    public void setSoundPlayerVolume(int volume) {
+    public void setSoundPlayerVolume(int volume, String username) {
         playerVolume = (float) volume / 100;
-        if (isMusicPlayer()) {
-            musicPlayer.setVolume(playerVolume);
-        }
+        Guild guild = getUsersGuild(username);
+        GuildMusicManager gmm = getGuildAudioPlayer(guild);
+        gmm.player.setVolume(volume);
     }
 
     /**
@@ -202,7 +205,7 @@ public class SoundPlayerImpl implements Observer {
      *              the sound back in.
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
-    public void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
+    private void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
 	    playFileForEvent(fileName, event, 1);
     }
 
@@ -219,7 +222,7 @@ public class SoundPlayerImpl implements Observer {
         if (event != null) {
             Guild guild = event.getGuild();
             if (guild == null) {
-                guild = getUsersGuild(event.getAuthor().getUsername());
+                guild = getUsersGuild(event.getAuthor().getName());
             }
             if (guild != null) {
                 if (fileToPlay != null) {
@@ -251,10 +254,10 @@ public class SoundPlayerImpl implements Observer {
      *              the sound back in.
      * @throws Exception Throws exception if entrance sounds couldn't be played
      */
-    public void playFileForEntrance(String fileName, VoiceJoinEvent event) throws Exception {
+    public void playFileForEntrance(String fileName, GuildVoiceJoinEvent event) throws Exception {
         if (event == null) return;
         try {
-            moveToChannel(event.getChannel(), event.getGuild());
+            moveToChannel(event.getChannelJoined(), event.getGuild());
             LOG.info("Playing file for entrance of user: " + fileName);
             try {
                 playFile(fileName, event.getGuild());
@@ -276,10 +279,10 @@ public class SoundPlayerImpl implements Observer {
      *              the sound back in.
      * @throws Exception Throws exception if disconnect sounds couldn't be played
      */
-    public void playFileForDisconnect(String fileName, VoiceLeaveEvent event) throws Exception {
+    public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) throws Exception {
         if (event == null) return;
         try {
-            moveToChannel(event.getOldChannel(), event.getGuild());
+            moveToChannel(event.getChannelLeft(), event.getGuild());
             LOG.info("Playing file for disconnect of user: " + fileName);
             try {
                 playFile(fileName, event.getGuild());
@@ -298,22 +301,12 @@ public class SoundPlayerImpl implements Observer {
      * Stops sound playback and returns true or false depending on if playback was stopped.
      * @return boolean representing whether playback was stopped.
      */
-    public boolean stop() {
-        if (isMusicPlayer()) {
-            if (musicPlayer != null && musicPlayer.isPlaying()) {
-                musicPlayer.stop();
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            if (player != null && player.isPlaying()) {
-                player.stop();
-                return true;
-            } else {
-                return false;
-            }
-        }
+    public boolean stop(String requestingUser) {
+        Guild guild = getUsersGuild(requestingUser);
+        GuildMusicManager mng = getGuildAudioPlayer(guild);
+        AudioPlayer player = mng.player;
+        player.stopTrack();
+        return true;
     }
 
     /**
@@ -323,15 +316,15 @@ public class SoundPlayerImpl implements Observer {
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
         String userNameToSelect = appProperties.getProperty("username_to_join_channel");
         List<User> users = new ArrayList<>();
-        for (net.dv8tion.jda.entities.User user : bot.getUsers()) {
-            if (user.getOnlineStatus().equals(OnlineStatus.ONLINE)) {
+        for (net.dv8tion.jda.core.entities.User user : bot.getUsers()) {
+//            if (user.getOnlineStatus().equals(OnlineStatus.ONLINE)) {
                 boolean selected = false;
-                String username = user.getUsername();
+                String username = user.getName();
                 if (userNameToSelect.equals(username)) {
                     selected = true;
                 }
                 users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
-            }
+//            }
         }
         return users;
     }
@@ -372,8 +365,8 @@ public class SoundPlayerImpl implements Observer {
 
         if (channel == null) {
             event.getAuthor().getPrivateChannel()
-                    .sendMessage("Hello @"+ event.getAuthor().getUsername() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
-            LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getUsername() + " is not connected to Voice?");
+                    .sendMessage("Hello @"+ event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getName() + " is not connected to Voice?");
         } else {
             moveToChannel(channel, guild);
         }
@@ -384,17 +377,18 @@ public class SoundPlayerImpl implements Observer {
      * @param channel - The channel specified.
      */
     private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
-        boolean hasPermissionToSpeak = PermissionUtil.checkPermission(channel, bot.getUserById(bot.getSelfInfo().getId()),
-                                                                                    Permission.VOICE_SPEAK);
-        if (hasPermissionToSpeak) {
-            AudioManager audioManager = bot.getAudioManager(guild);
-            if (audioManager.isConnected()) {
-                if (audioManager.isAttemptingToConnect()) {
-                    audioManager.closeAudioConnection();
+        GuildMusicManager mng = getGuildAudioPlayer(guild);
+
+        AudioManager audioManager = guild.getAudioManager();
+        audioManager.setSendingHandler(mng.sendHandler);
+
+        if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
+            try {
+                guild.getAudioManager().openAudioConnection(channel);
+            } catch (PermissionException e) {
+                if (e.getPermission() == Permission.VOICE_CONNECT) {
+                    throw new SoundPlaybackException("The bot does not have permission to speak in the requested channel: " + channel.getName() + ".");
                 }
-                audioManager.moveAudioConnection(channel);
-            } else {
-                audioManager.openAudioConnection(channel);
             }
 
             int i = 0;
@@ -414,8 +408,6 @@ public class SoundPlayerImpl implements Observer {
                     }
                 }
             }
-        } else {
-            throw new SoundPlaybackException("The bot does not have permission to speak in the requested channel: " + channel.getName() + ".");
         }
     }
 
@@ -430,8 +422,8 @@ public class SoundPlayerImpl implements Observer {
 
         outerloop:
         for (VoiceChannel channel1 : guild.getVoiceChannels()) {
-            for (net.dv8tion.jda.entities.User user : channel1.getUsers()) {
-                if (user.getId().equals(event.getAuthor().getId())) {
+            for (Member user : channel1.getMembers()) {
+                if (user.getUser().getId().equals(event.getAuthor().getId())) {
                     channel = channel1;
                     break outerloop;
                 }
@@ -447,8 +439,8 @@ public class SoundPlayerImpl implements Observer {
     private void joinUsersCurrentChannel(String userName) throws SoundPlaybackException {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
-                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
-                    if(user.getUsername().equalsIgnoreCase(userName)) {
+                for (Member user : channel.getMembers()) {
+                    if(user.getUser().getName().equalsIgnoreCase(userName)) {
                         try {
                             moveToChannel(channel, guild);
                         } catch (SoundPlaybackException e) {
@@ -469,8 +461,8 @@ public class SoundPlayerImpl implements Observer {
     private Guild getUsersGuild(String userName) {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
-                for (net.dv8tion.jda.entities.User user : channel.getUsers()) {
-                    if (user.getUsername().equalsIgnoreCase(userName)) {
+                for (Member user : channel.getMembers()) {
+                    if (user.getUser().getName().equalsIgnoreCase(userName)) {
                         return guild;
                     }
                 }
@@ -512,46 +504,36 @@ public class SoundPlayerImpl implements Observer {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
-            if (isMusicPlayer()) {
-                if (bot.getAudioManager(guild).getSendingHandler() == null) {
-                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
-                }
-                
-                musicPlayer.stop();
-                musicPlayer.getAudioQueue().clear();
-
-                AudioSource audioSource = new LocalSource(audioFile);
-
-				if (repeatNumber > 0) {
-	                for (int i = 0; i < repeatNumber; i++) {
-	                    musicPlayer.getAudioQueue().add(audioSource);
-	                }
-					musicPlayer.setRepeat(false);
-                } else {
-	                musicPlayer.getAudioQueue().add(audioSource);
-	                musicPlayer.setRepeat(true);
+            GuildMusicManager mng = getGuildAudioPlayer(guild);
+            playerManager.loadItemOrdered(mng, audioFile.getAbsolutePath(), new AudioLoadResultHandler() {
+                @Override
+                public void trackLoaded(AudioTrack track) {
+                    mng.scheduler.queue(track);
                 }
 
-                musicPlayer.setVolume(playerVolume);
-                bot.getAudioManager(guild).setConnectTimeout(100L);
-                
-                musicPlayer.play();
-            } else {
-                try {
-                    player = new FilePlayer(audioFile);
-                    
-                    bot.getAudioManager(guild).setSendingHandler(player);
+                @Override
+                public void playlistLoaded(AudioPlaylist playlist) {
+                    AudioTrack firstTrack = playlist.getSelectedTrack();
 
-                    player.stop();
+                    if (firstTrack == null) {
+                        firstTrack = playlist.getTracks().get(0);
+                    }
 
-                    player.setVolume(playerVolume);
-                    bot.getAudioManager(guild).setConnectTimeout(100L);
-
-                    player.play();
-                } catch (IOException | UnsupportedAudioFileException e) {
-                    e.printStackTrace();
+                    mng.scheduler.queue(firstTrack);
                 }
-            }
+
+                @Override
+                public void noMatches() {
+                    // Notify the user that we've got nothing
+                    LOG.debug("Could not find file");
+                }
+
+                @Override
+                public void loadFailed(FriendlyException throwable) {
+                    // Notify the user that everything exploded
+                    LOG.fatal(throwable.getMessage());
+                }
+            });
         }
     }
 
@@ -559,33 +541,25 @@ public class SoundPlayerImpl implements Observer {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
-            if (isMusicPlayer()) {
-                if (bot.getAudioManager(guild).getSendingHandler() == null) {
-                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
-                }
-
-                musicPlayer.stop();
-                musicPlayer.getAudioQueue().clear();
-
-                AudioSource audioSource = new RemoteSource(url, guild.getId());
-                musicPlayer.getAudioQueue().add(audioSource);
-
-                musicPlayer.setVolume(playerVolume);
-                bot.getAudioManager(guild).setConnectTimeout(100L);
-
-                musicPlayer.play();
-            } else {
-                throw new SoundPlaybackException("URL playback not supported by this player");
-            }
+//            if (isMusicPlayer()) {
+////                if (bot.getAudioManager(guild).getSendingHandler() == null) {
+////                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
+////                }
+////
+////                musicPlayer.stop();
+////                musicPlayer.getAudioQueue().clear();
+////
+////                AudioSource audioSource = new RemoteSource(url, guild.getId());
+////                musicPlayer.getAudioQueue().add(audioSource);
+////
+////                musicPlayer.setVolume(playerVolume);
+////                bot.getAudioManager(guild).setConnectTimeout(100L);
+////
+////                musicPlayer.play();
+//            } else {
+//                throw new SoundPlaybackException("URL playback not supported by this player");
+//            }
         }
-    }
-
-    /**
-     * Helper method that tells us if we are using MusicPlayer. If false we are using FilePlayer.
-     * @return boolean
-     */
-    private boolean isMusicPlayer() {
-        return playerSetting != null && playerSetting.equalsIgnoreCase("musicPlayer");
     }
 
     /**
@@ -652,10 +626,10 @@ public class SoundPlayerImpl implements Observer {
             }
 
             String botToken = appProperties.getProperty("bot_token");
-            bot = new JDABuilder()
+            bot = new JDABuilder(AccountType.BOT)
                     .setAudioEnabled(true)
                     .setAutoReconnect(true)
-                    .setBotToken(botToken)
+                    .setToken(botToken)
                     .buildBlocking();
 
             if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
@@ -669,9 +643,10 @@ public class SoundPlayerImpl implements Observer {
                 }
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
                                                                                     messageSizeLimit, respondToDms);
-                this.addBotListener(chatListener);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
                 LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
+
+                this.addBotListener(chatListener);
                 this.addBotListener(entranceListener);
                 this.addBotListener(leaveSoundBoardListener);
             }
@@ -692,11 +667,12 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-            bot.getAccountManager().setGame("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
+            Game game = new GameImpl("Type " + appProperties.getProperty("command_character") + "help for a list of commands.", "", Game.GameType.DEFAULT);
+            bot.getPresence().setGame(game);
 
-//            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
-//            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
-//            bot.getAccountManager().setAvatar(avatar).update();
+            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
+            Icon icon = Icon.from(avatarFile);
+            bot.getSelfUser().getManager().setAvatar(icon).queue();
         }
         catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
@@ -706,12 +682,18 @@ public class SoundPlayerImpl implements Observer {
         } catch (InterruptedException e) {
             LOG.fatal("Login Interrupted.");
         } //catch (UnsupportedEncodingException e) {
+        catch (RateLimitedException e) {
+            LOG.fatal("Login rate exceeded.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 //            LOG.warn("Could not update avatar with provided file.");
 //        }
     }
 
     private void disconnectFromChannel(Guild guild) {
-        bot.getAudioManager(guild).closeAudioConnection();
+        guild.getAudioManager().setSendingHandler(null);
+        guild.getAudioManager().closeAudioConnection();
         LOG.info("Disconnecting from channel.");
     }
 
@@ -752,6 +734,7 @@ public class SoundPlayerImpl implements Observer {
     @SuppressWarnings("unused")
     public void cleanUp() throws Exception {
         System.out.println("SoundPlayer is shutting down. Cleaning up.");
+        playerManager.shutdown();
         bot.shutdown();
     }
 

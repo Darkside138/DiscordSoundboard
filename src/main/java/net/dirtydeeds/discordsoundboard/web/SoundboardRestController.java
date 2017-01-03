@@ -41,7 +41,7 @@ public class SoundboardRestController {
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
-        Collections.sort(returnSounds, new SortIgnoreCase());
+        returnSounds.sort(new SortIgnoreCase());
         return returnSounds;
     }
     
@@ -90,7 +90,7 @@ public class SoundboardRestController {
     public List<SoundFile> getSoundFileListNew() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
-        Collections.sort(returnSounds, new SortIgnoreCase());
+        returnSounds.sort(new SortIgnoreCase());
         return returnSounds;
     }
 
@@ -118,14 +118,14 @@ public class SoundboardRestController {
     }
 
     @RequestMapping(value = "/stop", method = RequestMethod.POST)
-    public HttpStatus stopPlayback() {
-        soundPlayer.stop();
+    public HttpStatus stopPlayback(@RequestParam String username) {
+        soundPlayer.stop(username);
         return HttpStatus.OK;
     }
     
     @RequestMapping(value = "/volume", method = RequestMethod.POST)
-    public HttpStatus setVolume(@RequestParam Integer volume) {
-        soundPlayer.setSoundPlayerVolume(volume);
+    public HttpStatus setVolume(@RequestParam Integer volume, @RequestParam String username) {
+        soundPlayer.setSoundPlayerVolume(volume, username);
         return HttpStatus.OK;
     }
     

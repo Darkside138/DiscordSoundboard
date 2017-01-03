@@ -18,12 +18,12 @@ $(document).ready(function() {
 
             $(".soundButton").click(function() {
                 var volume = $('#volume').slider("option", "value");
+                var username = $(".userNameSelect option:selected").text();
+
                 $.ajax({
-                    url: "/soundsApi/volume?volume=" + volume,
+                    url: "/soundsApi/volume?volume=" + volume + "&username=" + username,
                     method: 'POST'
                 });
-
-                var username = $(".userNameSelect option:selected").text();
                 $.ajax({
                     url: "/soundsApi/playFile?soundFileId=" + this.value + "&username=" + username,
                     method: 'POST'
@@ -91,12 +91,13 @@ $(document).ready(function() {
 
     $(".randomButton").click(function() {
         var volume = $('#volume').slider("option", "value");
+        var username = $(".userNameSelect option:selected").text();
+
         $.ajax({
-            url: "/soundsApi/volume?volume=" + volume,
+            url: "/soundsApi/volume?volume=" + volume + "&username=" + username,
             method: 'POST'
         });
 
-        var username = $(".userNameSelect option:selected").text();
         $.ajax({
             url: "/soundsApi/playRandom?username=" + username,
             method: 'POST'
@@ -111,8 +112,10 @@ $(document).ready(function() {
         animate: true,
         slide: function(event, ui) {
             var volume = ui.value;
+            var username = $(".userNameSelect option:selected").text();
+
             $.ajax({
-                url: "/soundsApi/volume?volume=" + volume,
+                url: "/soundsApi/volume?volume=" + volume + "&username=" + username,
                 method: 'POST'
             });
         }

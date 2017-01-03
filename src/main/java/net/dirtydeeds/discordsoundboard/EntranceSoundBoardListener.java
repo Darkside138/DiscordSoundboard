@@ -5,9 +5,9 @@ import java.util.Set;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
-import net.dv8tion.jda.events.voice.VoiceJoinEvent;
-import net.dv8tion.jda.hooks.ListenerAdapter;
-import net.dv8tion.jda.utils.SimpleLog;
+import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.SimpleLog;
 
 /**
  * @author asafatli.
@@ -24,10 +24,10 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
         this.bot = bot;
     }
 
-    @SuppressWarnings("rawtypes")
-    public void onVoiceJoin(VoiceJoinEvent event) {
-        if(!event.getUser().isBot()) {
-            String joined = event.getUser().getUsername().toLowerCase();
+    @SuppressWarnings("rawtypes, unused")
+    public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
+        if(!event.getMember().getUser().isBot()) {
+            String joined = event.getMember().getUser().getName().toLowerCase();
 
             //Respond
             Set<Map.Entry<String, SoundFile>> entrySet = bot.getAvailableSoundFiles().entrySet();
@@ -50,5 +50,6 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 }
             }
         }
+        super.onGuildVoiceJoin(event);
     }
 }

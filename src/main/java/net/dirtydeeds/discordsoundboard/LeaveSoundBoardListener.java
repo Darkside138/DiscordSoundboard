@@ -2,9 +2,9 @@ package net.dirtydeeds.discordsoundboard;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
-import net.dv8tion.jda.events.voice.VoiceLeaveEvent;
-import net.dv8tion.jda.hooks.ListenerAdapter;
-import net.dv8tion.jda.utils.SimpleLog;
+import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.SimpleLog;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,10 +28,10 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    public void onVoiceLeave(VoiceLeaveEvent event) {
-        if(!event.getUser().isBot()) {
-            String userDisconnected = event.getUser().getUsername().toLowerCase();
+    @SuppressWarnings("rawtypes, unused")
+    public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
+        if(!event.getMember().getUser().isBot()) {
+            String userDisconnected = event.getMember().getUser().getName().toLowerCase();
 
             //Respond
             Set<Map.Entry<String, SoundFile>> entrySet = bot.getAvailableSoundFiles().entrySet();
@@ -55,5 +55,6 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
                 }
             }
         }
+        super.onGuildVoiceLeave(event);
     }
 }
