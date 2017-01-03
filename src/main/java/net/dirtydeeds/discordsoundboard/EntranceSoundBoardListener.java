@@ -35,7 +35,8 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 String fileToPlay = "";
                 for (Map.Entry entry : entrySet) {
                     String fileEntry = (String) entry.getKey();
-                    if (joined.startsWith(fileEntry) && fileEntry.length() > fileToPlay.length())
+                    if (joined.toLowerCase().startsWith(fileEntry.toLowerCase())
+                            && fileEntry.length() > fileToPlay.length())
                         fileToPlay = fileEntry;
                 }
                 if (!fileToPlay.equals("")) {
