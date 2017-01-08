@@ -5,7 +5,10 @@ import java.util.Set;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dv8tion.jda.core.entities.VoiceChannel;
+import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.utils.SimpleLog;
 
@@ -24,8 +27,18 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
         this.bot = bot;
     }
 
+    public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
+        voiceEntrance(event, event.getChannelJoined());
+        super.onGuildVoiceMove(event);
+    }
+
     @SuppressWarnings("rawtypes, unused")
     public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
+        voiceEntrance(event, event.getChannelJoined());
+        super.onGuildVoiceJoin(event);
+    }
+
+    private void voiceEntrance(GenericGuildVoiceEvent event, VoiceChannel channel) {
         if(!event.getMember().getUser().isBot()) {
             String joined = event.getMember().getUser().getName().toLowerCase();
 
@@ -41,7 +54,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 }
                 if (!fileToPlay.equals("")) {
                     try {
-                        bot.playFileForEntrance(fileToPlay, event);
+                        bot.playFileForEntrance(fileToPlay, event, channel);
                     } catch (Exception e) {
                         LOG.fatal("Could not play file for entrance of " + joined);
                     }
@@ -50,6 +63,5 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 }
             }
         }
-        super.onGuildVoiceJoin(event);
     }
 }

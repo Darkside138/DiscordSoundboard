@@ -15,7 +15,7 @@ import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.entities.impl.GameImpl;
-import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
@@ -254,10 +254,10 @@ public class SoundPlayerImpl implements Observer {
      *              the sound back in.
      * @throws Exception Throws exception if entrance sounds couldn't be played
      */
-    public void playFileForEntrance(String fileName, GuildVoiceJoinEvent event) throws Exception {
+    public void playFileForEntrance(String fileName, GenericGuildVoiceEvent event, VoiceChannel channel) throws Exception {
         if (event == null) return;
         try {
-            moveToChannel(event.getChannelJoined(), event.getGuild());
+            moveToChannel(channel, event.getGuild());
             LOG.info("Playing file for entrance of user: " + fileName);
             try {
                 playFile(fileName, event.getGuild());
@@ -382,7 +382,7 @@ public class SoundPlayerImpl implements Observer {
         AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(mng.sendHandler);
 
-        if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
+        if (!audioManager.isAttemptingToConnect()) {
             try {
                 guild.getAudioManager().openAudioConnection(channel);
             } catch (PermissionException e) {
@@ -393,15 +393,15 @@ public class SoundPlayerImpl implements Observer {
 
             int i = 0;
             int waitTime = 100;
-            int maxIterations = 40;
+            int maxIterations = 80;
             //Wait for the audio connection to be ready before proceeding.
             synchronized (this) {
-                while (!audioManager.isConnected()) {
+                while (!audioManager.isConnected() && audioManager.isAttemptingToConnect()) {
                     try {
                         wait(waitTime);
                         i++;
                         if (i >= maxIterations) {
-                            break; //break out if after 1 second it doesn't get a connection;
+                            break; //break out if after some time if it doesn't get a connection;
                         }
                     } catch (InterruptedException e) {
                         LOG.warn("Waiting for audio connection was interrupted.");
@@ -605,6 +605,10 @@ public class SoundPlayerImpl implements Observer {
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
                     SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                    SoundFile existing = repository.findOneBySoundFileIdIgnoreCase(fileName);
+                    if (existing != null) {
+                        repository.delete(existing);
+                    }
                     repository.save(soundFile);
                     returnFiles.put(fileName, soundFile);
                 }

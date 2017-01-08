@@ -3,11 +3,13 @@ package net.dirtydeeds.discordsoundboard;
 import com.sun.management.OperatingSystemMXBean;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.PermissionUtil;
 import net.dv8tion.jda.core.utils.SimpleLog;
 
 import java.io.File;
@@ -178,28 +180,27 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                            "\nSound File Path: " + soundPlayer.getSoundsPath() +
 	                            "```");
 	                } else if (message.startsWith(commandCharacter + "remove")) {
-//	                    String[] messageSplit = message.split(" ");
-//	                    String soundToRemove = messageSplit[1];
-//	                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getAuthor(), Permission.MANAGE_SERVER);
-//	                    if (event.getAuthor().getUsername().equalsIgnoreCase(soundToRemove)
-//	                            || hasManageServerPerm) {
-//	                        SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
-//	                        if (soundFileToRemove != null) {
-//	                            try {
-//	                                boolean fileRemoved = Files.deleteIfExists(Paths.get(soundFileToRemove.getSoundFileLocation()));
-//	                                if (fileRemoved) {
-//	                                    replyByPrivateMessage(event, "Sound file " + soundToRemove + " was removed.");
-//	                                } else {
-//	                                    replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
-//	                                }
-//	                            } catch (IOException e) {
-//	                                LOG.fatal("Could not remove sound file " + soundToRemove);
-//	                            }
-//	                        }
-//	                    } else {
-//	                        replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
-//	                    }
-	
+	                    String[] messageSplit = message.split(" ");
+	                    String soundToRemove = messageSplit[1];
+	                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getMember(), Permission.MANAGE_SERVER);
+	                    if (event.getAuthor().getName().equalsIgnoreCase(soundToRemove)
+	                            || hasManageServerPerm) {
+	                        SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
+	                        if (soundFileToRemove != null) {
+	                            try {
+	                                boolean fileRemoved = Files.deleteIfExists(Paths.get(soundFileToRemove.getSoundFileLocation()));
+	                                if (fileRemoved) {
+	                                    replyByPrivateMessage(event, "Sound file " + soundToRemove + " was removed.");
+	                                } else {
+	                                    replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
+	                                }
+	                            } catch (IOException e) {
+	                                LOG.fatal("Could not remove sound file " + soundToRemove);
+	                            }
+	                        }
+	                    } else {
+	                        replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
+	                    }
 	                } else if (message.startsWith(commandCharacter + "random")) {
 	                    try {
 	                        soundPlayer.playRandomSoundFile(requestingUser, event);
@@ -247,8 +248,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                                        attachment.download(newSoundFile);
 	                                        replyByPrivateMessage(event, "Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
 	                                    } else {
-//	                                        boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getAuthor(), Permission.MANAGE_SERVER);
-											boolean hasManageServerPerm = false;
+											boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getMember(), Permission.MANAGE_SERVER);
 	                                        if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
 	                                                || hasManageServerPerm) {
 	                                            try {
