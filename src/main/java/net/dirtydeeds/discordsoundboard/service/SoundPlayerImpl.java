@@ -339,10 +339,12 @@ public class SoundPlayerImpl implements Observer {
     public boolean isUserAllowed(String username) {
         if (allowedUsers == null) {
             return true;
-        } else if (!allowedUsers.isEmpty() && allowedUsers.contains(username)){
+        } else if (allowedUsers.isEmpty()){
+            return true;
+        } else if (allowedUsers.contains(username)){
             return true;
         } else {
-            return true;
+            return false;
         }
     }
 
