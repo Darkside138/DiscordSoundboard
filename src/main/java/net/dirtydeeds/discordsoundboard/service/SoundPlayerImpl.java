@@ -22,6 +22,7 @@ import net.dv8tion.jda.core.exceptions.PermissionException;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.managers.AudioManager;
 import net.dv8tion.jda.core.utils.SimpleLog;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -500,6 +501,7 @@ public class SoundPlayerImpl implements Observer {
      * @param guild - The guild (discord server) the playback is going to happen in.
      * @param repeatNumber - The number of times to repeat the audio file.
      */
+    @Async
     private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
             LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
@@ -508,7 +510,12 @@ public class SoundPlayerImpl implements Observer {
             playerManager.loadItemOrdered(mng, audioFile.getAbsolutePath(), new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
-                    mng.scheduler.queue(track);
+                    if (repeatNumber > 1) {
+                        for (int i = 0; i <= repeatNumber; i++) {
+                            mng.scheduler.queue(track);
+                        }
+                    }
+                    mng.scheduler.playNow(track);
                 }
 
                 @Override
@@ -516,10 +523,10 @@ public class SoundPlayerImpl implements Observer {
                     AudioTrack firstTrack = playlist.getSelectedTrack();
 
                     if (firstTrack == null) {
-                        firstTrack = playlist.getTracks().get(0);
+                        firstTrack = playlist.getSelectedTrack();
                     }
 
-                    mng.scheduler.queue(firstTrack);
+                    mng.scheduler.playNow(firstTrack);
                 }
 
                 @Override

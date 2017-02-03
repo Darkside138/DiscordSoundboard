@@ -43,7 +43,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private boolean respondToDms = true;
     private boolean muted;
     private static DecimalFormat df2 = new DecimalFormat("#.##");
-    private static final int MAX_FILE_SIZE_IN_BYTES = 1000000; // 1 MB
+    private static final int MAX_FILE_SIZE_IN_BYTES = 15000000; // 15 MB
 
     public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit,
                                   Boolean respondToDms) {
