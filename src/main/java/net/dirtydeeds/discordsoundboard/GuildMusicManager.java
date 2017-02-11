@@ -3,9 +3,6 @@ package net.dirtydeeds.discordsoundboard;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 
-/**
- * Created by davef on 1/2/2017.
- */
 public class GuildMusicManager {
     /**
      * Audio player for the guild.

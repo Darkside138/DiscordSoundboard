@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -21,7 +22,8 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.managers.AudioManager;
-import net.dv8tion.jda.core.utils.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +49,7 @@ import java.util.*;
 @Service
 public class SoundPlayerImpl implements Observer {
 
-    private static final SimpleLog LOG = SimpleLog.getLog("SoundPlayerImpl");
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
     
     private Properties appProperties;
     private JDA bot;
@@ -76,6 +78,7 @@ public class SoundPlayerImpl implements Observer {
 
         this.playerManager = new DefaultAudioPlayerManager();
         this.playerManager.registerSourceManager(new LocalAudioSourceManager());
+        this.playerManager.registerSourceManager(new YoutubeAudioSourceManager());
 
         this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
 
@@ -151,7 +154,7 @@ public class SoundPlayerImpl implements Observer {
                     }
                 }
             } catch (Exception e) {
-                LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+                LOG.error("Could not play random file: " + randomValue.getSoundFileId());
             }
         } catch (Exception e) {
             throw new SoundPlaybackException("Problem playing random file.");
@@ -189,7 +192,7 @@ public class SoundPlayerImpl implements Observer {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
 
-            playUrl(url, guild);
+            playFile(url, guild, 0);
 
             if (leaveAfterPlayback) {
                 disconnectFromChannel(guild);
@@ -233,7 +236,7 @@ public class SoundPlayerImpl implements Observer {
                         event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
                     }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
-                    playFile(soundFile, guild, repeatNumber);
+                    playFile(soundFile.getAbsolutePath(), guild, repeatNumber);
 
                     if (leaveAfterPlayback) {
                         disconnectFromChannel(event.getGuild());
@@ -317,16 +320,18 @@ public class SoundPlayerImpl implements Observer {
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
         String userNameToSelect = appProperties.getProperty("username_to_join_channel");
         List<User> users = new ArrayList<>();
-        for (net.dv8tion.jda.core.entities.User user : bot.getUsers()) {
-//            if (user.getOnlineStatus().equals(OnlineStatus.ONLINE)) {
+        for (Guild guild : bot.getGuilds()) {
+            for (Member member : guild.getMembers()) {
                 boolean selected = false;
-                String username = user.getName();
+                String username = member.getUser().getName();
                 if (userNameToSelect.equals(username)) {
                     selected = true;
                 }
-                users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
-//            }
+                users.add(new net.dirtydeeds.discordsoundboard.beans.User(member.getUser().getId(), username, member.getOnlineStatus().name(), selected));
+            }
         }
+        Comparator<User> c = Comparator.comparing(User::getUsernameLowerCase);
+        users.sort(c);
         return users;
     }
 
@@ -445,7 +450,7 @@ public class SoundPlayerImpl implements Observer {
                         try {
                             moveToChannel(channel, guild);
                         } catch (SoundPlaybackException e) {
-                            LOG.fatal(e.toString());
+                            LOG.error(e.toString());
                             throw e;
                         }
                     }
@@ -492,7 +497,7 @@ public class SoundPlayerImpl implements Observer {
      * @param guild - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(File audioFile, Guild guild) {
-	    playFile(audioFile, guild, 1);
+	    playFile(audioFile.getAbsolutePath(), guild, 1);
     }
 
     /**
@@ -502,20 +507,28 @@ public class SoundPlayerImpl implements Observer {
      * @param repeatNumber - The number of times to repeat the audio file.
      */
     @Async
-    private void playFile(File audioFile, Guild guild, int repeatNumber) {
+    private void playFile(String audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
-            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+            LOG.error("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
             GuildMusicManager mng = getGuildAudioPlayer(guild);
-            playerManager.loadItemOrdered(mng, audioFile.getAbsolutePath(), new AudioLoadResultHandler() {
+            playerManager.loadItemOrdered(mng, audioFile, new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
                     if (repeatNumber > 1) {
-                        for (int i = 0; i <= repeatNumber; i++) {
-                            mng.scheduler.queue(track);
+                        for (int i = 0; i <= repeatNumber - 1; i++) {
+                            if (i == 0) {
+                                mng.scheduler.playNow(track);
+                            } else {
+                                mng.scheduler.queue(track.makeClone());
+                            }
                         }
+                    } else if (repeatNumber < 0) {
+                        mng.scheduler.playNow(track);
+                        mng.scheduler.setRepeating(true);
+                    } else {
+                        mng.scheduler.playNow(track);
                     }
-                    mng.scheduler.playNow(track);
                 }
 
                 @Override
@@ -538,34 +551,9 @@ public class SoundPlayerImpl implements Observer {
                 @Override
                 public void loadFailed(FriendlyException throwable) {
                     // Notify the user that everything exploded
-                    LOG.fatal(throwable.getMessage());
+                    LOG.error(throwable.getMessage());
                 }
             });
-        }
-    }
-
-    private void playUrl(String url, Guild guild) throws SoundPlaybackException {
-        if (guild == null) {
-            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
-        } else {
-//            if (isMusicPlayer()) {
-////                if (bot.getAudioManager(guild).getSendingHandler() == null) {
-////                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
-////                }
-////
-////                musicPlayer.stop();
-////                musicPlayer.getAudioQueue().clear();
-////
-////                AudioSource audioSource = new RemoteSource(url, guild.getId());
-////                musicPlayer.getAudioQueue().add(audioSource);
-////
-////                musicPlayer.setVolume(playerVolume);
-////                bot.getAudioManager(guild).setConnectTimeout(100L);
-////
-////                musicPlayer.play();
-//            } else {
-//                throw new SoundPlaybackException("URL playback not supported by this player");
-//            }
         }
     }
 
@@ -596,7 +584,7 @@ public class SoundPlayerImpl implements Observer {
                 try {
                     result = soundFilePath.toFile().mkdir();
                 } catch(SecurityException se) {
-                    LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
+                    LOG.error("Could not create directory: " + soundFilePath.toFile().toString());
                 }
                 if(result) {
                     LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
@@ -621,7 +609,7 @@ public class SoundPlayerImpl implements Observer {
                 }
             });
         } catch (IOException e) {
-            LOG.fatal(e.toString());
+            LOG.error(e.toString());
             e.printStackTrace();
         }
         return returnFiles;
@@ -681,25 +669,27 @@ public class SoundPlayerImpl implements Observer {
             Game game = new GameImpl("Type " + appProperties.getProperty("command_character") + "help for a list of commands.", "", Game.GameType.DEFAULT);
             bot.getPresence().setGame(game);
 
-            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
-            Icon icon = Icon.from(avatarFile);
-            bot.getSelfUser().getManager().setAvatar(icon).queue();
+            try {
+                File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
+                Icon icon = Icon.from(avatarFile);
+                bot.getSelfUser().getManager().setAvatar(icon).queue();
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Could not find avatar file " + System.getProperty("user.dir") + "/avatar.jpg");
+            }
         }
         catch (IllegalArgumentException e) {
-            LOG.warn("The config was not populated. Please enter an email and password.");
+            LOG.warn("Something was configured incorrectly.", e);
         }
         catch (LoginException e) {
-            LOG.warn("The provided bot token was incorrect. Please provide valid details.");
+            LOG.warn("The provided bot token was incorrect. Please provide valid details.", e);
         } catch (InterruptedException e) {
-            LOG.fatal("Login Interrupted.");
+            LOG.error("Login Interrupted.", e);
         } //catch (UnsupportedEncodingException e) {
         catch (RateLimitedException e) {
-            LOG.fatal("Login rate exceeded.");
+            LOG.error("Login rate exceeded.", e);
         } catch (IOException e) {
             e.printStackTrace();
         }
-//            LOG.warn("Could not update avatar with provided file.");
-//        }
     }
 
     private void disconnectFromChannel(Guild guild) {
@@ -733,7 +723,7 @@ public class SoundPlayerImpl implements Observer {
                     stream.close();
                 } else {
                     //TODO: Would be nice if we could auto create a default app.properties here.
-                    LOG.fatal("You do not have an app.properties file. Please create one.");
+                    LOG.error("You do not have an app.properties file. Please create one.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();

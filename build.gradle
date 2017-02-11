@@ -3,9 +3,11 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'spring-boot'
 
-version = '2.0.0-beta'
+version = '2.0.1-beta'
 
+//noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8
+//noinspection GroovyUnusedAssignment
 targetCompatibility = 1.8
 
 buildscript {
@@ -31,8 +33,8 @@ repositories {
 
 dependencies {
     //https://bintray.com/dv8fromtheworld/maven/JDA
-    compile 'net.dv8tion:JDA:3.0.BETA2_119'
-    compile fileTree(dir: 'lib', include: '*.jar')
+    compile 'net.dv8tion:JDA:3.0.BETA2_126'
+    compile 'com.sedmelluq:lavaplayer:1.2.9'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
@@ -50,6 +52,9 @@ dependencies {
 processResources {
     exclude 'app.properties'
 }
+
+build.dependsOn 'clean'
+build.mustRunAfter 'clean'
 
 jar {
     group = 'build'
@@ -73,11 +78,10 @@ def distributionsCopySpec = copySpec {
     include "**/app.properties.example"
     from file("/distFiles")
     include "soundboard.bat"
-    include "ffmpeg.exe"
-    include "ffprobe.exe"
-    include "youtube-dl"
+    include "soundboard.sh"
     include "avatar.jpg"
     include "${fileName}.jar"
+    include "application.properties"
     exclude 'app.properties'
     rename ("app.properties.example", "app.properties")
     rename "${fileName}.jar", "${baseName}.jar"

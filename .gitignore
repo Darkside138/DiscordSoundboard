@@ -6,3 +6,6 @@ src/main/resources/app.properties
 build
 .gradle/
 sounds/*
+avatar.jpg
+logs/
+sounds/

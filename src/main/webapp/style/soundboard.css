@@ -33,7 +33,7 @@ body {
 }
 
 .randomButton {
-    vertical-align: top;
+    vertical-align: top !important;
 }
 
 .userNameSelect {

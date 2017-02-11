@@ -10,7 +10,8 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.utils.PermissionUtil;
-import net.dv8tion.jda.core.utils.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ChatSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = SimpleLog.getLog("ChatListener");
+	private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private SoundPlayerImpl soundPlayer;
     private String commandCharacter = "?";
@@ -66,7 +67,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         String requestingUser = event.getAuthor().getName();
         if (!event.getAuthor().isBot() && ((respondToDms && event.isFromType(ChannelType.PRIVATE))
 											|| !event.isFromType(ChannelType.PRIVATE))) {
-	        String message = event.getMessage().getContent().toLowerCase();
+            String originalMessage = event.getMessage().getContent();
+	        String message = originalMessage.toLowerCase();
             if (message.startsWith(commandCharacter)) {
 	            if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
 	                final int maxLineLength = messageSizeLimit;
@@ -101,6 +103,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                    replyByPrivateMessage(event, "You can type any of the following commands:" +
 	                            "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
 	                            "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
+                                "\n" + commandCharacter + "yt youtubeLink   - Plays the youtube link specified." +
 	                            "\n" + commandCharacter + "random           - Plays a random sound from the list." +
 	                            "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
 	                            "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
@@ -195,29 +198,43 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                                    replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
 	                                }
 	                            } catch (IOException e) {
-	                                LOG.fatal("Could not remove sound file " + soundToRemove);
+	                                LOG.error("Could not remove sound file " + soundToRemove);
 	                            }
 	                        }
 	                    } else {
 	                        replyByPrivateMessage(event, "You do not have permission to remove sound file: " + soundToRemove + ".");
 	                    }
 	                } else if (message.startsWith(commandCharacter + "random")) {
-	                    try {
-	                        soundPlayer.playRandomSoundFile(requestingUser, event);
-	                        deleteMessage(event);
-	                    } catch (SoundPlaybackException e) {
-	                        replyByPrivateMessage(event, "Problem playing random file:" + e);
-	                    }
+						try {
+							soundPlayer.playRandomSoundFile(requestingUser, event);
+							deleteMessage(event);
+						} catch (SoundPlaybackException e) {
+							replyByPrivateMessage(event, "Problem playing random file:" + e);
+						}
+					} else if (message.startsWith(commandCharacter + "yt")) {
+	                	try {
+	                		int split = originalMessage.indexOf(" ");
+							String url = originalMessage.substring(split + 1, originalMessage.length());
+							soundPlayer.playUrlForUser(url, event.getAuthor().getName());
+							deleteMessage(event);
+						}catch (Exception e) {
+							e.printStackTrace();
+							LOG.error(e.getMessage());
+						}
 	                } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
 	                    if (!muted) {
 	                        try {
 	                            int repeatNumber = 1;
 	                            String fileNameRequested = message.substring(1, message.length());
 		                        
-		                        // If there is the repeat character (~) then cut up the message string.
-	                            int repeatIndex = message.indexOf('~');
+		                        // If there is the repeat character (space) then cut up the message string.
+	                            int repeatIndex = message.indexOf(' ');
 	                            if (repeatIndex > -1) {
-									fileNameRequested = message.substring(1, repeatIndex - 1); // -1 to ignore the previous space
+									fileNameRequested = message.substring(1, repeatIndex);
+									fileNameRequested = fileNameRequested.trim();
+									if (fileNameRequested.endsWith("~")) {
+									    fileNameRequested = fileNameRequested.substring(0, fileNameRequested.length() - 1);
+                                    }
 	                            	if (repeatIndex + 1 == message.length()) { // If there is only a ~ then repeat-infinite
 		                            	repeatNumber = -1;
 	                            	} else { // If there is something after the ~ then repeat for that value
@@ -257,7 +274,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                                                attachment.download(newSoundFile);
 													replyByPrivateMessage(event,"Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
 	                                            } catch (IOException e1) {
-	                                                LOG.fatal("Problem deleting and re-adding sound file: " + name);
+	                                                LOG.error("Problem deleting and re-adding sound file: " + name);
 	                                            }
 	                                        } else {
 												replyByPrivateMessage(event,"The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.");
@@ -357,7 +374,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private void deleteMessage(MessageReceivedEvent event) {
         if (!event.isFromType(ChannelType.PRIVATE)) {
         	try {
-            	event.getMessage().deleteMessage().queue();
+            	event.getMessage().delete().queue();
             } catch (PermissionException e) {
 	            LOG.warn("Unable to delete message");
             }

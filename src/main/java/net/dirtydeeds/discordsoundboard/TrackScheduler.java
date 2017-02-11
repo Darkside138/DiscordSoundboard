@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Queue;
 
 /**
- * Created by davef on 1/2/2017.
+ * @author dave_f
  */
 public class TrackScheduler extends AudioEventAdapter {
 
@@ -41,9 +41,6 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void playNow(AudioTrack track) {
-        // Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If
-        // something is playing, it returns false and does nothing. In that case the player was already playing so this
-        // track goes to the queue instead.
         if (!player.startTrack(track, false)) {
             queue.offer(track);
         }
