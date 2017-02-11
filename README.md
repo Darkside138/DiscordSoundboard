@@ -5,8 +5,12 @@ choose the sound from the web UI. You will need to create a bot account that the
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
+##Beta Release
+Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
+[2.0.1-BETA.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.0.1-BETA/DiscordSoundboard-2.0.1-beta.zip)
+
 ## Current Release
-Latest Release [v1.4.11.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.11/DiscordSoundboard-1.4.11.zip) | [v1.4.11.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.11/DiscordSoundboard-1.4.11.tar). 
+Latest Release [v1.4.12.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.12/DiscordSoundboard-1.4.12.tar) | [v1.4.12.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.11/DiscordSoundboard-1.4.12.tar). 
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the app.properties). Put all the clips you 
