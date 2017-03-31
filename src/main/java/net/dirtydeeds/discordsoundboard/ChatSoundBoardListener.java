@@ -246,7 +246,14 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                            	if (repeatIndex + 1 == message.length()) { // If there is only a ~ then repeat-infinite
 		                            	repeatNumber = -1;
 	                            	} else { // If there is something after the ~ then repeat for that value
-	                                	repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1, message.length())); // +1 to ignore the ~ character
+										try {
+											// Get the number string, +1 to ignore the ~ character. Still needs work. GJF.
+											String repeatString = message.substring(repeatIndex + 1, message.length());
+											repeatNumber = Integer.parseInt(repeatString);
+										} catch( NumberFormatException ex) {
+											replyByPrivateMessage(event, "Repeat argument should be a number, but you sent me: " + repeatString);
+											repeatNumber = 1;
+										}
 	                            	}
 	                            }
 	                            LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");

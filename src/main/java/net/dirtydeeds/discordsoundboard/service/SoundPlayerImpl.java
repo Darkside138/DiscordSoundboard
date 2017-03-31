@@ -545,6 +545,7 @@ public class SoundPlayerImpl implements Observer {
                             if (i == 0) {
                                 mng.scheduler.playNow(track);
                             } else {
+                                LOG.info("Queuing additional play of track.");
                                 mng.scheduler.queue(track.makeClone());
                             }
                         }
