@@ -33,8 +33,8 @@ repositories {
 
 dependencies {
     //https://bintray.com/dv8fromtheworld/maven/JDA
-    compile 'net.dv8tion:JDA:3.0.BETA2_126'
-    compile 'com.sedmelluq:lavaplayer:1.2.9'
+    compile 'net.dv8tion:JDA:3.0.0_165'
+    compile 'com.sedmelluq:lavaplayer:1.2.34'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'

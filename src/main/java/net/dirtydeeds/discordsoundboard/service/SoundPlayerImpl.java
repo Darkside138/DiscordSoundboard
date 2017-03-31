@@ -543,7 +543,7 @@ public class SoundPlayerImpl implements Observer {
                     if (repeatNumber > 1) {
                         for (int i = 0; i <= repeatNumber - 1; i++) {
                             if (i == 0) {
-                                mng.scheduler.playNow(track);
+                                mng.scheduler.queue(track);
                             } else {
                                 LOG.info("Queuing additional play of track.");
                                 mng.scheduler.queue(track.makeClone());
