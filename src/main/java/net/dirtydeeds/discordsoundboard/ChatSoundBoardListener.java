@@ -106,7 +106,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                 "\n" + commandCharacter + "yt youtubeLink   - Plays the youtube link specified." +
 	                            "\n" + commandCharacter + "random           - Plays a random sound from the list." +
 	                            "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
-	                            "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
+								"\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
+	                            "\n" + commandCharacter + "summon           - Summon the bot to your channel." +
 	                            "\n" + commandCharacter + "info             - Returns info about the bot.```");
 	                } else if (message.startsWith(commandCharacter + "volume")) {
 	                    int newVol = Integer.parseInt(message.substring(8));
@@ -210,6 +211,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 							deleteMessage(event);
 						} catch (SoundPlaybackException e) {
 							replyByPrivateMessage(event, "Problem playing random file:" + e);
+						}
+					} else if (message.startsWith(commandCharacter + "summon")) {
+						try {
+							soundPlayer.playNothingForEvent(event);
+							deleteMessage(event);
+						} catch (Exception e) {
+							replyByPrivateMessage(event, "Problem being summoned to user:" + e);
 						}
 					} else if (message.startsWith(commandCharacter + "yt")) {
 	                	try {
