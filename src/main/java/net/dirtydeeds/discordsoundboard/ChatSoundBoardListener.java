@@ -234,7 +234,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                        try {
 	                            int repeatNumber = 1;
 	                            String fileNameRequested = message.substring(1, message.length());
-		                        
+								String repeatString = "";
+
 		                        // If there is the repeat character (space) then cut up the message string.
 	                            int repeatIndex = message.indexOf(' ');
 	                            if (repeatIndex > -1) {
@@ -248,7 +249,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                            	} else { // If there is something after the ~ then repeat for that value
 										try {
 											// Get the number string, +1 to ignore the ~ character. Still needs work. GJF.
-											String repeatString = message.substring(repeatIndex + 1, message.length());
+											repeatString = message.substring(repeatIndex + 1, message.length());
 											repeatNumber = Integer.parseInt(repeatString);
 										} catch( NumberFormatException ex) {
 											replyByPrivateMessage(event, "Repeat argument should be a number, but you sent me: " + repeatString);
