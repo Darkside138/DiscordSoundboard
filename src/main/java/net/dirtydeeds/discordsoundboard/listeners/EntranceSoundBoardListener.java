@@ -1,4 +1,4 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.listeners;
 
 import java.util.Map;
 import java.util.Set;

@@ -12,6 +12,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.listeners.ChatSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
@@ -54,7 +57,7 @@ public class SoundPlayerImpl implements Observer {
     private Properties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
-    private final MainWatch mainWatch;
+    private final SoundFolderWatch mainWatch;
     private boolean initialized = false;
     private AudioPlayerManager playerManager;
     private String soundFileDir;
@@ -65,10 +68,10 @@ public class SoundPlayerImpl implements Observer {
     private final Map<String, GuildMusicManager> musicManagers;
 
     @Inject
-    public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
+    public SoundPlayerImpl(SoundFolderWatch soundFolderWatch, SoundFileRepository repository) {
         this.musicManagers = new HashMap<>();
 
-        this.mainWatch = mainWatch;
+        this.mainWatch = soundFolderWatch;
         this.mainWatch.addObserver(this);
         this.repository = repository;
 
@@ -254,8 +257,8 @@ public class SoundPlayerImpl implements Observer {
     /**
      * This doesn't play anything, but since all of these actions are currently in the soundplayer service,
      * we keep this code here. The Bot will switch channels and stop.
-     * @param event
-     * @throws Exception
+     * @param event The MessageReceivedEvent
+     * @throws Exception exception
      */
     public void playNothingForEvent(MessageReceivedEvent event) throws Exception {
         if (event != null) {

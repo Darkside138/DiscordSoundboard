@@ -24,7 +24,7 @@ import java.util.Observable;
  * @author dfurrer.
  */
 @Service
-public class MainWatch extends Observable {
+public class SoundFolderWatch extends Observable {
 
     @Async
     @SuppressWarnings("unchecked")

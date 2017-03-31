@@ -6,7 +6,7 @@ and play sounds. The bot can only play sounds/respond to commands for servers it
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
 ## Current Release
-Latest Release [v1.4.9.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.9/DiscordSoundboard-1.4.9.zip) | [v1.4.9.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.9/DiscordSoundboard-1.4.9.tar). 
+Latest Release [v2.0.1_BETA.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.0.1-BETA/DiscordSoundboard-2.0.1-beta.zip) | [v2.0.1_BETA.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.0.1-BETA/DiscordSoundboard-2.0.1-beta.tar).
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the app.properties). Put all the clips you 
