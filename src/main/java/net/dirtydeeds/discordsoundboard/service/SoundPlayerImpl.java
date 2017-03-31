@@ -252,6 +252,31 @@ public class SoundPlayerImpl implements Observer {
     }
 
     /**
+     * This doesn't play anything, but since all of these actions are currently in the soundplayer service,
+     * we keep this code here. The Bot will switch channels and stop.
+     * @param event
+     * @throws Exception
+     */
+    public void playNothingForEvent(MessageReceivedEvent event) throws Exception {
+        if (event != null) {
+            Guild guild = event.getGuild();
+            if (guild == null) {
+                guild = getUsersGuild(event.getAuthor().getName());
+            }
+            if (guild != null) {
+                    try {
+                        moveToUserIdsChannel(event, guild);
+                    } catch (SoundPlaybackException e) {
+                        event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
+                    }
+            } else {
+                event.getAuthor().getPrivateChannel().sendMessage("I can not find a voice channel you are connected to.");
+                LOG.warn("no guild to join.");
+            }
+        }
+    }
+
+    /**
      * Plays the fileName requested for a voice channel entrance.
      * @param fileName - The name of the file to play.
      * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
@@ -520,6 +545,7 @@ public class SoundPlayerImpl implements Observer {
                             if (i == 0) {
                                 mng.scheduler.playNow(track);
                             } else {
+                                LOG.info("Queuing additional play of track.");
                                 mng.scheduler.queue(track.makeClone());
                             }
                         }
