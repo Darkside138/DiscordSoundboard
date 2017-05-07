@@ -625,7 +625,7 @@ public class SoundPlayerImpl implements Observer {
                     String fileName = filePath.getFileName().toString();
                     fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
                     fileName = fileName.substring(0, fileName.indexOf("."));
-                    LOG.info(fileName);
+                    // LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
                     SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
