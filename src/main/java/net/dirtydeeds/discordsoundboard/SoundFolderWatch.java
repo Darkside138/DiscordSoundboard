@@ -66,15 +66,16 @@ public class SoundFolderWatch extends Observable {
                 for(WatchEvent<?> watchEvent : key.pollEvents()) {
                     // Get the type of the event
                     kind = watchEvent.kind();
-                    if (kind == ENTRY_CREATE || kind == ENTRY_DELETE || kind == ENTRY_MODIFY) {
-                        // A new Path was created 
+                    if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
-                        // Output
                         //Mark the observable object as changed.
                         this.setChanged();
                         System.out.println("New path created: " + newPath + " kind of operation: " + kind);
-                        
-                        notifyObservers(this);
+                        notifyObservers();
+                    } else if (kind == ENTRY_DELETE) {
+                        Path deletedPath = ((WatchEvent<Path>) watchEvent).context();
+                        this.setChanged();
+                        notifyObservers(deletedPath);
                     }
                 }
 

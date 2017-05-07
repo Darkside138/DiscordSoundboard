@@ -101,6 +101,14 @@ public class SoundPlayerImpl implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
+        if (arg != null) {
+            Path path = (Path) arg;
+            String soundName = path.getFileName().toString();
+            soundName = soundName.substring(0, soundName.indexOf("."));
+            SoundFile soundToDelete = getSoundFileById(soundName);
+            repository.delete(soundToDelete);
+            System.out.println("Deleted: " + path);
+        }
         getFileList();
     }
     
