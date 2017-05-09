@@ -101,6 +101,14 @@ public class SoundPlayerImpl implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
+        if (arg != null) {
+            Path path = (Path) arg;
+            String soundName = path.getFileName().toString();
+            soundName = soundName.substring(0, soundName.indexOf("."));
+            SoundFile soundToDelete = getSoundFileById(soundName);
+            repository.delete(soundToDelete);
+            System.out.println("Deleted: " + path);
+        }
         getFileList();
     }
     
@@ -625,7 +633,7 @@ public class SoundPlayerImpl implements Observer {
                     String fileName = filePath.getFileName().toString();
                     fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
                     fileName = fileName.substring(0, fileName.indexOf("."));
-                    LOG.info(fileName);
+                    // LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
                     SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);

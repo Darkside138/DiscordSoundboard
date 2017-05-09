@@ -9,13 +9,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
+import java.nio.file.*;
 import java.nio.file.WatchEvent.Kind;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Observable;
 
 /**
@@ -51,7 +47,14 @@ public class SoundFolderWatch extends Observable {
 
             // We register the path to the service
             // We watch for creation events
-            path.register(service, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    System.out.println(dir.toString());
+                    dir.register(service, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
 
             // Start the infinite polling loop
             WatchKey key;
@@ -63,15 +66,16 @@ public class SoundFolderWatch extends Observable {
                 for(WatchEvent<?> watchEvent : key.pollEvents()) {
                     // Get the type of the event
                     kind = watchEvent.kind();
-                    if (kind == ENTRY_CREATE || kind == ENTRY_DELETE || kind == ENTRY_MODIFY) {
-                        // A new Path was created 
+                    if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
                         Path newPath = ((WatchEvent<Path>) watchEvent).context();
-                        // Output
                         //Mark the observable object as changed.
                         this.setChanged();
                         System.out.println("New path created: " + newPath + " kind of operation: " + kind);
-                        
-                        notifyObservers(this);
+                        notifyObservers();
+                    } else if (kind == ENTRY_DELETE) {
+                        Path deletedPath = ((WatchEvent<Path>) watchEvent).context();
+                        this.setChanged();
+                        notifyObservers(deletedPath);
                     }
                 }
 
