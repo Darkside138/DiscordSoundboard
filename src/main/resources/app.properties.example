@@ -25,11 +25,10 @@ message_size_limit=2000
 #Example: C:/Users/someUser/Music
 sounds_directory=
 
-#List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
+#List of user ids to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
 #repsond to all users.
-allowedUsers=
+allowedUserIds=
 
-#List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
+#List of banned user ids. Also, comma separated. If a user is listed here they will no be able to issues commands to the
 #bot through chat.
-bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
-
+bannedUserIds=

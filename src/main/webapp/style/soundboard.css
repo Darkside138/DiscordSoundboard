@@ -32,7 +32,7 @@ body {
     margin-top: 10px;
 }
 
-.randomButton {
+.randomButton, .stopButton {
     vertical-align: top !important;
 }
 

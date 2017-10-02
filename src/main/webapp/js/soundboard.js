@@ -104,6 +104,14 @@ $(document).ready(function() {
         });
     });
 
+    $(".stopButton").click(function() {
+        var username = $(".userNameSelect option:selected").text();
+        $.ajax({
+           url: "/soundsApi/stop?username=" + username,
+           method: 'POST'
+       });
+   });
+
     $("#volume").slider({
         min: 0,
         max: 100,

@@ -18,13 +18,13 @@ import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.core.*;
 import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.entities.impl.GameImpl;
 import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.managers.AudioManager;
+import net.dv8tion.jda.core.requests.RequestFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author dfurrer.
@@ -50,19 +51,21 @@ import java.util.*;
  * and the configuration properties.
  */
 @Service
-public class SoundPlayerImpl implements Observer {
+public class SoundPlayerImpl {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
     
     private Properties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
-    private final SoundFolderWatch mainWatch;
-    private boolean initialized = false;
+//    private final SoundFolderWatch mainWatch;
+//    private boolean initialized = false;
     private AudioPlayerManager playerManager;
     private String soundFileDir;
     private List<String> allowedUsers;
+    private List<String> allowedUserIds;
     private List<String> bannedUsers;
+    private List<String> bannedUserIds;
     private SoundFileRepository repository;
     private boolean leaveAfterPlayback = false;
     private final Map<String, GuildMusicManager> musicManagers;
@@ -71,8 +74,8 @@ public class SoundPlayerImpl implements Observer {
     public SoundPlayerImpl(SoundFolderWatch soundFolderWatch, SoundFileRepository repository) {
         this.musicManagers = new HashMap<>();
 
-        this.mainWatch = soundFolderWatch;
-        this.mainWatch.addObserver(this);
+//        this.mainWatch = soundFolderWatch;
+//        this.mainWatch.addObserver(this);
         this.repository = repository;
 
         loadProperties();
@@ -85,7 +88,7 @@ public class SoundPlayerImpl implements Observer {
 
         this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
 
-        this.initialized = true;
+//        this.initialized = true;
     }
 
     private GuildMusicManager getGuildAudioPlayer(Guild guild) {
@@ -99,10 +102,10 @@ public class SoundPlayerImpl implements Observer {
         return mng;
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        getFileList();
-    }
+//    @Override
+//    public void update(Observable o, Object arg) {
+//        getFileList();
+//    }
     
     /**
      * Gets a Map of the loaded sound files.
@@ -236,7 +239,7 @@ public class SoundPlayerImpl implements Observer {
                     try {
                         moveToUserIdsChannel(event, guild);
                     } catch (SoundPlaybackException e) {
-                        event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
+                        sendPrivateMessage(event, e.getLocalizedMessage());
                     }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile.getAbsolutePath(), guild, repeatNumber);
@@ -245,14 +248,15 @@ public class SoundPlayerImpl implements Observer {
                         disconnectFromChannel(event.getGuild());
                     }
                 } else {
-                    event.getAuthor().getPrivateChannel().sendMessage("Could not find sound to play. Requested sound: " + fileName + ".");
+                    sendPrivateMessage(event,"Could not find sound to play. Requested sound: " + fileName + ".");
                 }
             } else {
-                event.getAuthor().getPrivateChannel().sendMessage("I can not find a voice channel you are connected to.");
+                sendPrivateMessage(event,"I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to play to.");
             }
         }
     }
+
 
     /**
      * This doesn't play anything, but since all of these actions are currently in the soundplayer service,
@@ -270,10 +274,10 @@ public class SoundPlayerImpl implements Observer {
                     try {
                         moveToUserIdsChannel(event, guild);
                     } catch (SoundPlaybackException e) {
-                        event.getAuthor().getPrivateChannel().sendMessage(e.getLocalizedMessage());
+                        sendPrivateMessage(event, e.getLocalizedMessage());
                     }
             } else {
-                event.getAuthor().getPrivateChannel().sendMessage("I can not find a voice channel you are connected to.");
+                sendPrivateMessage(event, "I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to join.");
             }
         }
@@ -363,18 +367,18 @@ public class SoundPlayerImpl implements Observer {
         return users;
     }
 
-    public boolean isUserAllowed(String username) {
-        if (allowedUsers == null) {
-            return true;
-        } else if (!allowedUsers.isEmpty() && allowedUsers.contains(username)){
+    public boolean isUserAllowed(String username, String userId) {
+        if ((allowedUsers == null || !allowedUsers.isEmpty()) && (allowedUserIds == null || !allowedUserIds.isEmpty())) {
             return true;
         } else {
-            return true;
+            return (allowedUsers != null && !allowedUsers.isEmpty() && allowedUsers.contains(username)) ||
+                    (allowedUserIds != null && !allowedUserIds.isEmpty() && allowedUserIds.contains(userId));
         }
     }
 
-    public boolean isUserBanned(String username) {
-        return bannedUsers != null && !bannedUsers.isEmpty() && bannedUsers.contains(username);
+    public boolean isUserBanned(String username, String userId) {
+        return (bannedUsers != null && !bannedUsers.isEmpty() && bannedUsers.contains(username)) ||
+                (bannedUserIds != null && !bannedUserIds.isEmpty() && bannedUserIds.contains(userId));
     }
 
     /**
@@ -383,6 +387,12 @@ public class SoundPlayerImpl implements Observer {
      */
     public String getSoundsPath() {
         return soundFileDir;
+    }
+
+    public void sendPrivateMessage(MessageReceivedEvent event, String message) throws InterruptedException, java.util.concurrent.ExecutionException, java.util.concurrent.TimeoutException {
+        RequestFuture<PrivateChannel> privateChannel = event.getAuthor().openPrivateChannel().submit();
+        PrivateChannel channel = privateChannel.get(5, TimeUnit.SECONDS);
+        channel.sendMessage(message).submit();
     }
 
     private SoundFile getSoundFileById(String soundFileId) {
@@ -398,8 +408,7 @@ public class SoundPlayerImpl implements Observer {
         VoiceChannel channel = findUsersChannel(event, guild);
 
         if (channel == null) {
-            event.getAuthor().getPrivateChannel()
-                    .sendMessage("Hello @"+ event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            sendPrivateMessage(event, "Hello @"+ event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
             LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getName() + " is not connected to Voice?");
         } else {
             moveToChannel(channel, guild);
@@ -602,9 +611,9 @@ public class SoundPlayerImpl implements Observer {
             LOG.info("Loading from " + soundFileDir);
             Path soundFilePath = Paths.get(soundFileDir);
 
-            if (!initialized) {
-                mainWatch.watchDirectoryPath(soundFilePath);
-            }
+//            if (!initialized) {
+//                mainWatch.watchDirectoryPath(soundFilePath);
+//            }
 
             if (!soundFilePath.toFile().exists()) {
                 System.out.println("creating directory: " + soundFilePath.toFile().toString());
@@ -687,6 +696,14 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
+            String allowedUserIdsString = appProperties.getProperty("allowedUserIds");
+            if (allowedUserIdsString != null) {
+                String[] allowedUserIdsArray = allowedUserIdsString.trim().split(",");
+                if (allowedUserIdsArray.length > 0) {
+                    allowedUserIds = Arrays.asList(allowedUserIdsArray);
+                }
+            }
+
             String bannedUsersString = appProperties.getProperty("bannedUsers");
             if (bannedUsersString != null) {
                 String[] bannedUsersArray = bannedUsersString.split(",");
@@ -695,7 +712,15 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-            Game game = new GameImpl("Type " + appProperties.getProperty("command_character") + "help for a list of commands.", "", Game.GameType.DEFAULT);
+            String bannedUserIdsString = appProperties.getProperty("bannedUserIds");
+            if (bannedUserIdsString != null) {
+                String[] bannedUserIdsArray = bannedUserIdsString.split(",");
+                if (bannedUserIdsArray.length > 0) {
+                    bannedUserIds = Arrays.asList(bannedUserIdsArray);
+                }
+            }
+
+            Game game = Game.of("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
             bot.getPresence().setGame(game);
 
             try {

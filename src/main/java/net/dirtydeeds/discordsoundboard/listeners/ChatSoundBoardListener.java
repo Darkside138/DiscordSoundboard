@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author dfurrer.
@@ -66,12 +68,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         String requestingUser = event.getAuthor().getName();
+        String requestingUserId = event.getAuthor().getId();
         if (!event.getAuthor().isBot() && ((respondToDms && event.isFromType(ChannelType.PRIVATE))
 											|| !event.isFromType(ChannelType.PRIVATE))) {
             String originalMessage = event.getMessage().getContent();
 	        String message = originalMessage.toLowerCase();
             if (message.startsWith(commandCharacter)) {
-	            if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
+	            if (soundPlayer.isUserAllowed(requestingUser, requestingUserId) && !soundPlayer.isUserBanned(requestingUser, requestingUserId)) {
 	                final int maxLineLength = messageSizeLimit;
 	
 	                //Respond
@@ -79,7 +82,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                    StringBuilder commandString = getCommandListString();
 	                    List<String> soundList = getCommandList(commandString);
 	
-	                    LOG.info("Responding to list command. Requested by " + requestingUser + ".");
+	                    LOG.info("Responding to list command. Requested by " + requestingUser + ". ID: " + requestingUserId);
 	                    if (message.equals(commandCharacter + "list")) {
 	                        if (commandString.length() > maxLineLength) {
 	                            replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
@@ -98,9 +101,10 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                            replyByPrivateMessage(event, "The page number argument must be a number.");
 	                        }
 	                    }
+						deleteMessage(event);
 	                    //If the command is not list and starts with the specified command character try and play that "command" or sound file.
 	                } else if (message.startsWith(commandCharacter + "help")) {
-	                    LOG.info("Responding to help command. Requested by " + requestingUser + ".");
+	                    LOG.info("Responding to help command. Requested by " + requestingUser + ". ID: " + requestingUserId);
 	                    replyByPrivateMessage(event, "You can type any of the following commands:" +
 	                            "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
 	                            "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
@@ -110,19 +114,21 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 								"\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
 	                            "\n" + commandCharacter + "summon           - Summon the bot to your channel." +
 	                            "\n" + commandCharacter + "info             - Returns info about the bot.```");
+						deleteMessage(event);
 	                } else if (message.startsWith(commandCharacter + "volume")) {
 	                    int newVol = Integer.parseInt(message.substring(8));
 	                    if (newVol >= 1 && newVol <= 100) {
 	                        muted = false;
 	                        soundPlayer.setSoundPlayerVolume(newVol, requestingUser);
 	                        replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
-	                        LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
+	                        LOG.info("Volume set to " + newVol + "% by " + requestingUser + ". ID: " + requestingUserId);
 	                    } else if (newVol == 0) {
 	                        muted = true;
 	                        soundPlayer.setSoundPlayerVolume(newVol, requestingUser);
 	                        replyByPrivateMessage(event, requestingUser + " muted me.");
 	                        LOG.info("Bot muted by " + requestingUser + ".");
 	                    }
+						deleteMessage(event);
 	                } else if (message.startsWith(commandCharacter + "stop")) {
 	                    LOG.info("Stop requested by " + requestingUser + ".");
 	                    if (soundPlayer.stop(requestingUser)) {
@@ -130,9 +136,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                    } else {
 	                        replyByPrivateMessage(event, "Nothing was playing.");
 	                    }
-	
+						deleteMessage(event);
 	                } else if (message.startsWith(commandCharacter + "info")) {
-	                    LOG.info("Responding to info request by " + requestingUser + ".");
+	                    LOG.info("Responding to info request by " + requestingUser + ". ID: " + requestingUserId);
 	
 	                    OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 	                    RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
@@ -177,7 +183,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	
 	                    replyByPrivateMessage(event, "DiscordSoundboard info: ```" +
 	                            "CPU: " + df2.format(cpuUsage) + "%" +
-	                            "\nMemory: " + humanReadableByteCount(usedHeapMemoryAfterLastGC, true) +
+	                            "\nMemory: " + humanReadableByteCount(usedHeapMemoryAfterLastGC) +
 	                            "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
 	                            "\nVersion: " + version +
 	                            "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
@@ -187,7 +193,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                } else if (message.startsWith(commandCharacter + "remove")) {
 	                    String[] messageSplit = message.split(" ");
 	                    String soundToRemove = messageSplit[1];
-	                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getMember(), Permission.MANAGE_SERVER);
+	                    boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
 	                    if (event.getAuthor().getName().equalsIgnoreCase(soundToRemove)
 	                            || hasManageServerPerm) {
 	                        SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
@@ -258,7 +264,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 										}
 	                            	}
 	                            }
-	                            LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");
+	                            LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ". ID: " + requestingUserId);
 	
 	                            soundPlayer.playFileForEvent(fileNameRequested, event, repeatNumber);
 	                            deleteMessage(event);
@@ -267,7 +273,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                        }
 	                    } else {
 	                        replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
-	                        LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
+	                        LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ". ID: " + requestingUserId);
 	                    }
 	                } else {
 	                    List<Message.Attachment> attachments = event.getMessage().getAttachments();
@@ -282,7 +288,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                                        attachment.download(newSoundFile);
 	                                        replyByPrivateMessage(event, "Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
 	                                    } else {
-											boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getGuild(), event.getMember(), Permission.MANAGE_SERVER);
+											boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
 	                                        if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
 	                                                || hasManageServerPerm) {
 	                                            try {
@@ -309,10 +315,10 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 	                    }
 	                }
 	            } else {
-	                if (!soundPlayer.isUserAllowed(requestingUser)) {
+	                if (!soundPlayer.isUserAllowed(requestingUser, requestingUserId)) {
 	                    replyByPrivateMessage(event, "I don't take orders from you.");
 	                }
-	                if (soundPlayer.isUserBanned(requestingUser)) {
+	                if (soundPlayer.isUserBanned(requestingUser, requestingUserId)) {
 	                    replyByPrivateMessage(event, "You've been banned from using this soundboard bot.");
 	                }
 	            }
@@ -376,15 +382,23 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
     
     private void replyByPrivateMessage(MessageReceivedEvent event, String message) {
-        event.getAuthor().getPrivateChannel().sendMessage(message).queue();
-        deleteMessage(event);
+		try {
+			soundPlayer.sendPrivateMessage(event, message);
+		} catch (InterruptedException e) {
+			LOG.warn("Message reply async action interrupted");
+		} catch (ExecutionException e) {
+			LOG.warn("Could not send private message reply");
+		} catch (TimeoutException e) {
+			LOG.warn("Sending of private message timed out");
+		}
+		deleteMessage(event);
     }
 
-    private static String humanReadableByteCount(long bytes, boolean si) {
-        int unit = si ? 1000 : 1024;
+    private static String humanReadableByteCount(long bytes) {
+        int unit = 1000;
         if (bytes < unit) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+        String pre = ("kMGTPE").charAt(exp-1) + ("");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
