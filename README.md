@@ -13,7 +13,7 @@ Updated to the new JDA 3.X library and also updated to a new music player. This 
 [2.1.1-BETA.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.1.1-BETA/DiscordSoundboard-2.1.1-beta.tar) | [Mirror1](https://nofile.io/f/PvxDRx5qtd2/DiscordSoundboard-2.1.1-beta.tar)
 
 ## Current Release
-Latest Release [v1.4.12.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.12/DiscordSoundboard-1.4.12.tar) | [v1.4.12.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v1.4.11/DiscordSoundboard-1.4.12.tar). 
+Latest Release (Use BETA version above). 
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the app.properties). Put all the clips you 
