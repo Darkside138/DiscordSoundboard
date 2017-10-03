@@ -35,7 +35,7 @@ This will walk you through the process of getting your bot up and running.
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
 
 ## Planned Future Features
-White listing users that can use the bot.
+Creating a bot instance for each unique channel/server combination for busy servers. Currently there is one bot thread for each server.
 
 ## app.properties file
 The contents of the app.properties file are below with sample values:
