@@ -307,17 +307,20 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
         //if text has \n, \r or \t symbols it's better to split by \s+
         final String SPLIT_REGEXP= "(?<=[ \\n])";
+        final String PREFIX = "```\n";
+        final String SUFFIX = "```\n";
+        final int PADDING_LENGTH = PREFIX.length() + SUFFIX.length();
 
         String[] tokens = commandString.toString().split(SPLIT_REGEXP);
         int lineLen = 0;
         StringBuilder output = new StringBuilder();
-        output.append("```\n");
+        output.append(PREFIX);
         for (int i = 0; i < tokens.length; i++) {
             String word = tokens[i];
 
-            if (lineLen + (word).length() > maxLineLength) {
+            if (lineLen + (word).length() + PADDING_LENGTH > maxLineLength) {
                 if (i > 0) {
-                    output.append("```\n");
+                    output.append(SUFFIX);
                     soundFiles.add(output.toString());
 
                     output = new StringBuilder(maxLineLength);
