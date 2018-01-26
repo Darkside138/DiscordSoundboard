@@ -1,5 +1,7 @@
 package net.dirtydeeds.discordsoundboard;
 
+import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -9,13 +11,8 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
+import java.nio.file.*;
 import java.nio.file.WatchEvent.Kind;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.util.Observable;
 
 /**
@@ -28,8 +25,9 @@ public class SoundFolderWatch extends Observable {
 
     @Async
     @SuppressWarnings("unchecked")
-    public void watchDirectoryPath(Path path) {
+    public void watchDirectoryPath(String watchPath) {
         // Sanity check - Check if path is a folder
+        Path path = Paths.get(watchPath);
         try {
             Boolean isFolder = (Boolean) Files.getAttribute(path,
                     "basic:isDirectory", NOFOLLOW_LINKS);
@@ -47,7 +45,7 @@ public class SoundFolderWatch extends Observable {
         FileSystem fs = path.getFileSystem ();
 
         // We create the new WatchService using the new try() block
-        try(WatchService service = fs.newWatchService()) {
+        try (WatchService service = fs.newWatchService()) {
 
             // We register the path to the service
             // We watch for creation events
@@ -55,7 +53,7 @@ public class SoundFolderWatch extends Observable {
 
             // Start the infinite polling loop
             WatchKey key;
-            while(true) {
+            while (true) {
                 key = service.take();
 
                 // Dequeueing events

@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'org.springframework.boot'
 
-version = '2.1.1-beta'
+version = '2.2.0-beta'
 
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8

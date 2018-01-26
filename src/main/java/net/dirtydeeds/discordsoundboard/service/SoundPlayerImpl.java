@@ -58,8 +58,6 @@ public class SoundPlayerImpl {
     private Properties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
-//    private final SoundFolderWatch mainWatch;
-//    private boolean initialized = false;
     private AudioPlayerManager playerManager;
     private String soundFileDir;
     private List<String> allowedUsers;
@@ -71,11 +69,9 @@ public class SoundPlayerImpl {
     private final Map<String, GuildMusicManager> musicManagers;
 
     @Inject
-    public SoundPlayerImpl(SoundFolderWatch soundFolderWatch, SoundFileRepository repository) {
+    public SoundPlayerImpl(SoundFileRepository repository) {
         this.musicManagers = new HashMap<>();
 
-//        this.mainWatch = soundFolderWatch;
-//        this.mainWatch.addObserver(this);
         this.repository = repository;
 
         loadProperties();
@@ -87,8 +83,6 @@ public class SoundPlayerImpl {
         this.playerManager.registerSourceManager(new YoutubeAudioSourceManager());
 
         this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
-
-//        this.initialized = true;
     }
 
     private GuildMusicManager getGuildAudioPlayer(Guild guild) {
@@ -101,11 +95,6 @@ public class SoundPlayerImpl {
         }
         return mng;
     }
-
-//    @Override
-//    public void update(Observable o, Object arg) {
-//        getFileList();
-//    }
     
     /**
      * Gets a Map of the loaded sound files.
@@ -368,7 +357,7 @@ public class SoundPlayerImpl {
     }
 
     public boolean isUserAllowed(String username, String userId) {
-        if ((allowedUsers == null || !allowedUsers.isEmpty()) && (allowedUserIds == null || !allowedUserIds.isEmpty())) {
+        if ((allowedUsers == null || allowedUsers.isEmpty()) && (allowedUserIds == null || allowedUserIds.isEmpty())) {
             return true;
         } else {
             return (allowedUsers != null && !allowedUsers.isEmpty() && allowedUsers.contains(username)) ||
@@ -439,7 +428,7 @@ public class SoundPlayerImpl {
             int maxIterations = 80;
             //Wait for the audio connection to be ready before proceeding.
             synchronized (this) {
-                while (!audioManager.isConnected() && audioManager.isAttemptingToConnect()) {
+                while (!audioManager.isConnected()) {
                     try {
                         wait(waitTime);
                         i++;
@@ -497,7 +486,7 @@ public class SoundPlayerImpl {
     }
 
     /**
-     * Looks through all the guilds the bot has access to and returns the VoiceChannel the requested user is connected to.
+     * Looks through all the guilds the bot has access to and returns the Guild the requested user is connected to.
      * @param userName - The username to look for.
      * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
      */
@@ -517,6 +506,7 @@ public class SoundPlayerImpl {
     /**
      * Play file name requested. Will first try to load the file from the map of available sounds.
      * @param fileName - fileName to play.
+     * @param guild - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(String fileName, Guild guild) throws SoundPlaybackException {
         SoundFile fileToPlay = getSoundFileById(fileName);
@@ -598,10 +588,8 @@ public class SoundPlayerImpl {
     /**
      * This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
      * to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
-     * @return Map of the current list of available sound files.
      */
-    private Map<String,SoundFile> getFileList() {
-        Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    public void getFileList() {
         try {
             
             soundFileDir = appProperties.getProperty("sounds_directory");
@@ -610,10 +598,6 @@ public class SoundPlayerImpl {
             }
             LOG.info("Loading from " + soundFileDir);
             Path soundFilePath = Paths.get(soundFileDir);
-
-//            if (!initialized) {
-//                mainWatch.watchDirectoryPath(soundFilePath);
-//            }
 
             if (!soundFilePath.toFile().exists()) {
                 System.out.println("creating directory: " + soundFilePath.toFile().toString());
@@ -643,14 +627,12 @@ public class SoundPlayerImpl {
                         repository.delete(existing);
                     }
                     repository.save(soundFile);
-                    returnFiles.put(fileName, soundFile);
                 }
             });
         } catch (IOException e) {
             LOG.error(e.toString());
             e.printStackTrace();
         }
-        return returnFiles;
     }
 
     /**
@@ -689,7 +671,7 @@ public class SoundPlayerImpl {
             }
 
             String allowedUsersString = appProperties.getProperty("allowedUsers");
-            if (allowedUsersString != null) {
+            if (allowedUsersString != null && !allowedUsersString.isEmpty()) {
                 String[] allowedUsersArray = allowedUsersString.trim().split(",");
                 if (allowedUsersArray.length > 0) {
                     allowedUsers = Arrays.asList(allowedUsersArray);
@@ -697,7 +679,7 @@ public class SoundPlayerImpl {
             }
 
             String allowedUserIdsString = appProperties.getProperty("allowedUserIds");
-            if (allowedUserIdsString != null) {
+            if (allowedUserIdsString != null && !allowedUserIdsString.isEmpty()) {
                 String[] allowedUserIdsArray = allowedUserIdsString.trim().split(",");
                 if (allowedUserIdsArray.length > 0) {
                     allowedUserIds = Arrays.asList(allowedUserIdsArray);
@@ -705,7 +687,7 @@ public class SoundPlayerImpl {
             }
 
             String bannedUsersString = appProperties.getProperty("bannedUsers");
-            if (bannedUsersString != null) {
+            if (bannedUsersString != null && !bannedUsersString.isEmpty()) {
                 String[] bannedUsersArray = bannedUsersString.split(",");
                 if (bannedUsersArray.length > 0) {
                     bannedUsers = Arrays.asList(bannedUsersArray);
@@ -713,7 +695,7 @@ public class SoundPlayerImpl {
             }
 
             String bannedUserIdsString = appProperties.getProperty("bannedUserIds");
-            if (bannedUserIdsString != null) {
+            if (bannedUserIdsString != null && !bannedUserIdsString.isEmpty()) {
                 String[] bannedUserIdsArray = bannedUserIdsString.split(",");
                 if (bannedUserIdsArray.length > 0) {
                     bannedUserIds = Arrays.asList(bannedUserIdsArray);

@@ -133,4 +133,10 @@ public class SoundboardRestController {
     public float getVolume() {
         return soundPlayer.getSoundPlayerVolume();
     }
+
+    @RequestMapping(value = "/updateSoundList", method = RequestMethod.GET)
+    public HttpStatus updateSoundList() {
+        soundPlayer.getFileList();
+        return HttpStatus.OK;
+    }
 }
