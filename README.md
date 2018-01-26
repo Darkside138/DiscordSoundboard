@@ -8,9 +8,9 @@ Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8
 ##Beta Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
 
-[2.1.1-BETA.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.1.1-BETA/DiscordSoundboard-2.1.1-beta.zip) | [Mirror1](https://nofile.io/f/KoGp34M6W1z/DiscordSoundboard-2.1.1-beta.zip)
+[2.2.0-BETA.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.2.0-BETA/DiscordSoundboard-2.2.0-beta.zip) | [Mirror1](https://nofile.io/f/vuCGXtgk0EE/DiscordSoundboard-2.2.0-beta.zip)
 
-[2.1.1-BETA.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.1.1-BETA/DiscordSoundboard-2.1.1-beta.tar) | [Mirror1](https://nofile.io/f/PvxDRx5qtd2/DiscordSoundboard-2.1.1-beta.tar)
+[2.1.1-BETA.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.2.0-BETA/DiscordSoundboard-2.2.0-beta.tar) | [Mirror1](https://nofile.io/f/m8dnSU6p7pe/DiscordSoundboard-2.2.0-beta.tar)
 
 ## Current Release
 Latest Release (Use BETA version above). 
