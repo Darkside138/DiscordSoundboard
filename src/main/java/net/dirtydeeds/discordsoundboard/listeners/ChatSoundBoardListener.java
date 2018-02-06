@@ -289,7 +289,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 							String name = attachment.getFileName();
 							String extension = name.substring(name.indexOf(".") + 1);
 							if (!originalMessage.isEmpty()) {
-								name = originalMessage + extension;
+								name = originalMessage + "." + extension;
 							}
 							if (extension.equals("wav") || extension.equals("mp3")) {
 								if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
