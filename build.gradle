@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'org.springframework.boot'
 
-version = '2.2.0-beta'
+version = '2.2.2-beta'
 
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8
@@ -34,7 +34,7 @@ repositories {
 dependencies {
     //https://bintray.com/dv8fromtheworld/maven/JDA
     compile 'net.dv8tion:JDA:3.3.1_284'
-    compile 'com.sedmelluq:lavaplayer:1.2.34'
+    compile 'com.sedmelluq:lavaplayer:1.2.47'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
@@ -47,6 +47,8 @@ dependencies {
     compile 'io.springfox:springfox-swagger-ui:2.4.0'
 
     compile 'org.json:json:20170516'
+
+    compile 'javax.xml.bind:jaxb-api:2.2.8'
 
     testCompile 'org.springframework.boot:spring-boot-starter-test' 
 }
