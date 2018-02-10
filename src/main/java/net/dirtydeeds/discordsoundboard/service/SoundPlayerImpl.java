@@ -4,7 +4,14 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.nico.NicoAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -81,6 +88,12 @@ public class SoundPlayerImpl {
         this.playerManager = new DefaultAudioPlayerManager();
         this.playerManager.registerSourceManager(new LocalAudioSourceManager());
         this.playerManager.registerSourceManager(new YoutubeAudioSourceManager());
+        this.playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+        this.playerManager.registerSourceManager(new BandcampAudioSourceManager());
+        this.playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
+        this.playerManager.registerSourceManager(new VimeoAudioSourceManager());
+        this.playerManager.registerSourceManager(new HttpAudioSourceManager());
+        this.playerManager.registerSourceManager(new BeamAudioSourceManager());
 
         this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
     }
