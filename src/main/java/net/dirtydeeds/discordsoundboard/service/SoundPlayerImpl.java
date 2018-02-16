@@ -629,17 +629,22 @@ public class SoundPlayerImpl {
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
                     String fileName = filePath.getFileName().toString();
-                    fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
-                    fileName = fileName.substring(0, fileName.indexOf("."));
-                    LOG.info(fileName);
-                    File file = filePath.toFile();
-                    String parent = file.getParentFile().getName();
-                    SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                    SoundFile existing = repository.findOneBySoundFileIdIgnoreCase(fileName);
-                    if (existing != null) {
-                        repository.delete(existing);
+                    try {
+                        fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
+                        fileName = fileName.substring(0, fileName.indexOf("."));
+                        LOG.info(fileName);
+                        File file = filePath.toFile();
+                        String parent = file.getParentFile().getName();
+                        SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                        SoundFile existing = repository.findOneBySoundFileIdIgnoreCase(fileName);
+                        if (existing != null) {
+                            repository.delete(existing);
+                        }
+                        repository.save(soundFile);
+                    } catch (Exception e) {
+                        LOG.error(e.toString());
+                        e.printStackTrace();
                     }
-                    repository.save(soundFile);
                 }
             });
         } catch (IOException e) {

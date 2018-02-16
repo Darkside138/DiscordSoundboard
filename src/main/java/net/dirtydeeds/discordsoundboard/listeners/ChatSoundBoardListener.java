@@ -291,7 +291,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 							if (!originalMessage.isEmpty()) {
 								name = originalMessage + "." + extension;
 							}
-							if (extension.equals("wav") || extension.equals("mp3")) {
+							if (extension.equals("wav") || extension.equals("mp3") || extension.equals("ogg")
+									|| extension.equals("flac") || extension.equals("mp4") || extension.equals("m4a")) {
 								if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
 									if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
 										File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
