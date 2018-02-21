@@ -61,12 +61,8 @@ public class SoundboardRestController {
     
     @RequestMapping(value = "/playFile", method = RequestMethod.POST)
     public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
-        try {
-            soundPlayer.playFileForUser(soundFileId, username);
-            return HttpStatus.OK;
-        } catch (SoundPlaybackException e) {
-            return HttpStatus.NOT_FOUND;
-        }
+        soundPlayer.playFileForUser(soundFileId, username);
+        return HttpStatus.OK;
     }
 
     @RequestMapping(value = "/playUrl", method = RequestMethod.POST)

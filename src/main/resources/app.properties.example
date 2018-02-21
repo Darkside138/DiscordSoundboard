@@ -32,3 +32,5 @@ allowedUserIds=
 #List of banned user ids. Also, comma separated. If a user is listed here they will no be able to issues commands to the
 #bot through chat.
 bannedUserIds=
+
+leaveAfterPlayback=false

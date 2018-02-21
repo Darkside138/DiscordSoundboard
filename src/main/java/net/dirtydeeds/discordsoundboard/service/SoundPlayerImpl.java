@@ -8,7 +8,6 @@ import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManag
 import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.nico.NicoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
@@ -72,7 +71,7 @@ public class SoundPlayerImpl {
     private List<String> bannedUsers;
     private List<String> bannedUserIds;
     private SoundFileRepository repository;
-    private boolean leaveAfterPlayback = false;
+    private boolean leaveAfterPlayback;
     private final Map<String, GuildMusicManager> musicManagers;
 
     @Inject
@@ -103,7 +102,7 @@ public class SoundPlayerImpl {
         GuildMusicManager mng = musicManagers.get(guildId);
         if (mng == null) {
             synchronized (musicManagers) {
-                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager));
+                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager, leaveAfterPlayback));
             }
         }
         return mng;
@@ -128,8 +127,11 @@ public class SoundPlayerImpl {
     public void setSoundPlayerVolume(int volume, String username) {
         playerVolume = (float) volume / 100;
         Guild guild = getUsersGuild(username);
-        GuildMusicManager gmm = getGuildAudioPlayer(guild);
-        gmm.player.setVolume(volume);
+        GuildMusicManager gmm;
+        if (guild != null) {
+            gmm = getGuildAudioPlayer(guild);
+            gmm.player.setVolume(volume);
+        }
     }
 
     /**
@@ -155,12 +157,6 @@ public class SoundPlayerImpl {
                 } else {
                     playFileForUser(randomValue.getSoundFileId(), requestingUser);
                 }
-
-                if (leaveAfterPlayback) {
-                    if (event != null) {
-                        disconnectFromChannel(event.getGuild());
-                    }
-                }
             } catch (Exception e) {
                 LOG.error("Could not play random file: " + randomValue.getSoundFileId());
             }
@@ -174,7 +170,7 @@ public class SoundPlayerImpl {
      * @param fileName - The name of the file to play.
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      */
-    public void playFileForUser(String fileName, String userName) throws SoundPlaybackException {
+    public void playFileForUser(String fileName, String userName) {
         if (userName == null || userName.isEmpty()) {
             userName = appProperties.getProperty("username_to_join_channel");
         }
@@ -183,10 +179,6 @@ public class SoundPlayerImpl {
             joinUsersCurrentChannel(userName);
             
             playFile(fileName, guild);
-
-            if (leaveAfterPlayback) {
-                disconnectFromChannel(guild);
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -201,10 +193,6 @@ public class SoundPlayerImpl {
             joinUsersCurrentChannel(userName);
 
             playFile(url, guild, 0);
-
-            if (leaveAfterPlayback) {
-                disconnectFromChannel(guild);
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -245,10 +233,6 @@ public class SoundPlayerImpl {
                     }
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile.getAbsolutePath(), guild, repeatNumber);
-
-                    if (leaveAfterPlayback) {
-                        disconnectFromChannel(event.getGuild());
-                    }
                 } else {
                     sendPrivateMessage(event,"Could not find sound to play. Requested sound: " + fileName + ".");
                 }
@@ -290,9 +274,8 @@ public class SoundPlayerImpl {
      * @param fileName - The name of the file to play.
      * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
      *              the sound back in.
-     * @throws Exception Throws exception if entrance sounds couldn't be played
      */
-    public void playFileForEntrance(String fileName, GenericGuildVoiceEvent event, VoiceChannel channel) throws Exception {
+    public void playFileForEntrance(String fileName, GenericGuildVoiceEvent event, VoiceChannel channel) {
         if (event == null) return;
         try {
             moveToChannel(channel, event.getGuild());
@@ -301,9 +284,6 @@ public class SoundPlayerImpl {
                 playFile(fileName, event.getGuild());
             } catch (SoundPlaybackException e) {
                 LOG.info("Could not find any sound to play for entrance of user: " + fileName);
-            }
-            if (leaveAfterPlayback) {
-                disconnectFromChannel(event.getGuild());
             }
         } catch (SoundPlaybackException e) {
             LOG.debug(e.toString());
@@ -317,7 +297,7 @@ public class SoundPlayerImpl {
      *              the sound back in.
      * @throws Exception Throws exception if disconnect sounds couldn't be played
      */
-    public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) throws Exception {
+    public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) {
         if (event == null) return;
         try {
             moveToChannel(event.getChannelLeft(), event.getGuild());
@@ -326,9 +306,6 @@ public class SoundPlayerImpl {
                 playFile(fileName, event.getGuild());
             } catch (SoundPlaybackException e) {
                 LOG.info("Could not find any sound to play for disconnect of user: " + fileName);
-            }
-            if (leaveAfterPlayback) {
-                disconnectFromChannel(event.getGuild());
             }
         } catch (SoundPlaybackException e) {
             LOG.debug(e.toString());
@@ -341,10 +318,14 @@ public class SoundPlayerImpl {
      */
     public boolean stop(String requestingUser) {
         Guild guild = getUsersGuild(requestingUser);
-        GuildMusicManager mng = getGuildAudioPlayer(guild);
-        AudioPlayer player = mng.player;
-        player.stopTrack();
-        return true;
+        GuildMusicManager mng;
+        if (guild != null) {
+            mng = getGuildAudioPlayer(guild);
+            AudioPlayer player = mng.player;
+            player.stopTrack();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -558,17 +539,17 @@ public class SoundPlayerImpl {
                     if (repeatNumber > 1) {
                         for (int i = 0; i <= repeatNumber - 1; i++) {
                             if (i == 0) {
-                                mng.scheduler.queue(track);
+                                mng.scheduler.queue(track, guild);
                             } else {
                                 LOG.info("Queuing additional play of track.");
-                                mng.scheduler.queue(track.makeClone());
+                                mng.scheduler.queue(track.makeClone(), guild);
                             }
                         }
                     } else if (repeatNumber < 0) {
-                        mng.scheduler.playNow(track);
+                        mng.scheduler.playNow(track, guild);
                         mng.scheduler.setRepeating(true);
                     } else {
-                        mng.scheduler.playNow(track);
+                        mng.scheduler.playNow(track, guild);
                     }
                 }
 
@@ -580,7 +561,7 @@ public class SoundPlayerImpl {
                         firstTrack = playlist.getSelectedTrack();
                     }
 
-                    mng.scheduler.playNow(firstTrack);
+                    mng.scheduler.playNow(firstTrack, guild);
                 }
 
                 @Override
@@ -746,12 +727,6 @@ public class SoundPlayerImpl {
         }
     }
 
-    private void disconnectFromChannel(Guild guild) {
-        guild.getAudioManager().setSendingHandler(null);
-        guild.getAudioManager().closeAudioConnection();
-        LOG.info("Disconnecting from channel.");
-    }
-
     /**
      * Loads in the properties from the app.properties file
      */
@@ -787,7 +762,7 @@ public class SoundPlayerImpl {
 
     @PreDestroy
     @SuppressWarnings("unused")
-    public void cleanUp() throws Exception {
+    public void cleanUp() {
         System.out.println("SoundPlayer is shutting down. Cleaning up.");
         playerManager.shutdown();
         bot.shutdown();

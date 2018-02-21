@@ -1,15 +1,16 @@
 package net.dirtydeeds.discordsoundboard;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.VoiceChannel;
 
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author dave_f
@@ -18,12 +19,13 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private boolean repeating = false;
     private final AudioPlayer player;
-    private final Queue<AudioTrack> queue;
-    private AudioTrack lastTrack;
+    private final Queue<AudioInfo> queue;
+    private final boolean leaveAfterPlayback;
 
-    TrackScheduler(AudioPlayer player) {
+    TrackScheduler(AudioPlayer player, boolean leaveAfterPlayback) {
         this.player = player;
-        this.queue = new LinkedList<>();
+        this.queue = new LinkedBlockingQueue<>();
+        this.leaveAfterPlayback = leaveAfterPlayback;
     }
 
     /**
@@ -31,59 +33,60 @@ public class TrackScheduler extends AudioEventAdapter {
      *
      * @param track The track to play or add to queue.
      */
-    public void queue(AudioTrack track) {
-        // Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If
-        // something is playing, it returns false and does nothing. In that case the player was already playing so this
-        // track goes to the queue instead.
-        if (!player.startTrack(track, true)) {
-            queue.offer(track);
+    public void queue(AudioTrack track, Guild guild) {
+        AudioInfo info = new AudioInfo(track, guild);
+        queue.add(info);
+
+        if (player.getPlayingTrack() == null) {
+            player.playTrack(track);
         }
     }
 
-    public void playNow(AudioTrack track) {
-        if (!player.startTrack(track, false)) {
-            queue.offer(track);
+    public void playNow(AudioTrack track, Guild guild) {
+        if (player.startTrack(track, false)) {
+            AudioInfo info = new AudioInfo(track, guild);
+            queue.add(info);
         }
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        this.lastTrack = track;
-        // Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
-        if (endReason.mayStartNext) {
-            if (repeating) {
-                player.startTrack(lastTrack.makeClone(), false);
-            } else {
-                nextTrack();
+        Guild guild = queue.poll().getGuild();
+
+        if (repeating) {
+            playNow(track.makeClone(), guild);
+        }
+
+        if (queue.isEmpty()) {
+            if (leaveAfterPlayback) {
+                VoiceChannel afkChannel = guild.getAfkChannel();
+                if (afkChannel != null) {
+                    guild.getAudioManager().openAudioConnection(afkChannel);
+                }
             }
+        } else {
+           //playNow(queue.element().getTrack(), guild);
         }
     }
 
     /**
      * Start the next track, stopping the current one if it is playing.
      */
-    public void nextTrack() {
+    public void nextTrack(Guild guild) {
         // Start the next track, regardless of if something is already playing or not. In case queue was empty, we are
         // giving null to startTrack, which is a valid argument and will simply stop the player.
-        player.startTrack(queue.poll(), false);
+        playNow(queue.poll().getTrack(), guild);
     }
 
     public boolean isRepeating() {
         return repeating;
     }
 
-    public void setRepeating(boolean repeating)
-    {
+    public void setRepeating(boolean repeating) {
         this.repeating = repeating;
     }
 
-    public void shuffle()
-    {
+    public void shuffle() {
         Collections.shuffle((List<?>) queue);
-    }
-
-    @Override
-    public void onEvent(AudioEvent audioEvent) {
-
     }
 }
