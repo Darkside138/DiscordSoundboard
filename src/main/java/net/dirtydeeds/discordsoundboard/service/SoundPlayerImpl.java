@@ -15,14 +15,18 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dirtydeeds.discordsoundboard.*;
+import net.dirtydeeds.discordsoundboard.GuildMusicManager;
+import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.listeners.ChatSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dv8tion.jda.core.*;
+import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
@@ -39,11 +43,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 public class SoundPlayerImpl {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
-    
+
     private Properties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
@@ -107,7 +107,7 @@ public class SoundPlayerImpl {
         }
         return mng;
     }
-    
+
     /**
      * Gets a Map of the loaded sound files.
      * @return Map of sound files that have been loaded.
@@ -119,7 +119,7 @@ public class SoundPlayerImpl {
         }
         return returnFiles;
     }
-    
+
     /**
      * Sets volume of the player.
      * @param volume - The volume value to set.
@@ -142,11 +142,10 @@ public class SoundPlayerImpl {
         return playerVolume;
     }
 
-    @SuppressWarnings("unchecked")
     public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
         try {
             Map<String, SoundFile> sounds = getAvailableSoundFiles();
-            List<String> keysAsArray = new ArrayList(sounds.keySet());
+            List<String> keysAsArray = new ArrayList<>(sounds.keySet());
             Random r = new Random();
             SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
 
@@ -174,10 +173,15 @@ public class SoundPlayerImpl {
         if (userName == null || userName.isEmpty()) {
             userName = appProperties.getProperty("username_to_join_channel");
         }
+
+        if (!SoundPlayerRateLimiter.canUserPlaySound(userName)) {
+            return;
+        }
+
         try {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
-            
+
             playFile(fileName, guild);
         } catch (Exception e) {
             e.printStackTrace();
@@ -188,6 +192,11 @@ public class SoundPlayerImpl {
         if (userName == null || userName.isEmpty()) {
             userName = appProperties.getProperty("username_to_join_channel");
         }
+
+        if (!SoundPlayerRateLimiter.canUserPlaySound(userName)) {
+            return;
+        }
+
         try {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
@@ -220,6 +229,10 @@ public class SoundPlayerImpl {
     public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
+            if (!SoundPlayerRateLimiter.canUserPlaySound(event.getAuthor().getName())) {
+                return;
+            }
+
             Guild guild = event.getGuild();
             if (guild == null) {
                 guild = getUsersGuild(event.getAuthor().getName());
@@ -585,7 +598,7 @@ public class SoundPlayerImpl {
      */
     public void getFileList() {
         try {
-            
+
             soundFileDir = appProperties.getProperty("sounds_directory");
             if (soundFileDir == null || soundFileDir.isEmpty())  {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
