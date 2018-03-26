@@ -51,6 +51,8 @@ dependencies {
     compile 'javax.xml.bind:jaxb-api:2.2.8'
 
     compile 'com.google.guava:guava:24.1-jre'
+    compile 'org.postgresql:postgresql:42.2.2'
+
     testCompile 'org.springframework.boot:spring-boot-starter-test'
 }
 

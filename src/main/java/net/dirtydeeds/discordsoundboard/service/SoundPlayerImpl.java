@@ -47,6 +47,10 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -231,6 +235,23 @@ public class SoundPlayerImpl {
         if (event != null) {
             if (!SoundPlayerRateLimiter.canUserPlaySound(event.getAuthor().getName())) {
                 return;
+            }
+
+            // TODO log other entry points
+            // TODO db connection info should be application property
+            String url = "jdbc:postgresql://localhost:5432/postgres";
+            Properties props = new Properties();
+            props.setProperty("user", "postgres");
+            String sql = "INSERT INTO public.plays(username, sound) VALUES (?, ?);";
+            try (Connection con = DriverManager.getConnection(url, props)) {
+                try (PreparedStatement psmt = con.prepareStatement(sql)) {
+                    psmt.setString(1, event.getAuthor().getName());
+                    psmt.setString(2, fileName);
+
+                    psmt.executeUpdate();
+                }
+            } catch (SQLException e) {
+                LOG.error("Couldn't insert statistics", e);
             }
 
             Guild guild = event.getGuild();
