@@ -357,13 +357,13 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         String[] tokens = commandString.toString().split(SPLIT_REGEXP);
         int lineLen = 0;
         StringBuilder output = new StringBuilder();
-        output.append("```\n");
+        output.append("```");
         for (int i = 0; i < tokens.length; i++) {
             String word = tokens[i];
 
             if (lineLen + (word).length() > maxLineLength) {
                 if (i > 0) {
-                    output.append("```\n");
+                    output.append("```");
                     soundFiles.add(output.toString());
 
                     output = new StringBuilder(maxLineLength);
