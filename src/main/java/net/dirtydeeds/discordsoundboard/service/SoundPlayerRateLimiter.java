@@ -11,20 +11,20 @@ import java.util.concurrent.TimeUnit;
 public class SoundPlayerRateLimiter {
 
     private static final Logger LOG = LoggerFactory.getLogger(SoundPlayerRateLimiter.class);
+    private static final int kSecondsToRestrict = 90;
     private static final Cache<String, Instant> userAccessTimeCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(2, TimeUnit.MINUTES)
+            .expireAfterWrite(kSecondsToRestrict, TimeUnit.SECONDS)
             .removalListener(notification -> LOG.info("Removed from rate-limit list {}", notification.getKey()))
             .build();
 
-    public static boolean canUserPlaySound(String user) {
-        Instant instant = userAccessTimeCache.getIfPresent(user);
+    public static boolean userIsRateLimited(String user) {
+        final Instant instant = userAccessTimeCache.getIfPresent(user);
         if (instant == null) {
             userAccessTimeCache.put(user, Instant.now());
-            LOG.info("Added to rate-limit list {}", user);
-            return true;
-        } else {
-            LOG.info("Already on rate-limit list {}", user);
             return false;
+        } else {
+            LOG.info("User {} is rate-limited until {}", user, instant.plusSeconds(kSecondsToRestrict));
+            return true;
         }
     }
 
