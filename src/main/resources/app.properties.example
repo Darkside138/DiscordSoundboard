@@ -34,3 +34,10 @@ allowedUserIds=
 bannedUserIds=
 
 leaveAfterPlayback=false
+
+#Database Connection Info (for statistics, optional)
+#The current implementation does not encrypt your database password if you set it here. Other Authentication Methods are
+#recommended. Easiest method is to trust localhost. See https://www.postgresql.org/docs/current/static/auth-methods.html
+#db.connectionstring=jdbc:postgresql://localhost:5432/postgres
+#db.user=postgres
+#db.password=

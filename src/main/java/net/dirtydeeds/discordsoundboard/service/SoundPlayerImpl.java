@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author dfurrer.
- *
+ * <p>
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files
  * and the configuration properties.
  */
@@ -114,10 +114,11 @@ public class SoundPlayerImpl {
 
     /**
      * Gets a Map of the loaded sound files.
+     *
      * @return Map of sound files that have been loaded.
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
-        Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (SoundFile soundFile : repository.findAll()) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
@@ -126,6 +127,7 @@ public class SoundPlayerImpl {
 
     /**
      * Sets volume of the player.
+     *
      * @param volume - The volume value to set.
      */
     public void setSoundPlayerVolume(int volume, String username) {
@@ -140,6 +142,7 @@ public class SoundPlayerImpl {
 
     /**
      * Returns the current volume
+     *
      * @return float representing the current volume.
      */
     public float getSoundPlayerVolume() {
@@ -170,6 +173,7 @@ public class SoundPlayerImpl {
 
     /**
      * Joins the channel of the user provided and then plays a file.
+     *
      * @param fileName - The name of the file to play.
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      */
@@ -178,7 +182,7 @@ public class SoundPlayerImpl {
             userName = appProperties.getProperty("username_to_join_channel");
         }
 
-        if (!SoundPlayerRateLimiter.canUserPlaySound(userName)) {
+        if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
             return;
         }
 
@@ -197,7 +201,7 @@ public class SoundPlayerImpl {
             userName = appProperties.getProperty("username_to_join_channel");
         }
 
-        if (!SoundPlayerRateLimiter.canUserPlaySound(userName)) {
+        if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
             return;
         }
 
@@ -213,35 +217,76 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The event that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     private void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
-	    playFileForEvent(fileName, event, 1);
+        playFileForEvent(fileName, event, 1);
     }
 
     /**
      * Plays the fileName requested.
-     * @param fileName - The name of the file to play.
-     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     *
+     * @param fileName     - The name of the file to play.
+     * @param event        -  The event that triggered the sound playing request. The event is used to find the channel to play
+     *                     the sound back in.
      * @param repeatNumber - the number of times to repeat the sound file
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
-            if (!SoundPlayerRateLimiter.canUserPlaySound(event.getAuthor().getName())) {
+            // TODO move this to ChatSoundBoardListener with refactor for DB stats
+            if (SoundPlayerRateLimiter.userIsRateLimited(event.getAuthor().getName())) {
                 return;
             }
 
-            // TODO log other entry points
-            // TODO db connection info should be application property
-            String url = "jdbc:postgresql://localhost:5432/postgres";
+            // TODO stats commands
+//            SELECT count(*) count, sound
+//            FROM public.plays
+//            where (current_timestamp - last_change) < interval '72 hours'
+//            group by sound
+//            order by count desc;
+//
+//
+//            SELECT count(*) count, username
+//            FROM public.plays
+//            where (current_timestamp - last_change) < interval '72 hours'
+//            group by username
+//            order by count desc;
+//
+//            SELECT count(*) count, sound
+//            FROM public.plays
+//            group by sound
+//            order by count desc;
+//
+//            --This one is probably inefficient as hell, but I don't foresee 100k rows in the future anytime soon
+//            select *
+//            from (
+//                select distinct on (username) *
+//                from (
+//                    select username, sound, cnt
+//                    from (
+//                        select username, sound, count(*) as cnt, rank() over (partition by username order by count(*) desc) rnk
+//                        from public.plays
+//                        group by username, sound
+//                    ) ranked
+//                    where rnk = 1 and cnt >= 5
+//                    order by cnt desc
+//                ) d
+//            ) o order by cnt desc;
+
+
+            // TODO refactor other entry points to make this easier to log in all cases
+            String url = appProperties.getProperty("db.connectionstring");
+            String user = appProperties.getProperty("db.user");
+            String password = appProperties.getProperty("db.password");
             Properties props = new Properties();
-            props.setProperty("user", "postgres");
+            props.setProperty("user", user);
+            props.setProperty("password", password);
             String sql = "INSERT INTO public.plays(username, sound) VALUES (?, ?);";
             try (Connection con = DriverManager.getConnection(url, props)) {
                 try (PreparedStatement psmt = con.prepareStatement(sql)) {
@@ -268,10 +313,10 @@ public class SoundPlayerImpl {
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile.getAbsolutePath(), guild, repeatNumber);
                 } else {
-                    sendPrivateMessage(event,"Could not find sound to play. Requested sound: " + fileName + ".");
+                    sendPrivateMessage(event, "Could not find sound to play. Requested sound: " + fileName + ".");
                 }
             } else {
-                sendPrivateMessage(event,"I can not find a voice channel you are connected to.");
+                sendPrivateMessage(event, "I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to play to.");
             }
         }
@@ -281,6 +326,7 @@ public class SoundPlayerImpl {
     /**
      * This doesn't play anything, but since all of these actions are currently in the soundplayer service,
      * we keep this code here. The Bot will switch channels and stop.
+     *
      * @param event The MessageReceivedEvent
      * @throws Exception exception
      */
@@ -291,11 +337,11 @@ public class SoundPlayerImpl {
                 guild = getUsersGuild(event.getAuthor().getName());
             }
             if (guild != null) {
-                    try {
-                        moveToUserIdsChannel(event, guild);
-                    } catch (SoundPlaybackException e) {
-                        sendPrivateMessage(event, e.getLocalizedMessage());
-                    }
+                try {
+                    moveToUserIdsChannel(event, guild);
+                } catch (SoundPlaybackException e) {
+                    sendPrivateMessage(event, e.getLocalizedMessage());
+                }
             } else {
                 sendPrivateMessage(event, "I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to join.");
@@ -305,9 +351,10 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested for a voice channel entrance.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      */
     public void playFileForEntrance(String fileName, GenericGuildVoiceEvent event, VoiceChannel channel) {
         if (event == null) return;
@@ -326,9 +373,10 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested for a voice channel disconnect.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      * @throws Exception Throws exception if disconnect sounds couldn't be played
      */
     public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) {
@@ -348,6 +396,7 @@ public class SoundPlayerImpl {
 
     /**
      * Stops sound playback and returns true or false depending on if playback was stopped.
+     *
      * @return boolean representing whether playback was stopped.
      */
     public boolean stop(String requestingUser) {
@@ -364,6 +413,7 @@ public class SoundPlayerImpl {
 
     /**
      * Get a list of users
+     *
      * @return List of soundboard users.
      */
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
@@ -400,6 +450,7 @@ public class SoundPlayerImpl {
 
     /**
      * Get the path the application is using for sound files.
+     *
      * @return String representation of the sound file path.
      */
     public String getSoundsPath() {
@@ -418,6 +469,7 @@ public class SoundPlayerImpl {
 
     /**
      * Find the "author" of the event and join the voice channel they are in.
+     *
      * @param event - The event
      * @throws Exception Throws exception if the bot couldn't join the users channel.
      */
@@ -425,7 +477,7 @@ public class SoundPlayerImpl {
         VoiceChannel channel = findUsersChannel(event, guild);
 
         if (channel == null) {
-            sendPrivateMessage(event, "Hello @"+ event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            sendPrivateMessage(event, "Hello @" + event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
             LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getName() + " is not connected to Voice?");
         } else {
             moveToChannel(channel, guild);
@@ -434,6 +486,7 @@ public class SoundPlayerImpl {
 
     /**
      * Moves to the specified voice channel.
+     *
      * @param channel - The channel specified.
      */
     private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
@@ -473,6 +526,7 @@ public class SoundPlayerImpl {
 
     /**
      * Finds a users voice channel based on event and what guild to look in.
+     *
      * @param event - The event that triggered this search. This is used to get th events author.
      * @param guild - The guild (discord server) to look in for the author.
      * @return The VoiceChannel if one is found. Otherwise return null.
@@ -500,7 +554,7 @@ public class SoundPlayerImpl {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 for (Member user : channel.getMembers()) {
-                    if(user.getUser().getName().equalsIgnoreCase(userName)) {
+                    if (user.getUser().getName().equalsIgnoreCase(userName)) {
                         try {
                             moveToChannel(channel, guild);
                         } catch (SoundPlaybackException e) {
@@ -515,6 +569,7 @@ public class SoundPlayerImpl {
 
     /**
      * Looks through all the guilds the bot has access to and returns the Guild the requested user is connected to.
+     *
      * @param userName - The username to look for.
      * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
      */
@@ -533,8 +588,9 @@ public class SoundPlayerImpl {
 
     /**
      * Play file name requested. Will first try to load the file from the map of available sounds.
+     *
      * @param fileName - fileName to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     * @param guild    - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(String fileName, Guild guild) throws SoundPlaybackException {
         SoundFile fileToPlay = getSoundFileById(fileName);
@@ -548,17 +604,19 @@ public class SoundPlayerImpl {
 
     /**
      * Play the provided File object
+     *
      * @param audioFile - The File object to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     * @param guild     - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(File audioFile, Guild guild) {
-	    playFile(audioFile.getAbsolutePath(), guild, 1);
+        playFile(audioFile.getAbsolutePath(), guild, 1);
     }
 
     /**
      * Play the provided File object
-     * @param audioFile - The File object to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     *
+     * @param audioFile    - The File object to play.
+     * @param guild        - The guild (discord server) the playback is going to happen in.
      * @param repeatNumber - The number of times to repeat the audio file.
      */
     @Async
@@ -621,7 +679,7 @@ public class SoundPlayerImpl {
         try {
 
             soundFileDir = appProperties.getProperty("sounds_directory");
-            if (soundFileDir == null || soundFileDir.isEmpty())  {
+            if (soundFileDir == null || soundFileDir.isEmpty()) {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }
             LOG.info("Loading from " + soundFileDir);
@@ -633,10 +691,10 @@ public class SoundPlayerImpl {
 
                 try {
                     result = soundFilePath.toFile().mkdir();
-                } catch(SecurityException se) {
+                } catch (SecurityException se) {
                     LOG.error("Could not create directory: " + soundFilePath.toFile().toString());
                 }
-                if(result) {
+                if (result) {
                     LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
                 }
             }
@@ -694,7 +752,7 @@ public class SoundPlayerImpl {
                     respondToDms = Boolean.valueOf(respondToDmsString);
                 }
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
-                                                                                    messageSizeLimit, respondToDms);
+                        messageSizeLimit, respondToDms);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
                 LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
 
@@ -745,11 +803,9 @@ public class SoundPlayerImpl {
             } catch (IllegalArgumentException e) {
                 LOG.warn("Could not find avatar file " + System.getProperty("user.dir") + "/avatar.jpg");
             }
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             LOG.warn("Something was configured incorrectly.", e);
-        }
-        catch (LoginException e) {
+        } catch (LoginException e) {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.", e);
         } catch (InterruptedException e) {
             LOG.error("Login Interrupted.", e);
@@ -804,6 +860,7 @@ public class SoundPlayerImpl {
 
     /**
      * Sets listeners
+     *
      * @param listener - The listener object to set.
      */
     private void addBotListener(Object listener) {
