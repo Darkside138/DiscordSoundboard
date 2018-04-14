@@ -15,6 +15,7 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import net.dirtydeeds.discordsoundboard.DiscordSoundboardProperties;
 import net.dirtydeeds.discordsoundboard.GuildMusicManager;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
@@ -37,13 +38,15 @@ import net.dv8tion.jda.core.managers.AudioManager;
 import net.dv8tion.jda.core.requests.RequestFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,8 +67,9 @@ import java.util.concurrent.TimeUnit;
 public class SoundPlayerImpl {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
-
-    private Properties appProperties;
+    private final Map<String, GuildMusicManager> musicManagers;
+    private Environment env;
+    private DiscordSoundboardProperties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
     private AudioPlayerManager playerManager;
@@ -75,16 +79,14 @@ public class SoundPlayerImpl {
     private List<String> bannedUsers;
     private List<String> bannedUserIds;
     private SoundFileRepository repository;
-    private boolean leaveAfterPlayback;
-    private final Map<String, GuildMusicManager> musicManagers;
 
-    @Inject
-    public SoundPlayerImpl(SoundFileRepository repository) {
+    @Autowired
+    public SoundPlayerImpl(DiscordSoundboardProperties discordSoundboardProperties, Environment environment, SoundFileRepository repository) {
+        this.appProperties = discordSoundboardProperties;
+        this.env = environment;
+        this.repository = repository;
         this.musicManagers = new HashMap<>();
 
-        this.repository = repository;
-
-        loadProperties();
         initializeDiscordBot();
         getFileList();
 
@@ -97,8 +99,6 @@ public class SoundPlayerImpl {
         this.playerManager.registerSourceManager(new VimeoAudioSourceManager());
         this.playerManager.registerSourceManager(new HttpAudioSourceManager());
         this.playerManager.registerSourceManager(new BeamAudioSourceManager());
-
-        this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
     }
 
     private GuildMusicManager getGuildAudioPlayer(Guild guild) {
@@ -106,7 +106,7 @@ public class SoundPlayerImpl {
         GuildMusicManager mng = musicManagers.get(guildId);
         if (mng == null) {
             synchronized (musicManagers) {
-                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager, leaveAfterPlayback));
+                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager, appProperties.isLeaveAfterPlayback()));
             }
         }
         return mng;
@@ -179,7 +179,7 @@ public class SoundPlayerImpl {
      */
     public void playFileForUser(String fileName, String userName) {
         if (userName == null || userName.isEmpty()) {
-            userName = appProperties.getProperty("username_to_join_channel");
+            userName = appProperties.getUsernameToJoinChannel();
         }
 
         if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
@@ -198,7 +198,7 @@ public class SoundPlayerImpl {
 
     public void playUrlForUser(String url, String userName) {
         if (userName == null || userName.isEmpty()) {
-            userName = appProperties.getProperty("username_to_join_channel");
+            userName = appProperties.getUsernameToJoinChannel();
         }
 
         if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
@@ -245,6 +245,7 @@ public class SoundPlayerImpl {
             }
 
             // TODO stats commands
+            // TODO DDL
 //            SELECT count(*) count, sound
 //            FROM public.plays
 //            where (current_timestamp - last_change) < interval '72 hours'
@@ -281,14 +282,11 @@ public class SoundPlayerImpl {
 
 
             // TODO refactor other entry points to make this easier to log in all cases
-            String url = appProperties.getProperty("db.connectionstring");
-            String user = appProperties.getProperty("db.user");
-            String password = appProperties.getProperty("db.password");
-            Properties props = new Properties();
-            props.setProperty("user", user);
-            props.setProperty("password", password);
+            String url = env.getProperty("db.connectionstring");
+            String user = env.getProperty("db.user");
+            String password = env.getProperty("db.password");
             String sql = "INSERT INTO public.plays(username, sound) VALUES (?, ?);";
-            try (Connection con = DriverManager.getConnection(url, props)) {
+            try (Connection con = DriverManager.getConnection(url, user, password)) {
                 try (PreparedStatement psmt = con.prepareStatement(sql)) {
                     psmt.setString(1, event.getAuthor().getName());
                     psmt.setString(2, fileName);
@@ -417,7 +415,7 @@ public class SoundPlayerImpl {
      * @return List of soundboard users.
      */
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
-        String userNameToSelect = appProperties.getProperty("username_to_join_channel");
+        String userNameToSelect = appProperties.getUsernameToJoinChannel();
         List<User> users = new ArrayList<>();
         for (Guild guild : bot.getGuilds()) {
             for (Member member : guild.getMembers()) {
@@ -678,7 +676,8 @@ public class SoundPlayerImpl {
     public void getFileList() {
         try {
 
-            soundFileDir = appProperties.getProperty("sounds_directory");
+            soundFileDir = appProperties.getSoundsDirectory();
+
             if (soundFileDir == null || soundFileDir.isEmpty()) {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }
@@ -735,65 +734,29 @@ public class SoundPlayerImpl {
                 bot.shutdown();
             }
 
-            String botToken = appProperties.getProperty("bot_token");
+            String botToken = appProperties.getBotToken();
             bot = new JDABuilder(AccountType.BOT)
                     .setAudioEnabled(true)
                     .setAutoReconnect(true)
                     .setToken(botToken)
                     .buildBlocking();
 
-            if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
-                String commandCharacter = appProperties.getProperty("command_character");
-                String messageSizeLimit = appProperties.getProperty("message_size_limit");
-                String leaveSuffix = appProperties.getProperty("leave_suffix");
-                String respondToDmsString = appProperties.getProperty("respond_to_dm");
-                Boolean respondToDms = true;
-                if (respondToDmsString != null) {
-                    respondToDms = Boolean.valueOf(respondToDmsString);
-                }
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
-                        messageSizeLimit, respondToDms);
+            if (appProperties.isRespondToChatCommands()) {
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, appProperties, env);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
-                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, appProperties.getLeaveSuffix());
 
                 this.addBotListener(chatListener);
                 this.addBotListener(entranceListener);
                 this.addBotListener(leaveSoundBoardListener);
             }
 
-            String allowedUsersString = appProperties.getProperty("allowedUsers");
-            if (allowedUsersString != null && !allowedUsersString.isEmpty()) {
-                String[] allowedUsersArray = allowedUsersString.trim().split(",");
-                if (allowedUsersArray.length > 0) {
-                    allowedUsers = Arrays.asList(allowedUsersArray);
-                }
-            }
+            allowedUsers = appProperties.getAllowedUserIds();
+            allowedUserIds = appProperties.getAllowedUserIds();
+            bannedUsers = appProperties.getBannedUserIds();
+            bannedUserIds = appProperties.getBannedUserIds();
 
-            String allowedUserIdsString = appProperties.getProperty("allowedUserIds");
-            if (allowedUserIdsString != null && !allowedUserIdsString.isEmpty()) {
-                String[] allowedUserIdsArray = allowedUserIdsString.trim().split(",");
-                if (allowedUserIdsArray.length > 0) {
-                    allowedUserIds = Arrays.asList(allowedUserIdsArray);
-                }
-            }
-
-            String bannedUsersString = appProperties.getProperty("bannedUsers");
-            if (bannedUsersString != null && !bannedUsersString.isEmpty()) {
-                String[] bannedUsersArray = bannedUsersString.split(",");
-                if (bannedUsersArray.length > 0) {
-                    bannedUsers = Arrays.asList(bannedUsersArray);
-                }
-            }
-
-            String bannedUserIdsString = appProperties.getProperty("bannedUserIds");
-            if (bannedUserIdsString != null && !bannedUserIdsString.isEmpty()) {
-                String[] bannedUserIdsArray = bannedUserIdsString.split(",");
-                if (bannedUserIdsArray.length > 0) {
-                    bannedUserIds = Arrays.asList(bannedUserIdsArray);
-                }
-            }
-
-            Game game = Game.of("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
+            Game game = Game.of("Type " + appProperties.getCommandCharacter() + "help for a list of commands.");
             bot.getPresence().setGame(game);
 
             try {
@@ -814,39 +777,6 @@ public class SoundPlayerImpl {
             LOG.error("Login rate exceeded.", e);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * Loads in the properties from the app.properties file
-     */
-    private void loadProperties() {
-        appProperties = new Properties();
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(System.getProperty("user.dir") + "/app.properties");
-            appProperties.load(stream);
-            stream.close();
-            return;
-        } catch (FileNotFoundException e) {
-            LOG.warn("Could not find app.properties file.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (stream == null) {
-            LOG.warn("Loading app.properties file from resources folder");
-            try {
-                stream = this.getClass().getResourceAsStream("/app.properties");
-                if (stream != null) {
-                    appProperties.load(stream);
-                    stream.close();
-                } else {
-                    //TODO: Would be nice if we could auto create a default app.properties here.
-                    LOG.error("You do not have an app.properties file. Please create one.");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 

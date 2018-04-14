@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
 import com.sun.management.OperatingSystemMXBean;
+import net.dirtydeeds.discordsoundboard.DiscordSoundboardProperties;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
@@ -14,12 +15,14 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,33 +44,24 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private SoundPlayerImpl soundPlayer;
-    private String commandCharacter = "?";
-    private Integer messageSizeLimit = 2000;
-    private boolean respondToDms = true;
+    private DiscordSoundboardProperties appProperties;
+    private Environment env;
     private boolean muted;
     private static DecimalFormat df2 = new DecimalFormat("#.##");
     private static final int MAX_FILE_SIZE_IN_BYTES = 15000000; // 15 MB
 
-    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit, Boolean respondToDms) {
+    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, DiscordSoundboardProperties appProperties, Environment env) {
         this.soundPlayer = soundPlayer;
-        if (commandCharacter != null && !commandCharacter.isEmpty()) {
-            this.commandCharacter = commandCharacter;
-        }
-        if (messageSizeLimit != null && !messageSizeLimit.isEmpty() && messageSizeLimit.matches("^-?\\d+$")) {
-            this.messageSizeLimit = Integer.parseInt(messageSizeLimit);
-            if (this.messageSizeLimit > 1994) {
-                this.messageSizeLimit = 1994;
-            }
-        }
+        this.appProperties = appProperties;
+        this.env = env;
         muted = false;
-        this.respondToDms = respondToDms;
     }
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         String requestingUser = event.getAuthor().getName();
         String requestingUserId = event.getAuthor().getId();
-        if (event.getAuthor().isBot() || !((respondToDms && event.isFromType(ChannelType.PRIVATE)) || !event.isFromType(ChannelType.PRIVATE))) {
+        if (event.getAuthor().isBot() || !((appProperties.isRespondToDm() && event.isFromType(ChannelType.PRIVATE)) || !event.isFromType(ChannelType.PRIVATE))) {
             super.onMessageReceived(event);
             return;
         }
@@ -85,32 +79,34 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             return;
         }
 
-        if (!message.startsWith(commandCharacter)) {
+        if (!message.startsWith(appProperties.getCommandCharacter())) {
             uploadCommand(event, originalMessage);
             super.onMessageReceived(event);
             return;
         }
 
         //Respond
-        if (message.startsWith(commandCharacter + "list")) {
+        if (message.startsWith(appProperties.getCommandCharacter() + "list")) {
             listCommand(event, requestingUser, requestingUserId, message);
-        } else if (message.startsWith(commandCharacter + "help")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "help")) {
             helpCommand(event, requestingUser, requestingUserId);
-        } else if (message.startsWith(commandCharacter + "volume")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "volume")) {
             volumeCommand(event, requestingUser, requestingUserId, message);
-        } else if (message.startsWith(commandCharacter + "stop")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "stop")) {
             stopCommand(event, requestingUser);
-        } else if (message.startsWith(commandCharacter + "info")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "info")) {
             infoCommand(event, requestingUser, requestingUserId);
-        } else if (message.startsWith(commandCharacter + "remove")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "remove")) {
             removeCommand(event, message);
-        } else if (message.startsWith(commandCharacter + "random")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "random")) {
             randomCommand(event, requestingUser);
-        } else if (message.startsWith(commandCharacter + "summon")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "summon")) {
             summonCommand(event);
-        } else if (message.startsWith(commandCharacter + "yt")) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "yt")) {
             youtubeCommand(event, originalMessage);
-        } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
+        } else if (message.startsWith(appProperties.getCommandCharacter() + "stats")) {
+            statsCommand(event);
+        } else if (message.startsWith(appProperties.getCommandCharacter()) && message.length() >= 2) {
             playSoundCommand(event, requestingUser, requestingUserId, message);
         } else {
             if (event.isFromType(ChannelType.PRIVATE)) {
@@ -121,14 +117,39 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         super.onMessageReceived(event);
     }
 
+    private void statsCommand(MessageReceivedEvent event) {
+        String url = env.getProperty("db.connectionstring");
+        String username = env.getProperty("db.username");
+        String password = env.getProperty("db.password");
+        String sql = "SELECT count(*) count, sound FROM public.plays where (current_timestamp - last_change) < interval '3 days' GROUP BY sound ORDER BY count desc LIMIT 10";
+        try (Connection con = DriverManager.getConnection(url, username, password)) {
+            try (PreparedStatement psmt = con.prepareStatement(sql)) {
+                /// todo configurable days
+                try (ResultSet rs = psmt.executeQuery()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("```\n");
+                    sb.append(" count |       sound        \n");
+                    sb.append("-------+--------------------\n");
+                    while (rs.next()) {
+                        sb.append(String.format(" %5d | %18s \n", rs.getInt(1), rs.getString(2)));
+                    }
+                    sb.append("```");
+                    replyByPrivateMessage(event, sb.toString());
+                }
+            }
+        } catch (SQLException e) {
+            LOG.error("Couldn't insert statistics", e);
+        }
+    }
+
     private void listCommand(MessageReceivedEvent event, String requestingUser, String requestingUserId, String message) {
         StringBuilder commandString = getCommandListString();
         List<String> soundList = getCommandList(commandString);
 
         LOG.info("Responding to list command. Requested by " + requestingUser + ". ID: " + requestingUserId);
-        if (message.equals(commandCharacter + "list")) {
-            if (commandString.length() > messageSizeLimit) {
-                replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
+        if (message.equals(appProperties.getCommandCharacter() + "list")) {
+            if (commandString.length() > appProperties.getMessageSizeLimit()) {
+                replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + appProperties.getCommandCharacter() + "list pageNumber``` to request a specific page of results.");
             } else {
                 replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:");
                 replyByPrivateMessage(event, soundList.get(0));
@@ -151,14 +172,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private void helpCommand(MessageReceivedEvent event, String requestingUser, String requestingUserId) {
         LOG.info("Responding to help command. Requested by " + requestingUser + ". ID: " + requestingUserId);
         replyByPrivateMessage(event, "You can type any of the following commands:" +
-                "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
-                "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
-                "\n" + commandCharacter + "yt youtubeLink   - Plays the youtube link specified." +
-                "\n" + commandCharacter + "random           - Plays a random sound from the list." +
-                "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
-                "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
-                "\n" + commandCharacter + "summon           - Summon the bot to your channel." +
-                "\n" + commandCharacter + "info             - Returns info about the bot.```");
+                "\n```" + appProperties.getCommandCharacter() + "list             - Returns a list of available sound files." +
+                "\n" + appProperties.getCommandCharacter() + "soundFileName    - Plays the specified sound from the list." +
+                "\n" + appProperties.getCommandCharacter() + "yt youtubeLink   - Plays the youtube link specified." +
+                "\n" + appProperties.getCommandCharacter() + "random           - Plays a random sound from the list." +
+                "\n" + appProperties.getCommandCharacter() + "volume 0-100     - Sets the playback volume." +
+                "\n" + appProperties.getCommandCharacter() + "stop             - Stops the sound that is currently playing." +
+                "\n" + appProperties.getCommandCharacter() + "summon           - Summon the bot to your channel." +
+                "\n" + appProperties.getCommandCharacter() + "info             - Returns info about the bot." +
+                "\n" + appProperties.getCommandCharacter() + "stats             - Returns statistics about which sounds are popular.```");
         deleteMessage(event);
     }
 
@@ -233,20 +255,23 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private void playSoundCommand(MessageReceivedEvent event, String requestingUser, String requestingUserId, String message) {
         if (muted) {
             LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ". ID: " + requestingUserId);
-            replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
+            replyByPrivateMessage(event, "I seem to be muted! Try " + appProperties.getCommandCharacter() + "help");
             deleteMessage(event);
             return;
         }
 
         Pattern pattern = Pattern.compile("\\?(\\w+)(\\s(\\d+)|)");
         Matcher matcher = pattern.matcher(message);
+        if (!matcher.matches()) {
+            return;
+        }
 
         String fileNameRequested = matcher.group(1);
         String repeatString = matcher.group(3);
 
         if (fileNameRequested == null) {
             LOG.info("No filename recognized for message: {}", message);
-            replyByPrivateMessage(event, "I didn't recognize the filename in your message! Try " + commandCharacter + "help");
+            replyByPrivateMessage(event, "I didn't recognize the filename in your message! Try " + appProperties.getCommandCharacter() + "help");
             deleteMessage(event);
             return;
         }
@@ -373,7 +398,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
                 "\nVersion: " + version +
                 "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
-                "\nCommand Prefix: " + commandCharacter +
+                "\nCommand Prefix: " + appProperties.getCommandCharacter() +
                 "\nSound File Path: " + soundPlayer.getSoundsPath() +
                 "```");
     }
@@ -385,12 +410,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     private void nonRecognizedCommand(MessageReceivedEvent event, String requestingUser) {
         replyByPrivateMessage(event, "Hello @" + requestingUser + ". I don't know how to respond to this message!");
-        replyByPrivateMessage(event, "You can type " + commandCharacter + "help to see a list of recognized commands.");
+        replyByPrivateMessage(event, "You can type " + appProperties.getCommandCharacter() + "help to see a list of recognized commands.");
         LOG.info("Responding to PM of " + requestingUser + ". Unknown Command. Sending help text.");
     }
 
     private List<String> getCommandList(StringBuilder commandString) {
-        final int maxLineLength = messageSizeLimit;
+        final int maxLineLength = appProperties.getMessageSizeLimit();
         List<String> soundFiles = new ArrayList<>();
 
         //if text has \n, \r or \t symbols it's better to split by \s+
@@ -430,7 +455,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
         if (entrySet.size() > 0) {
             for (Map.Entry entry : entrySet) {
-                sb.append(commandCharacter).append(entry.getKey()).append("\n");
+                sb.append(appProperties.getCommandCharacter()).append(entry.getKey()).append("\n");
             }
         }
         return sb;
