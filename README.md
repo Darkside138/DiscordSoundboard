@@ -100,6 +100,8 @@ directory in a folder then simply execute the .jar file or the provided .bat fil
 
 ?random
 
+?remove fileName (must have admin to remove files)
+
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
 Responses will be sent to the requesting user via direct message also.
 
