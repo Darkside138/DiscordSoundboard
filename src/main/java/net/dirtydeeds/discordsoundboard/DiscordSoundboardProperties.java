@@ -30,6 +30,9 @@ public class DiscordSoundboardProperties {
     private List<String> bannedUserIds = Collections.emptyList();
     private boolean leaveAfterPlayback = false;
 
+    @Min(0)
+    private int rateLimitRestrictDuration;
+
     public String getBotToken() {
         return botToken;
     }
@@ -116,5 +119,13 @@ public class DiscordSoundboardProperties {
 
     public void setBannedUserIds(List<String> bannedUserIds) {
         this.bannedUserIds = bannedUserIds;
+    }
+
+    public int getRateLimitRestrictDuration() {
+        return rateLimitRestrictDuration;
+    }
+
+    public void setRateLimitRestrictDuration(int rateLimitRestrictDuration) {
+        this.rateLimitRestrictDuration = rateLimitRestrictDuration;
     }
 }

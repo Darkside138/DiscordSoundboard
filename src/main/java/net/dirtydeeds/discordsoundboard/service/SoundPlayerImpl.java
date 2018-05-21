@@ -76,6 +76,7 @@ public class SoundPlayerImpl {
     private List<String> bannedUserIds;
     private SoundFileRepository soundFileRepository;
     private final PlayEventRepository playEventRepository;
+    private final SoundPlayerRateLimiter rateLimiter;
 
     @Autowired
     public SoundPlayerImpl(DiscordSoundboardProperties discordSoundboardProperties, SoundFileRepository soundFileRepository, PlayEventRepository playEventRepository) {
@@ -96,6 +97,8 @@ public class SoundPlayerImpl {
         this.playerManager.registerSourceManager(new VimeoAudioSourceManager());
         this.playerManager.registerSourceManager(new HttpAudioSourceManager());
         this.playerManager.registerSourceManager(new BeamAudioSourceManager());
+
+        this.rateLimiter = new SoundPlayerRateLimiter(appProperties);
     }
 
     private GuildMusicManager getGuildAudioPlayer(Guild guild) {
@@ -176,7 +179,7 @@ public class SoundPlayerImpl {
             userName = appProperties.getUsernameToJoinChannel();
         }
 
-        if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
+        if (rateLimiter.userIsRateLimited(userName)) {
             return;
         }
 
@@ -201,7 +204,7 @@ public class SoundPlayerImpl {
             userName = appProperties.getUsernameToJoinChannel();
         }
 
-        if (SoundPlayerRateLimiter.userIsRateLimited(userName)) {
+        if (rateLimiter.userIsRateLimited(userName)) {
             return;
         }
 
@@ -240,7 +243,7 @@ public class SoundPlayerImpl {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
             // TODO move this to ChatSoundBoardListener
-            if (SoundPlayerRateLimiter.userIsRateLimited(event.getAuthor().getName())) {
+            if (rateLimiter.userIsRateLimited(event.getAuthor().getName())) {
                 return;
             }
 
