@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -11,13 +12,18 @@ import javax.persistence.Id;
 @SuppressWarnings("unused")
 @Entity
 public class SoundFile {
-    
+
     @Id
     private String soundFileId;
+
+    @Column
     private String soundFileLocation;
+
+    @Column
     private String category;
-    
-    protected SoundFile() {}
+
+    protected SoundFile() {
+    }
 
     public SoundFile(String soundFileId, String soundFileLocation, String category) {
         this.soundFileId = soundFileId;

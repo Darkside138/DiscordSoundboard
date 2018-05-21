@@ -1,9 +1,16 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.sun.management.OperatingSystemMXBean;
 import net.dirtydeeds.discordsoundboard.DiscordSoundboardProperties;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
+import net.dirtydeeds.discordsoundboard.beans.PlayEventFilenameCount;
+import net.dirtydeeds.discordsoundboard.beans.PlayEventUsernameCount;
+import net.dirtydeeds.discordsoundboard.beans.PlayEventUsernameFilenameCount;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
+import net.dirtydeeds.discordsoundboard.repository.PlayEventRepository;
+import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.ChannelType;
@@ -15,19 +22,14 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.*;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,15 +47,18 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     private SoundPlayerImpl soundPlayer;
     private DiscordSoundboardProperties appProperties;
-    private Environment env;
+    private PlayEventRepository playEventRepository;
+    private SoundFileRepository soundFileRepository;
     private boolean muted;
     private static DecimalFormat df2 = new DecimalFormat("#.##");
     private static final int MAX_FILE_SIZE_IN_BYTES = 15000000; // 15 MB
 
-    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, DiscordSoundboardProperties appProperties, Environment env) {
+
+    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, DiscordSoundboardProperties appProperties, PlayEventRepository playEventRepository, SoundFileRepository soundFileRepository) {
         this.soundPlayer = soundPlayer;
         this.appProperties = appProperties;
-        this.env = env;
+        this.playEventRepository = playEventRepository;
+        this.soundFileRepository = soundFileRepository;
         muted = false;
     }
 
@@ -118,27 +123,70 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void statsCommand(MessageReceivedEvent event) {
-        String url = env.getProperty("db.connectionstring");
-        String username = env.getProperty("db.username");
-        String password = env.getProperty("db.password");
-        String sql = "SELECT count(*) count, sound FROM public.plays where (current_timestamp - last_change) < interval '3 days' GROUP BY sound ORDER BY count desc LIMIT 10";
-        try (Connection con = DriverManager.getConnection(url, username, password)) {
-            try (PreparedStatement psmt = con.prepareStatement(sql)) {
-                /// todo configurable days
-                try (ResultSet rs = psmt.executeQuery()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("```\n");
-                    sb.append(" count |       sound        \n");
-                    sb.append("-------+--------------------\n");
-                    while (rs.next()) {
-                        sb.append(String.format(" %5d | %18s \n", rs.getInt(1), rs.getString(2)));
-                    }
-                    sb.append("```");
-                    replyByPrivateMessage(event, sb.toString());
+        String message = event.getMessage().getContent().trim().toLowerCase();
+
+        // g1 stats
+        // g3 which stats query
+        // g5 period for stats
+        Pattern pattern = Pattern.compile("\\?(\\w+)(\\s(\\w+))?(\\s(\\d+))?");
+        Matcher matcher = pattern.matcher(message);
+
+        if (!matcher.matches()) {
+            return;
+        }
+
+        String statsQuery = matcher.group(3);
+        String statsPeriod = matcher.group(5); // TODO date range for stats
+
+        if (Strings.isNullOrEmpty(statsQuery)) {
+            statsQuery = "top";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        Set<String> soundFileLocations = soundFileRepository.getSoundFileNames();
+        switch (statsQuery) {
+            case "usersounds":
+                Collection<PlayEventUsernameFilenameCount> usernameFilenameCount = playEventRepository.getUsernameFilenameCount();
+                sb.append("Username, Filename, Count\n");
+                if (usernameFilenameCount.isEmpty()) {
+                    sb.append("No Results\n");
                 }
+                usernameFilenameCount.stream()
+                        .filter(ufc -> soundFileLocations.contains(ufc.getFilename()))
+                        .limit(50)
+                        .forEach(ufc -> sb.append(ufc.getUsername()).append(", ").append(ufc.getFilename()).append(", ").append(ufc.getCount()).append("\n"));
+                break;
+            case "users":
+                Collection<PlayEventUsernameCount> usernameCount = playEventRepository.getUsernameCount();
+                sb.append("Username, Count\n");
+                if (usernameCount.isEmpty()) {
+                    sb.append("No Results\n");
+                }
+                usernameCount.forEach(e -> sb.append(e.getUsername()).append(", ").append(e.getCount()).append("\n"));
+                sb.append("\n");
+                break;
+            case "sounds":
+            default:
+                Collection<PlayEventFilenameCount> filenameCount = playEventRepository.getFilenameCount();
+                sb.append("Filename, Count\n");
+                if (filenameCount.isEmpty()) {
+                    sb.append("No Results\n");
+                }
+                filenameCount.stream()
+                        .filter(fc -> soundFileLocations.contains(fc.getFilename()))
+                        .forEach(fc -> sb.append(fc.getFilename()).append(", ").append(fc.getCount()).append("\n"));
+                sb.append("\n");
+                break;
+        }
+
+        String output = sb.toString();
+        if (output.length() < appProperties.getMessageSizeLimit()) {
+            replyByPrivateMessage(event, output);
+        } else {
+            Splitter splitter = Splitter.fixedLength(appProperties.getMessageSizeLimit());
+            for (String s : splitter.split(output)) {
+                replyByPrivateMessage(event, s);
             }
-        } catch (SQLException e) {
-            LOG.error("Couldn't insert statistics", e);
         }
     }
 
@@ -180,7 +228,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\n" + appProperties.getCommandCharacter() + "stop             - Stops the sound that is currently playing." +
                 "\n" + appProperties.getCommandCharacter() + "summon           - Summon the bot to your channel." +
                 "\n" + appProperties.getCommandCharacter() + "info             - Returns info about the bot." +
-                "\n" + appProperties.getCommandCharacter() + "stats             - Returns statistics about which sounds are popular.```");
+                "\n" + appProperties.getCommandCharacter() + "stats            - Returns statistics about which sounds are popular.```");
         deleteMessage(event);
     }
 

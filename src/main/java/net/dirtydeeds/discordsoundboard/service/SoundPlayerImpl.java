@@ -18,11 +18,13 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dirtydeeds.discordsoundboard.DiscordSoundboardProperties;
 import net.dirtydeeds.discordsoundboard.GuildMusicManager;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
+import net.dirtydeeds.discordsoundboard.beans.PlayEvent;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.listeners.ChatSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.repository.PlayEventRepository;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
@@ -39,7 +41,6 @@ import net.dv8tion.jda.core.requests.RequestFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -50,10 +51,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -68,7 +65,6 @@ public class SoundPlayerImpl {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
     private final Map<String, GuildMusicManager> musicManagers;
-    private Environment env;
     private DiscordSoundboardProperties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
@@ -78,13 +74,14 @@ public class SoundPlayerImpl {
     private List<String> allowedUserIds;
     private List<String> bannedUsers;
     private List<String> bannedUserIds;
-    private SoundFileRepository repository;
+    private SoundFileRepository soundFileRepository;
+    private final PlayEventRepository playEventRepository;
 
     @Autowired
-    public SoundPlayerImpl(DiscordSoundboardProperties discordSoundboardProperties, Environment environment, SoundFileRepository repository) {
+    public SoundPlayerImpl(DiscordSoundboardProperties discordSoundboardProperties, SoundFileRepository soundFileRepository, PlayEventRepository playEventRepository) {
         this.appProperties = discordSoundboardProperties;
-        this.env = environment;
-        this.repository = repository;
+        this.soundFileRepository = soundFileRepository;
+        this.playEventRepository = playEventRepository;
         this.musicManagers = new HashMap<>();
 
         initializeDiscordBot();
@@ -119,7 +116,7 @@ public class SoundPlayerImpl {
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
         Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (SoundFile soundFile : repository.findAll()) {
+        for (SoundFile soundFile : soundFileRepository.findAll()) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
         return returnFiles;
@@ -151,10 +148,7 @@ public class SoundPlayerImpl {
 
     public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
         try {
-            Map<String, SoundFile> sounds = getAvailableSoundFiles();
-            List<String> keysAsArray = new ArrayList<>(sounds.keySet());
-            Random r = new Random();
-            SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
+            SoundFile randomValue = soundFileRepository.findRandom();
 
             LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
             try {
@@ -190,7 +184,13 @@ public class SoundPlayerImpl {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
 
-            playFile(fileName, guild);
+            SoundFile fileToPlay = getSoundFileById(fileName);
+            if (fileToPlay != null) {
+                File soundFile = new File(fileToPlay.getSoundFileLocation());
+                playFile(soundFile, guild);
+            } else {
+                throw new SoundPlaybackException("Could not find sound file that was requested.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -239,63 +239,12 @@ public class SoundPlayerImpl {
     public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
-            // TODO move this to ChatSoundBoardListener with refactor for DB stats
+            // TODO move this to ChatSoundBoardListener
             if (SoundPlayerRateLimiter.userIsRateLimited(event.getAuthor().getName())) {
                 return;
             }
 
-            // TODO stats commands
-            // TODO DDL
-//            SELECT count(*) count, sound
-//            FROM public.plays
-//            where (current_timestamp - last_change) < interval '72 hours'
-//            group by sound
-//            order by count desc;
-//
-//
-//            SELECT count(*) count, username
-//            FROM public.plays
-//            where (current_timestamp - last_change) < interval '72 hours'
-//            group by username
-//            order by count desc;
-//
-//            SELECT count(*) count, sound
-//            FROM public.plays
-//            group by sound
-//            order by count desc;
-//
-//            --This one is probably inefficient as hell, but I don't foresee 100k rows in the future anytime soon
-//            select *
-//            from (
-//                select distinct on (username) *
-//                from (
-//                    select username, sound, cnt
-//                    from (
-//                        select username, sound, count(*) as cnt, rank() over (partition by username order by count(*) desc) rnk
-//                        from public.plays
-//                        group by username, sound
-//                    ) ranked
-//                    where rnk = 1 and cnt >= 5
-//                    order by cnt desc
-//                ) d
-//            ) o order by cnt desc;
-
-
-            // TODO refactor other entry points to make this easier to log in all cases
-            String url = env.getProperty("db.connectionstring");
-            String user = env.getProperty("db.user");
-            String password = env.getProperty("db.password");
-            String sql = "INSERT INTO public.plays(username, sound) VALUES (?, ?);";
-            try (Connection con = DriverManager.getConnection(url, user, password)) {
-                try (PreparedStatement psmt = con.prepareStatement(sql)) {
-                    psmt.setString(1, event.getAuthor().getName());
-                    psmt.setString(2, fileName);
-
-                    psmt.executeUpdate();
-                }
-            } catch (SQLException e) {
-                LOG.error("Couldn't insert statistics", e);
-            }
+            playEventRepository.save(new PlayEvent(event.getAuthor().getName(), fileName));
 
             Guild guild = event.getGuild();
             if (guild == null) {
@@ -462,7 +411,7 @@ public class SoundPlayerImpl {
     }
 
     private SoundFile getSoundFileById(String soundFileId) {
-        return repository.findOneBySoundFileIdIgnoreCase(soundFileId);
+        return soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileId);
     }
 
     /**
@@ -698,27 +647,26 @@ public class SoundPlayerImpl {
                 }
             }
 
-            Files.walk(soundFilePath).forEach(filePath -> {
-                if (Files.isRegularFile(filePath)) {
-                    String fileName = filePath.getFileName().toString();
-                    try {
-                        fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
-                        fileName = fileName.substring(0, fileName.indexOf("."));
-                        LOG.info(fileName);
-                        File file = filePath.toFile();
-                        String parent = file.getParentFile().getName();
-                        SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                        SoundFile existing = repository.findOneBySoundFileIdIgnoreCase(fileName);
-                        if (existing != null) {
-                            repository.delete(existing);
+            Files.walk(soundFilePath).filter(p -> Files.isReadable(p) && !Files.isDirectory(p) && !Files.isSymbolicLink(p))
+                    .forEach(filePath -> {
+                        String fileName = filePath.getFileName().toString();
+                        try {
+                            fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
+                            fileName = fileName.substring(0, fileName.indexOf("."));
+                            LOG.info(fileName);
+                            File file = filePath.toFile();
+                            String parent = file.getParentFile().getName();
+                            SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                            SoundFile existing = soundFileRepository.findOneBySoundFileIdIgnoreCase(fileName);
+                            if (existing != null) {
+                                soundFileRepository.delete(existing);
+                            }
+                            soundFileRepository.save(soundFile);
+                        } catch (Exception e) {
+                            LOG.error(e.toString());
+                            e.printStackTrace();
                         }
-                        repository.save(soundFile);
-                    } catch (Exception e) {
-                        LOG.error(e.toString());
-                        e.printStackTrace();
-                    }
-                }
-            });
+                    });
         } catch (IOException e) {
             LOG.error(e.toString());
             e.printStackTrace();
@@ -742,7 +690,7 @@ public class SoundPlayerImpl {
                     .buildBlocking();
 
             if (appProperties.isRespondToChatCommands()) {
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, appProperties, env);
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, appProperties, playEventRepository, soundFileRepository);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
                 LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, appProperties.getLeaveSuffix());
 
