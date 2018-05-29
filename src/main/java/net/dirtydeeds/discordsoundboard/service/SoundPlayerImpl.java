@@ -15,14 +15,21 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dirtydeeds.discordsoundboard.*;
+import net.dirtydeeds.discordsoundboard.DiscordSoundboardProperties;
+import net.dirtydeeds.discordsoundboard.GuildMusicManager;
+import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
+import net.dirtydeeds.discordsoundboard.beans.PlayEvent;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.listeners.ChatSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
+import net.dirtydeeds.discordsoundboard.repository.PlayEventRepository;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dv8tion.jda.core.*;
+import net.dv8tion.jda.core.AccountType;
+import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
@@ -33,17 +40,14 @@ import net.dv8tion.jda.core.managers.AudioManager;
 import net.dv8tion.jda.core.requests.RequestFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author dfurrer.
- *
+ * <p>
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files
  * and the configuration properties.
  */
@@ -60,8 +64,8 @@ import java.util.concurrent.TimeUnit;
 public class SoundPlayerImpl {
 
     private final Logger LOG = LoggerFactory.getLogger(this.getClass());
-    
-    private Properties appProperties;
+    private final Map<String, GuildMusicManager> musicManagers;
+    private DiscordSoundboardProperties appProperties;
     private JDA bot;
     private float playerVolume = (float) .75;
     private AudioPlayerManager playerManager;
@@ -70,17 +74,17 @@ public class SoundPlayerImpl {
     private List<String> allowedUserIds;
     private List<String> bannedUsers;
     private List<String> bannedUserIds;
-    private SoundFileRepository repository;
-    private boolean leaveAfterPlayback;
-    private final Map<String, GuildMusicManager> musicManagers;
+    private SoundFileRepository soundFileRepository;
+    private final PlayEventRepository playEventRepository;
+    private final SoundPlayerRateLimiter rateLimiter;
 
-    @Inject
-    public SoundPlayerImpl(SoundFileRepository repository) {
+    @Autowired
+    public SoundPlayerImpl(DiscordSoundboardProperties discordSoundboardProperties, SoundFileRepository soundFileRepository, PlayEventRepository playEventRepository) {
+        this.appProperties = discordSoundboardProperties;
+        this.soundFileRepository = soundFileRepository;
+        this.playEventRepository = playEventRepository;
         this.musicManagers = new HashMap<>();
 
-        this.repository = repository;
-
-        loadProperties();
         initializeDiscordBot();
         getFileList();
 
@@ -94,7 +98,7 @@ public class SoundPlayerImpl {
         this.playerManager.registerSourceManager(new HttpAudioSourceManager());
         this.playerManager.registerSourceManager(new BeamAudioSourceManager());
 
-        this.leaveAfterPlayback = Boolean.valueOf(appProperties.getProperty("leaveAfterPlayback"));
+        this.rateLimiter = new SoundPlayerRateLimiter(appProperties);
     }
 
     private GuildMusicManager getGuildAudioPlayer(Guild guild) {
@@ -102,26 +106,28 @@ public class SoundPlayerImpl {
         GuildMusicManager mng = musicManagers.get(guildId);
         if (mng == null) {
             synchronized (musicManagers) {
-                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager, leaveAfterPlayback));
+                mng = musicManagers.computeIfAbsent(guildId, k -> new GuildMusicManager(playerManager, appProperties.isLeaveAfterPlayback()));
             }
         }
         return mng;
     }
-    
+
     /**
      * Gets a Map of the loaded sound files.
+     *
      * @return Map of sound files that have been loaded.
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
-        Map<String,SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (SoundFile soundFile : repository.findAll()) {
+        Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (SoundFile soundFile : soundFileRepository.findAll()) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
         return returnFiles;
     }
-    
+
     /**
      * Sets volume of the player.
+     *
      * @param volume - The volume value to set.
      */
     public void setSoundPlayerVolume(int volume, String username) {
@@ -136,19 +142,16 @@ public class SoundPlayerImpl {
 
     /**
      * Returns the current volume
+     *
      * @return float representing the current volume.
      */
     public float getSoundPlayerVolume() {
         return playerVolume;
     }
 
-    @SuppressWarnings("unchecked")
     public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
         try {
-            Map<String, SoundFile> sounds = getAvailableSoundFiles();
-            List<String> keysAsArray = new ArrayList(sounds.keySet());
-            Random r = new Random();
-            SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
+            SoundFile randomValue = soundFileRepository.findRandom();
 
             LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
             try {
@@ -167,18 +170,30 @@ public class SoundPlayerImpl {
 
     /**
      * Joins the channel of the user provided and then plays a file.
+     *
      * @param fileName - The name of the file to play.
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      */
     public void playFileForUser(String fileName, String userName) {
         if (userName == null || userName.isEmpty()) {
-            userName = appProperties.getProperty("username_to_join_channel");
+            userName = appProperties.getUsernameToJoinChannel();
         }
+
+        if (rateLimiter.userIsRateLimited(userName)) {
+            return;
+        }
+
         try {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
-            
-            playFile(fileName, guild);
+
+            SoundFile fileToPlay = getSoundFileById(fileName);
+            if (fileToPlay != null) {
+                File soundFile = new File(fileToPlay.getSoundFileLocation());
+                playFile(soundFile, guild);
+            } else {
+                throw new SoundPlaybackException("Could not find sound file that was requested.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -186,8 +201,13 @@ public class SoundPlayerImpl {
 
     public void playUrlForUser(String url, String userName) {
         if (userName == null || userName.isEmpty()) {
-            userName = appProperties.getProperty("username_to_join_channel");
+            userName = appProperties.getUsernameToJoinChannel();
         }
+
+        if (rateLimiter.userIsRateLimited(userName)) {
+            return;
+        }
+
         try {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
@@ -200,26 +220,35 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The event that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     private void playFileForEvent(String fileName, MessageReceivedEvent event) throws Exception {
-	    playFileForEvent(fileName, event, 1);
+        playFileForEvent(fileName, event, 1);
     }
 
     /**
      * Plays the fileName requested.
-     * @param fileName - The name of the file to play.
-     * @param event -  The event that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     *
+     * @param fileName     - The name of the file to play.
+     * @param event        -  The event that triggered the sound playing request. The event is used to find the channel to play
+     *                     the sound back in.
      * @param repeatNumber - the number of times to repeat the sound file
      * @throws Exception Throws exception if it couldn't find the file requested or can't join the voice channel
      */
     public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) throws Exception {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
+            // TODO move this to ChatSoundBoardListener
+            if (rateLimiter.userIsRateLimited(event.getAuthor().getName())) {
+                return;
+            }
+
+            playEventRepository.save(new PlayEvent(event.getAuthor().getName(), fileName));
+
             Guild guild = event.getGuild();
             if (guild == null) {
                 guild = getUsersGuild(event.getAuthor().getName());
@@ -234,10 +263,10 @@ public class SoundPlayerImpl {
                     File soundFile = new File(fileToPlay.getSoundFileLocation());
                     playFile(soundFile.getAbsolutePath(), guild, repeatNumber);
                 } else {
-                    sendPrivateMessage(event,"Could not find sound to play. Requested sound: " + fileName + ".");
+                    sendPrivateMessage(event, "Could not find sound to play. Requested sound: " + fileName + ".");
                 }
             } else {
-                sendPrivateMessage(event,"I can not find a voice channel you are connected to.");
+                sendPrivateMessage(event, "I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to play to.");
             }
         }
@@ -247,6 +276,7 @@ public class SoundPlayerImpl {
     /**
      * This doesn't play anything, but since all of these actions are currently in the soundplayer service,
      * we keep this code here. The Bot will switch channels and stop.
+     *
      * @param event The MessageReceivedEvent
      * @throws Exception exception
      */
@@ -257,11 +287,11 @@ public class SoundPlayerImpl {
                 guild = getUsersGuild(event.getAuthor().getName());
             }
             if (guild != null) {
-                    try {
-                        moveToUserIdsChannel(event, guild);
-                    } catch (SoundPlaybackException e) {
-                        sendPrivateMessage(event, e.getLocalizedMessage());
-                    }
+                try {
+                    moveToUserIdsChannel(event, guild);
+                } catch (SoundPlaybackException e) {
+                    sendPrivateMessage(event, e.getLocalizedMessage());
+                }
             } else {
                 sendPrivateMessage(event, "I can not find a voice channel you are connected to.");
                 LOG.warn("no guild to join.");
@@ -271,9 +301,10 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested for a voice channel entrance.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      */
     public void playFileForEntrance(String fileName, GenericGuildVoiceEvent event, VoiceChannel channel) {
         if (event == null) return;
@@ -292,9 +323,10 @@ public class SoundPlayerImpl {
 
     /**
      * Plays the fileName requested for a voice channel disconnect.
+     *
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param event    -  The even that triggered the sound playing request. The event is used to find the channel to play
+     *                 the sound back in.
      * @throws Exception Throws exception if disconnect sounds couldn't be played
      */
     public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) {
@@ -314,6 +346,7 @@ public class SoundPlayerImpl {
 
     /**
      * Stops sound playback and returns true or false depending on if playback was stopped.
+     *
      * @return boolean representing whether playback was stopped.
      */
     public boolean stop(String requestingUser) {
@@ -330,10 +363,11 @@ public class SoundPlayerImpl {
 
     /**
      * Get a list of users
+     *
      * @return List of soundboard users.
      */
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
-        String userNameToSelect = appProperties.getProperty("username_to_join_channel");
+        String userNameToSelect = appProperties.getUsernameToJoinChannel();
         List<User> users = new ArrayList<>();
         for (Guild guild : bot.getGuilds()) {
             for (Member member : guild.getMembers()) {
@@ -366,6 +400,7 @@ public class SoundPlayerImpl {
 
     /**
      * Get the path the application is using for sound files.
+     *
      * @return String representation of the sound file path.
      */
     public String getSoundsPath() {
@@ -379,11 +414,12 @@ public class SoundPlayerImpl {
     }
 
     private SoundFile getSoundFileById(String soundFileId) {
-        return repository.findOneBySoundFileIdIgnoreCase(soundFileId);
+        return soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileId);
     }
 
     /**
      * Find the "author" of the event and join the voice channel they are in.
+     *
      * @param event - The event
      * @throws Exception Throws exception if the bot couldn't join the users channel.
      */
@@ -391,7 +427,7 @@ public class SoundPlayerImpl {
         VoiceChannel channel = findUsersChannel(event, guild);
 
         if (channel == null) {
-            sendPrivateMessage(event, "Hello @"+ event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
+            sendPrivateMessage(event, "Hello @" + event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.");
             LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getName() + " is not connected to Voice?");
         } else {
             moveToChannel(channel, guild);
@@ -400,6 +436,7 @@ public class SoundPlayerImpl {
 
     /**
      * Moves to the specified voice channel.
+     *
      * @param channel - The channel specified.
      */
     private void moveToChannel(VoiceChannel channel, Guild guild) throws SoundPlaybackException {
@@ -439,6 +476,7 @@ public class SoundPlayerImpl {
 
     /**
      * Finds a users voice channel based on event and what guild to look in.
+     *
      * @param event - The event that triggered this search. This is used to get th events author.
      * @param guild - The guild (discord server) to look in for the author.
      * @return The VoiceChannel if one is found. Otherwise return null.
@@ -466,7 +504,7 @@ public class SoundPlayerImpl {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 for (Member user : channel.getMembers()) {
-                    if(user.getUser().getName().equalsIgnoreCase(userName)) {
+                    if (user.getUser().getName().equalsIgnoreCase(userName)) {
                         try {
                             moveToChannel(channel, guild);
                         } catch (SoundPlaybackException e) {
@@ -481,6 +519,7 @@ public class SoundPlayerImpl {
 
     /**
      * Looks through all the guilds the bot has access to and returns the Guild the requested user is connected to.
+     *
      * @param userName - The username to look for.
      * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
      */
@@ -499,8 +538,9 @@ public class SoundPlayerImpl {
 
     /**
      * Play file name requested. Will first try to load the file from the map of available sounds.
+     *
      * @param fileName - fileName to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     * @param guild    - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(String fileName, Guild guild) throws SoundPlaybackException {
         SoundFile fileToPlay = getSoundFileById(fileName);
@@ -514,17 +554,19 @@ public class SoundPlayerImpl {
 
     /**
      * Play the provided File object
+     *
      * @param audioFile - The File object to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     * @param guild     - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(File audioFile, Guild guild) {
-	    playFile(audioFile.getAbsolutePath(), guild, 1);
+        playFile(audioFile.getAbsolutePath(), guild, 1);
     }
 
     /**
      * Play the provided File object
-     * @param audioFile - The File object to play.
-     * @param guild - The guild (discord server) the playback is going to happen in.
+     *
+     * @param audioFile    - The File object to play.
+     * @param guild        - The guild (discord server) the playback is going to happen in.
      * @param repeatNumber - The number of times to repeat the audio file.
      */
     @Async
@@ -585,9 +627,10 @@ public class SoundPlayerImpl {
      */
     public void getFileList() {
         try {
-            
-            soundFileDir = appProperties.getProperty("sounds_directory");
-            if (soundFileDir == null || soundFileDir.isEmpty())  {
+
+            soundFileDir = appProperties.getSoundsDirectory();
+
+            if (soundFileDir == null || soundFileDir.isEmpty()) {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }
             LOG.info("Loading from " + soundFileDir);
@@ -599,35 +642,34 @@ public class SoundPlayerImpl {
 
                 try {
                     result = soundFilePath.toFile().mkdir();
-                } catch(SecurityException se) {
+                } catch (SecurityException se) {
                     LOG.error("Could not create directory: " + soundFilePath.toFile().toString());
                 }
-                if(result) {
+                if (result) {
                     LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
                 }
             }
 
-            Files.walk(soundFilePath).forEach(filePath -> {
-                if (Files.isRegularFile(filePath)) {
-                    String fileName = filePath.getFileName().toString();
-                    try {
-                        fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
-                        fileName = fileName.substring(0, fileName.indexOf("."));
-                        LOG.info(fileName);
-                        File file = filePath.toFile();
-                        String parent = file.getParentFile().getName();
-                        SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                        SoundFile existing = repository.findOneBySoundFileIdIgnoreCase(fileName);
-                        if (existing != null) {
-                            repository.delete(existing);
+            Files.walk(soundFilePath).filter(p -> Files.isReadable(p) && !Files.isDirectory(p) && !Files.isSymbolicLink(p))
+                    .forEach(filePath -> {
+                        String fileName = filePath.getFileName().toString();
+                        try {
+                            fileName = fileName.substring(fileName.indexOf("/") + 1, fileName.length());
+                            fileName = fileName.substring(0, fileName.indexOf("."));
+                            LOG.info(fileName);
+                            File file = filePath.toFile();
+                            String parent = file.getParentFile().getName();
+                            SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                            SoundFile existing = soundFileRepository.findOneBySoundFileIdIgnoreCase(fileName);
+                            if (existing != null) {
+                                soundFileRepository.delete(existing);
+                            }
+                            soundFileRepository.save(soundFile);
+                        } catch (Exception e) {
+                            LOG.error(e.toString());
+                            e.printStackTrace();
                         }
-                        repository.save(soundFile);
-                    } catch (Exception e) {
-                        LOG.error(e.toString());
-                        e.printStackTrace();
-                    }
-                }
-            });
+                    });
         } catch (IOException e) {
             LOG.error(e.toString());
             e.printStackTrace();
@@ -643,65 +685,29 @@ public class SoundPlayerImpl {
                 bot.shutdown();
             }
 
-            String botToken = appProperties.getProperty("bot_token");
+            String botToken = appProperties.getBotToken();
             bot = new JDABuilder(AccountType.BOT)
                     .setAudioEnabled(true)
                     .setAutoReconnect(true)
                     .setToken(botToken)
                     .buildBlocking();
 
-            if (Boolean.valueOf(appProperties.getProperty("respond_to_chat_commands"))) {
-                String commandCharacter = appProperties.getProperty("command_character");
-                String messageSizeLimit = appProperties.getProperty("message_size_limit");
-                String leaveSuffix = appProperties.getProperty("leave_suffix");
-                String respondToDmsString = appProperties.getProperty("respond_to_dm");
-                Boolean respondToDms = true;
-                if (respondToDmsString != null) {
-                    respondToDms = Boolean.valueOf(respondToDmsString);
-                }
-                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
-                                                                                    messageSizeLimit, respondToDms);
+            if (appProperties.isRespondToChatCommands()) {
+                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, appProperties, playEventRepository, soundFileRepository);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
-                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, appProperties.getLeaveSuffix());
 
                 this.addBotListener(chatListener);
                 this.addBotListener(entranceListener);
                 this.addBotListener(leaveSoundBoardListener);
             }
 
-            String allowedUsersString = appProperties.getProperty("allowedUsers");
-            if (allowedUsersString != null && !allowedUsersString.isEmpty()) {
-                String[] allowedUsersArray = allowedUsersString.trim().split(",");
-                if (allowedUsersArray.length > 0) {
-                    allowedUsers = Arrays.asList(allowedUsersArray);
-                }
-            }
+            allowedUsers = appProperties.getAllowedUserIds();
+            allowedUserIds = appProperties.getAllowedUserIds();
+            bannedUsers = appProperties.getBannedUserIds();
+            bannedUserIds = appProperties.getBannedUserIds();
 
-            String allowedUserIdsString = appProperties.getProperty("allowedUserIds");
-            if (allowedUserIdsString != null && !allowedUserIdsString.isEmpty()) {
-                String[] allowedUserIdsArray = allowedUserIdsString.trim().split(",");
-                if (allowedUserIdsArray.length > 0) {
-                    allowedUserIds = Arrays.asList(allowedUserIdsArray);
-                }
-            }
-
-            String bannedUsersString = appProperties.getProperty("bannedUsers");
-            if (bannedUsersString != null && !bannedUsersString.isEmpty()) {
-                String[] bannedUsersArray = bannedUsersString.split(",");
-                if (bannedUsersArray.length > 0) {
-                    bannedUsers = Arrays.asList(bannedUsersArray);
-                }
-            }
-
-            String bannedUserIdsString = appProperties.getProperty("bannedUserIds");
-            if (bannedUserIdsString != null && !bannedUserIdsString.isEmpty()) {
-                String[] bannedUserIdsArray = bannedUserIdsString.split(",");
-                if (bannedUserIdsArray.length > 0) {
-                    bannedUserIds = Arrays.asList(bannedUserIdsArray);
-                }
-            }
-
-            Game game = Game.of("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
+            Game game = Game.of("Type " + appProperties.getCommandCharacter() + "help for a list of commands.");
             bot.getPresence().setGame(game);
 
             try {
@@ -711,11 +717,9 @@ public class SoundPlayerImpl {
             } catch (IllegalArgumentException e) {
                 LOG.warn("Could not find avatar file " + System.getProperty("user.dir") + "/avatar.jpg");
             }
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             LOG.warn("Something was configured incorrectly.", e);
-        }
-        catch (LoginException e) {
+        } catch (LoginException e) {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.", e);
         } catch (InterruptedException e) {
             LOG.error("Login Interrupted.", e);
@@ -724,39 +728,6 @@ public class SoundPlayerImpl {
             LOG.error("Login rate exceeded.", e);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * Loads in the properties from the app.properties file
-     */
-    private void loadProperties() {
-        appProperties = new Properties();
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(System.getProperty("user.dir") + "/app.properties");
-            appProperties.load(stream);
-            stream.close();
-            return;
-        } catch (FileNotFoundException e) {
-            LOG.warn("Could not find app.properties file.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (stream == null) {
-            LOG.warn("Loading app.properties file from resources folder");
-            try {
-                stream = this.getClass().getResourceAsStream("/app.properties");
-                if (stream != null) {
-                    appProperties.load(stream);
-                    stream.close();
-                } else {
-                    //TODO: Would be nice if we could auto create a default app.properties here.
-                    LOG.error("You do not have an app.properties file. Please create one.");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -770,6 +741,7 @@ public class SoundPlayerImpl {
 
     /**
      * Sets listeners
+     *
      * @param listener - The listener object to set.
      */
     private void addBotListener(Object listener) {
