@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Max;
@@ -9,14 +10,14 @@ import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
 
-@ConfigurationProperties("discord_soundboard")
+@ConfigurationProperties()
+//@PropertySource("classpath:application.properties")
 @Validated
 public class DiscordSoundboardProperties {
 
     @NotNull
     private String botToken;
     private String usernameToJoinChannel;
-    @NotNull
     private String commandCharacter = "?";
     private boolean respondToChatCommands = true;
     private boolean respondToDm = true;

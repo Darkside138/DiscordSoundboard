@@ -10,7 +10,7 @@ import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.utils.SimpleLog;
+import org.apache.commons.logging.impl.SimpleLog;
 
 /**
  * @author asafatli.
@@ -19,7 +19,7 @@ import net.dv8tion.jda.core.utils.SimpleLog;
  */
 public class EntranceSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = SimpleLog.getLog("EntranceListener");
+    private static final SimpleLog LOG = new SimpleLog("EntranceListener");
 
     private SoundPlayerImpl bot;
 

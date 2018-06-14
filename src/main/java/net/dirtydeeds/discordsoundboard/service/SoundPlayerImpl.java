@@ -26,6 +26,7 @@ import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.repository.PlayEventRepository;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
+import net.dv8tion.jda.core.audio.hooks.ConnectionStatus;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
@@ -35,7 +36,6 @@ import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.PermissionException;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.managers.AudioManager;
 import net.dv8tion.jda.core.requests.RequestFuture;
 import org.slf4j.Logger;
@@ -183,6 +183,8 @@ public class SoundPlayerImpl {
             return;
         }
 
+        playEventRepository.save(new PlayEvent(userName, fileName));
+
         try {
             Guild guild = getUsersGuild(userName);
             joinUsersCurrentChannel(userName);
@@ -327,7 +329,6 @@ public class SoundPlayerImpl {
      * @param fileName - The name of the file to play.
      * @param event    -  The even that triggered the sound playing request. The event is used to find the channel to play
      *                 the sound back in.
-     * @throws Exception Throws exception if disconnect sounds couldn't be played
      */
     public void playFileForDisconnect(String fileName, GuildVoiceLeaveEvent event) {
         if (event == null) return;
@@ -445,7 +446,8 @@ public class SoundPlayerImpl {
         AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(mng.sendHandler);
 
-        if (!audioManager.isAttemptingToConnect()) {
+        LOG.info("Connection Status during move to channel: " + audioManager.getConnectionStatus().toString());
+        if (!audioManager.isAttemptingToConnect() || !audioManager.getConnectionStatus().equals(ConnectionStatus.CONNECTED)) {
             try {
                 guild.getAudioManager().openAudioConnection(channel);
             } catch (PermissionException e) {
@@ -574,6 +576,7 @@ public class SoundPlayerImpl {
         if (guild == null) {
             LOG.error("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
+            LOG.info("Attempting to play file " + audioFile);
             GuildMusicManager mng = getGuildAudioPlayer(guild);
             playerManager.loadItemOrdered(mng, audioFile, new AudioLoadResultHandler() {
                 @Override
@@ -707,7 +710,7 @@ public class SoundPlayerImpl {
             bannedUsers = appProperties.getBannedUserIds();
             bannedUserIds = appProperties.getBannedUserIds();
 
-            Game game = Game.of("Type " + appProperties.getCommandCharacter() + "help for a list of commands.");
+            Game game = Game.of(Game.GameType.DEFAULT,"Type " + appProperties.getCommandCharacter() + "help for a list of commands.");
             bot.getPresence().setGame(game);
 
             try {
@@ -723,9 +726,6 @@ public class SoundPlayerImpl {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.", e);
         } catch (InterruptedException e) {
             LOG.error("Login Interrupted.", e);
-        } //catch (UnsupportedEncodingException e) {
-        catch (RateLimitedException e) {
-            LOG.error("Login rate exceeded.", e);
         } catch (IOException e) {
             e.printStackTrace();
         }

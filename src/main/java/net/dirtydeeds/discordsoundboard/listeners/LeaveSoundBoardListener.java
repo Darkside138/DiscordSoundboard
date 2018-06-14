@@ -4,7 +4,7 @@ import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.utils.SimpleLog;
+import org.apache.commons.logging.impl.SimpleLog;
 
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class LeaveSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = SimpleLog.getLog("LeaveListener");
+    private static final SimpleLog LOG = new SimpleLog("LeaveListener");
 
     private SoundPlayerImpl bot;
     private String suffix = "_leave";

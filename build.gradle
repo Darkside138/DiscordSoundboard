@@ -3,7 +3,7 @@ apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'org.springframework.boot'
 
-version = '2.2.3-beta'
+version = '2.2.5-beta'
 
 //noinspection GroovyUnusedAssignment
 sourceCompatibility = 1.8
@@ -33,15 +33,15 @@ repositories {
 
 dependencies {
     //https://bintray.com/dv8fromtheworld/maven/JDA
-    compile 'net.dv8tion:JDA:3.3.1_284'
-    compile 'com.sedmelluq:lavaplayer:1.2.47'
+    compile 'net.dv8tion:JDA:3.6.0_354'
+    compile 'com.sedmelluq:lavaplayer:1.2.63'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-jersey'
     
-    compile("org.springframework.boot:spring-boot-starter-data-jpa")
-    compile("com.h2database:h2")
+    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile 'com.h2database:h2'
     compile 'org.postgresql:postgresql'
 
     compile "io.springfox:springfox-swagger2:2.4.0"
@@ -57,7 +57,7 @@ dependencies {
 }
 
 processResources {
-    exclude 'app.properties'
+    exclude 'appplication.properties'
 }
 
 build.dependsOn 'clean'
@@ -82,15 +82,15 @@ def distributionsCopySpec = copySpec {
     def fileName = "${baseName}-$version"
     from file("$buildDir/libs")
     from file("$buildDir/resources/main")
-    include "**/app.properties.example"
+    include "**/application.properties.example"
     from file("/distFiles")
     include "soundboard.bat"
     include "soundboard.sh"
     include "avatar.jpg"
     include "${fileName}.jar"
-    include "application.properties"
-    exclude 'app.properties'
-    rename ("app.properties.example", "app.properties")
+    include "application.properties.example"
+    exclude 'application.properties'
+    rename ("application.properties.example", "application.properties")
     rename "${fileName}.jar", "${baseName}.jar"
 }
 

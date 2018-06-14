@@ -9,3 +9,6 @@ sounds/*
 avatar.jpg
 logs/
 sounds/
+discordSoundboard.log
+out/
+/src/main/resources/application.properties

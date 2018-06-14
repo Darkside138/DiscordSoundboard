@@ -66,11 +66,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent event) {
         String requestingUser = event.getAuthor().getName();
         String requestingUserId = event.getAuthor().getId();
-        if (event.getAuthor().isBot() || !((appProperties.isRespondToDm() && event.isFromType(ChannelType.PRIVATE)) || !event.isFromType(ChannelType.PRIVATE))) {
+        if (event.getAuthor().isBot() || !((appProperties.isRespondToDm() && event.isFromType(ChannelType.PRIVATE)) ||
+                !event.isFromType(ChannelType.PRIVATE))) {
             super.onMessageReceived(event);
             return;
         }
-        String originalMessage = event.getMessage().getContent().trim();
+        String originalMessage = event.getMessage().getContentRaw().trim();
         String message = originalMessage.toLowerCase();
 
         if (!soundPlayer.isUserAllowed(requestingUser, requestingUserId)) {
@@ -123,12 +124,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void statsCommand(MessageReceivedEvent event) {
-        String message = event.getMessage().getContent().trim().toLowerCase();
+        String message = event.getMessage().getContentRaw().trim().toLowerCase();
+        deleteMessage(event);
 
         // g1 stats
         // g3 which stats query
         // g5 period for stats
-        Pattern pattern = Pattern.compile("\\?(\\w+)(\\s(\\w+))?(\\s(\\d+))?");
+        String patternString = new StringBuilder().append("\\")
+                .append(appProperties.getCommandCharacter()).append("(\\w+)(\\s(\\w+))?(\\s(\\d+))?").toString();
+        Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher(message);
 
         if (!matcher.matches()) {
@@ -154,7 +158,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 usernameFilenameCount.stream()
                         .filter(ufc -> soundFileLocations.contains(ufc.getFilename()))
                         .limit(50)
-                        .forEach(ufc -> sb.append(ufc.getUsername()).append(", ").append(ufc.getFilename()).append(", ").append(ufc.getCount()).append("\n"));
+                        .forEach(ufc -> sb.append(ufc.getUsername()).append(", ").append(ufc.getFilename()).append(", ")
+                                .append(ufc.getCount()).append("\n"));
                 break;
             case "users":
                 Collection<PlayEventUsernameCount> usernameCount = playEventRepository.getUsernameCount();
@@ -197,7 +202,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         LOG.info("Responding to list command. Requested by " + requestingUser + ". ID: " + requestingUserId);
         if (message.equals(appProperties.getCommandCharacter() + "list")) {
             if (commandString.length() > appProperties.getMessageSizeLimit()) {
-                replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + appProperties.getCommandCharacter() + "list pageNumber``` to request a specific page of results.");
+                replyByPrivateMessage(event, "You have " + soundList.size() +
+                        " pages of soundFiles. Reply: ```" + appProperties.getCommandCharacter() +
+                        "list pageNumber``` to request a specific page of results.");
             } else {
                 replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:");
                 replyByPrivateMessage(event, soundList.get(0));
@@ -274,7 +281,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
                             File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
                             attachment.download(newSoundFile);
-                            replyByPrivateMessage(event, "Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
+                            replyByPrivateMessage(event, "Downloaded file `" + name +
+                                    "` and added to list of sounds " + event.getAuthor().getAsMention() + ".");
                         } else {
                             boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
                             if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
@@ -283,12 +291,14 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                     Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
                                     File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
                                     attachment.download(newSoundFile);
-                                    replyByPrivateMessage(event, "Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
+                                    replyByPrivateMessage(event, "Downloaded file `" + name +
+                                            "` and updated list of sounds " + event.getAuthor().getAsMention() + ".");
                                 } catch (IOException e1) {
                                     LOG.error("Problem deleting and re-adding sound file: " + name);
                                 }
                             } else {
-                                replyByPrivateMessage(event, "The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.");
+                                replyByPrivateMessage(event, "The file '" + name + "' already exists. Only " +
+                                        name.substring(0, name.indexOf(".")) + " can change update this sound.");
                             }
                         }
                         soundPlayer.getFileList();
@@ -301,14 +311,17 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void playSoundCommand(MessageReceivedEvent event, String requestingUser, String requestingUserId, String message) {
+        deleteMessage(event);
+
         if (muted) {
             LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ". ID: " + requestingUserId);
             replyByPrivateMessage(event, "I seem to be muted! Try " + appProperties.getCommandCharacter() + "help");
-            deleteMessage(event);
             return;
         }
 
-        Pattern pattern = Pattern.compile("\\?(\\w+)(\\s(\\d+)|)");
+        String patternString = new StringBuilder().append("\\")
+                .append(appProperties.getCommandCharacter()).append("(\\w+)(\\s(\\w+))?(\\s(\\d+))?").toString();
+        Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher(message);
         if (!matcher.matches()) {
             return;
@@ -319,8 +332,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
         if (fileNameRequested == null) {
             LOG.info("No filename recognized for message: {}", message);
-            replyByPrivateMessage(event, "I didn't recognize the filename in your message! Try " + appProperties.getCommandCharacter() + "help");
-            deleteMessage(event);
+            replyByPrivateMessage(event, "I didn't recognize the filename in your message! Try " +
+                    appProperties.getCommandCharacter() + "help");
             return;
         }
 
@@ -333,10 +346,10 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             }
         }
 
-        LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ". ID: " + requestingUserId);
+        LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " +
+                requestingUser + ". ID: " + requestingUserId);
         try {
             soundPlayer.playFileForEvent(fileNameRequested, event, repeatNumber);
-            deleteMessage(event);
         } catch (Exception e) {
             e.printStackTrace();
         }
