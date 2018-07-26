@@ -23,7 +23,7 @@ public interface SoundFileRepository extends CrudRepository<SoundFile, String> {
         long count = count();
         int random = (int) (Math.random() * count);
 
-        Page<SoundFile> page = findAll(new PageRequest(random, 1));
+        Page<SoundFile> page = findAll(PageRequest.of(random, 1));
 
         if (page.hasContent()) {
             return page.getContent().get(0);
