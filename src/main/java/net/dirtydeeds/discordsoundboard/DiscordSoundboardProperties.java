@@ -9,6 +9,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @ConfigurationProperties()
 //@PropertySource("classpath:application.properties")
@@ -29,6 +30,7 @@ public class DiscordSoundboardProperties {
     // TODO test if comma separated strings get parsed automatically... not sure if some config is needed to do it
     private List<String> allowedUserIds = Collections.emptyList();
     private List<String> bannedUserIds = Collections.emptyList();
+    private Set<String> unlimitedUserIds = Collections.emptySet();
     private boolean leaveAfterPlayback = false;
 
     @Min(0)
@@ -128,5 +130,13 @@ public class DiscordSoundboardProperties {
 
     public void setRateLimitRestrictDuration(int rateLimitRestrictDuration) {
         this.rateLimitRestrictDuration = rateLimitRestrictDuration;
+    }
+
+    public Set<String> getUnlimitedUserIds() {
+        return unlimitedUserIds;
+    }
+
+    public void setUnlimitedUserIds(Set<String> unlimitedUserIds) {
+        this.unlimitedUserIds = unlimitedUserIds;
     }
 }
