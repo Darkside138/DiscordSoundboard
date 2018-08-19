@@ -10,7 +10,8 @@ import net.dv8tion.jda.core.events.guild.voice.GenericGuildVoiceEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import org.apache.commons.logging.impl.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author asafatli.
@@ -19,7 +20,7 @@ import org.apache.commons.logging.impl.SimpleLog;
  */
 public class EntranceSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = new SimpleLog("EntranceListener");
+    private static final Logger log = LoggerFactory.getLogger(EntranceSoundBoardListener.class);
 
     private SoundPlayerImpl bot;
 
@@ -56,10 +57,10 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     try {
                         bot.playFileForEntrance(fileToPlay, event, channel);
                     } catch (Exception e) {
-                        LOG.fatal("Could not play file for entrance of " + joined);
+                        log.error("Could not play file for entrance of {}", joined);
                     }
                 } else {
-                    LOG.info("Could not find any sound that starts with " + joined + ", so ignoring entrance.");
+                    log.info("Could not find any sound that starts with {}, so ignoring entrance.", joined);
                 }
             }
         }

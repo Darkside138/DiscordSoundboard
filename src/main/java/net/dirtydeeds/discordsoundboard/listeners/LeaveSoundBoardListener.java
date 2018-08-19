@@ -4,7 +4,8 @@ import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import org.apache.commons.logging.impl.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +17,7 @@ import java.util.Set;
  */
 public class LeaveSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = new SimpleLog("LeaveListener");
+    private static final Logger log = LoggerFactory.getLogger(LeaveSoundBoardListener.class);
 
     private SoundPlayerImpl bot;
     private String suffix = "_leave";
@@ -48,10 +49,10 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
                     try {
                         bot.playFileForDisconnect(fileToPlay, event);
                     } catch (Exception e) {
-                        LOG.fatal("Could not play file for disconnection of " + userDisconnected);
+                        log.error("Could not play file for disconnection of {}", userDisconnected);
                     }
                 } else {
-                    LOG.info("Could not disconnection sound for " + userDisconnected + ", so ignoring disconnection event.");
+                    log.info("Could not disconnection sound for {}, so ignoring disconnection event.", userDisconnected);
                 }
             }
         }

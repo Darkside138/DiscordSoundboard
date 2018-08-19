@@ -2,6 +2,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'distribution'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
 version = '2.2.5-beta'
 
@@ -12,7 +13,7 @@ targetCompatibility = 1.8
 
 buildscript {
     ext {
-        springBootVersion = '1.5.7.RELEASE'
+        springBootVersion = '2.0.3.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -33,8 +34,8 @@ repositories {
 
 dependencies {
     //https://bintray.com/dv8fromtheworld/maven/JDA
-    compile 'net.dv8tion:JDA:3.6.0_354'
-    compile 'com.sedmelluq:lavaplayer:1.2.63'
+    compile 'net.dv8tion:JDA:3.7.1_386'
+    compile 'com.sedmelluq:lavaplayer:1.3.7'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
