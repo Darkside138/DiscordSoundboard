@@ -11,10 +11,7 @@ import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.logging.impl.SimpleLog;
@@ -53,6 +50,7 @@ public class SoundPlayerImpl implements Observer {
     private List<String> bannedUsers;
     private SoundFileRepository repository;
     private boolean leaveAfterPlayback = false;
+    private String leaveSuffix = "_leave";
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
@@ -68,7 +66,7 @@ public class SoundPlayerImpl implements Observer {
     private void init() {
         loadProperties();
         initializeDiscordBot();
-        getFileList();
+        updateFileList();
 
         playerManager = new DefaultAudioPlayerManager();
         LocalAudioSourceManager localAudioSourceManager = new LocalAudioSourceManager();
@@ -100,7 +98,7 @@ public class SoundPlayerImpl implements Observer {
             if (Boolean.parseBoolean(appProperties.getProperty("respond_to_chat_commands"))) {
                 String commandCharacter = appProperties.getProperty("command_character");
                 String messageSizeLimit = appProperties.getProperty("message_size_limit");
-                String leaveSuffix = appProperties.getProperty("leave_suffix");
+                leaveSuffix = appProperties.getProperty("leave_suffix");
                 String respondToDmsString = appProperties.getProperty("respond_to_dm");
                 Boolean respondToDms = true;
                 if (respondToDmsString != null) {
@@ -110,9 +108,11 @@ public class SoundPlayerImpl implements Observer {
                         messageSizeLimit, respondToDms);
                 this.addBotListener(chatListener);
                 EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
-                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, leaveSuffix);
-                this.addBotListener(entranceListener);
-                this.addBotListener(leaveSoundBoardListener);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this);
+                MovedChannelListener movedChannelListener = new MovedChannelListener(this);
+//                this.addBotListener(entranceListener);
+//                this.addBotListener(leaveSoundBoardListener);
+                this.addBotListener(movedChannelListener);
             }
 
             String allowedUsersString = appProperties.getProperty("allowedUsers");
@@ -149,7 +149,7 @@ public class SoundPlayerImpl implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        getFileList();
+        updateFileList();
     }
 
     /**
@@ -180,7 +180,7 @@ public class SoundPlayerImpl implements Observer {
      * @param volume - The volume value to set.
      */
     public void setSoundPlayerVolume(int volume, int timeout) {
-        int currentVolume = Math.round(playerVolume * 100);
+        int currentVolume = playerVolume;
 
         int volumeDiff = currentVolume - volume;
         if (volumeDiff < 0) {
@@ -189,6 +189,10 @@ public class SoundPlayerImpl implements Observer {
 
         if (volumeDiff != 0) {
             int microInterval = Math.round(timeout / volumeDiff);
+            boolean goingUp = false;
+            if (currentVolume < volume) {
+                goingUp = true;
+            }
             while (currentVolume != volume) {
                 if (currentVolume < volume) {
                     currentVolume++;
@@ -196,7 +200,14 @@ public class SoundPlayerImpl implements Observer {
                     currentVolume--;
                 }
                 playerVolume = currentVolume;
+                musicPlayer.setVolume(currentVolume);
                 LOG.info("Setting player volume to: " + currentVolume);
+
+                if (goingUp && currentVolume >= volume) {
+                    break;
+                } else if (!goingUp && currentVolume <= volume) {
+                    break;
+                }
                 try {
                     TimeUnit.MILLISECONDS.sleep(microInterval);
                 } catch (InterruptedException e) {
@@ -297,7 +308,7 @@ public class SoundPlayerImpl implements Observer {
      * @param event    -  The event that triggered the sound playing request. The event is used to find the channel to play
      *                 the sound back in.
      */
-    public void playFileForEvent(String fileName, MessageReceivedEvent event) {
+    private void playFileForEvent(String fileName, MessageReceivedEvent event) {
         playFileForEvent(fileName, event, 1);
     }
 
@@ -309,7 +320,7 @@ public class SoundPlayerImpl implements Observer {
      *                     the sound back in.
      * @param repeatNumber - the number of times to repeat the sound file
      */
-    public void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) {
+    private void playFileForEvent(String fileName, MessageReceivedEvent event, int repeatNumber) {
         SoundFile fileToPlay = getSoundFileById(fileName);
         if (event != null) {
             Guild guild = event.getGuild();
@@ -329,60 +340,22 @@ public class SoundPlayerImpl implements Observer {
     }
 
     /**
-     * Plays the fileName requested for a voice channel entrance.
+     * Plays the fileName requested in the requested channel.
      * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
+     * @param channel -  The channel to play the file in
      */
-//    public void playFileForEntrance(String fileName, VoiceJoinEvent event) {
-//        if (event == null) return;
-//        try {
-//            moveToChannel(event.get, event.getGuild());
-//            LOG.info("Playing file for entrance of user: " + fileName);
-//            try {
-//                playFile(fileName, event.getGuild());
-//            } catch (SoundPlaybackException e) {
-//                LOG.info("Could not find any sound to play for entrance of user: " + fileName);
-//            }
-//            if (leaveAfterPlayback) {
-//                disconnectFromChannel(event.getGuild());
-//            }
-//        } catch (SoundPlaybackException e) {
-//            LOG.debug(e.toString());
-//        }
-//    }
-
-    /**
-     * Plays the fileName requested for a voice channel disconnect.
-     * @param fileName - The name of the file to play.
-     * @param event -  The even that triggered the sound playing request. The event is used to find the channel to play
-     *              the sound back in.
-     */
-//    public void playFileForDisconnect(String fileName, VoiceLeaveEvent event) {
-//        if (event == null) return;
-//        try {
-//            moveToChannel(event.getOldChannel(), event.getGuild());
-//            LOG.info("Playing file for disconnect of user: " + fileName);
-//            try {
-//                playFile(fileName, event.getGuild());
-//            } catch (SoundPlaybackException e) {
-//                LOG.info("Could not find any sound to play for disconnect of user: " + fileName);
-//            }
-//            if (leaveAfterPlayback) {
-//                disconnectFromChannel(event.getGuild());
-//            }
-//        } catch (SoundPlaybackException e) {
-//            LOG.debug(e.toString());
-//        }
-//    }
-
-    /**
-     * Stops sound playback and returns true or false depending on if playback was stopped.
-     *
-     * @return boolean representing whether playback was stopped.
-     */
-    public boolean stop() {
-        return stop(0);
+    public void playFileInChannel(String fileName, VoiceChannel channel) {
+        if (channel == null) return;
+        moveToChannel(channel, channel.getGuild());
+        LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
+        try {
+            playFile(fileName, channel.getGuild());
+        } catch (SoundPlaybackException e) {
+            LOG.info("Could not find any sound to play for channel movement of user: " + fileName);
+        }
+        if (leaveAfterPlayback) {
+            disconnectFromChannel(channel.getGuild());
+        }
     }
 
     /**
@@ -390,7 +363,7 @@ public class SoundPlayerImpl implements Observer {
      *
      * @return boolean representing whether playback was stopped.
      */
-    public boolean stop(int timeout) {
+    public boolean stop() {
         musicPlayer.stopTrack();
 
         return true;
@@ -446,7 +419,6 @@ public class SoundPlayerImpl implements Observer {
      * Find the "author" of the event and join the voice channel they are in.
      *
      * @param event - The event
-     * @throws Exception Throws exception if the bot couldn't join the users channel.
      */
     private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) {
         VoiceChannel channel = findUsersChannel(event, guild);
@@ -631,14 +603,34 @@ public class SoundPlayerImpl implements Observer {
 //        }
     }
 
+    public String getFileForUser(String userName, boolean entrance) {
+        Set<Map.Entry<String, SoundFile>> entrySet = getAvailableSoundFiles().entrySet();
+        String fileToPlay = "";
+        if (entrySet.size() > 0) {
+            for (Map.Entry entry : entrySet) {
+                String fileEntry = (String) entry.getKey();
+                if (entrance) {
+                    if (userName.toLowerCase().startsWith(fileEntry.toLowerCase())
+                            && fileEntry.length() > fileToPlay.length())
+                        fileToPlay = fileEntry;
+                } else {
+                    if (fileEntry.toLowerCase().startsWith(userName.toLowerCase()) &&
+                            fileEntry.toLowerCase().endsWith(leaveSuffix.toLowerCase())
+                            && fileEntry.length() > fileToPlay.length()) {
+                        fileToPlay = fileEntry;
+                    }
+                }
+            }
+        }
+        return fileToPlay;
+    }
+
     /**
      * This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
      * to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
      *
-     * @return Map of the current list of available sound files.
      */
-    private Map<String, SoundFile> getFileList() {
-        Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private void updateFileList() {
         try {
 
             soundFileDir = appProperties.getProperty("sounds_directory");
@@ -666,6 +658,8 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
+            repository.deleteAll();
+
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
                     String fileName = filePath.getFileName().toString();
@@ -674,16 +668,16 @@ public class SoundPlayerImpl implements Observer {
                     LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
-                    SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                    repository.save(soundFile);
-                    returnFiles.put(fileName, soundFile);
+                    if (!repository.exists(fileName)) {
+                        SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+                        repository.save(soundFile);
+                    }
                 }
             });
         } catch (IOException e) {
             LOG.fatal(e.toString());
             e.printStackTrace();
         }
-        return returnFiles;
     }
 
 

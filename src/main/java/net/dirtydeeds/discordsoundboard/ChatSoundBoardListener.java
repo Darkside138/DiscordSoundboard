@@ -64,7 +64,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         String requestingUser = event.getAuthor().getName();
-        if (!event.getAuthor().isBot() && ((respondToDms && event.isFromType(ChannelType.PRIVATE)) || !event.isFromType(ChannelType.PRIVATE))) {
+        if (!event.getAuthor().isBot() && ((respondToDms && event.isFromType(ChannelType.PRIVATE)) ||
+				!event.isFromType(ChannelType.PRIVATE))) {
+
             String message = event.getMessage().getContentRaw().toLowerCase();
             if (message.startsWith(commandCharacter)) {
                 if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
@@ -247,45 +249,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
                         }
                     } else {
-                        List<Message.Attachment> attachments = event.getMessage().getAttachments();
-                        if (attachments.size() > 0 && event.isFromType(ChannelType.PRIVATE)) {
-                            for (Message.Attachment attachment : attachments) {
-                                String name = attachment.getFileName();
-                                String extension = name.substring(name.indexOf(".") + 1);
-                                if (extension.equals("wav") || extension.equals("mp3")) {
-                                    if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
-                                        if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
-                                            File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
-                                            attachment.downloadToFile().getNow(newSoundFile);
-                                            event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".").queue();
-                                        } else {
-                                            if (event.getMember() != null) {
-                                                boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
-                                                if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
-                                                        || hasManageServerPerm) {
-                                                    try {
-                                                        Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
-                                                        File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
-                                                        attachment.downloadToFile().getNow(newSoundFile);
-                                                        event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".").queue();
-                                                    } catch (IOException e1) {
-                                                        LOG.fatal("Problem deleting and re-adding sound file: " + name);
-                                                    }
-                                                } else {
-                                                    event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.").queue();
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
-                                    }
-                                }
-                            }
-                        } else {
-                            if (message.startsWith(commandCharacter) || event.isFromType(ChannelType.PRIVATE)) {
-                                nonRecognizedCommand(event, requestingUser);
-                            }
-                        }
+						if (message.startsWith(commandCharacter) || event.isFromType(ChannelType.PRIVATE)) {
+							nonRecognizedCommand(event, requestingUser);
+						}
                     }
                 } else {
                     if (!soundPlayer.isUserAllowed(requestingUser)) {
@@ -295,7 +261,43 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         replyByPrivateMessage(event, "You've been banned from using this soundboard bot.");
                     }
                 }
-            }
+            } else {
+				List<Message.Attachment> attachments = event.getMessage().getAttachments();
+				if (attachments.size() > 0 && event.isFromType(ChannelType.PRIVATE)) {
+					for (Message.Attachment attachment : attachments) {
+						String name = attachment.getFileName();
+						String extension = name.substring(name.indexOf(".") + 1);
+						if (extension.equals("wav") || extension.equals("mp3")) {
+							if (attachment.getSize() < MAX_FILE_SIZE_IN_BYTES) {
+								if (!Files.exists(Paths.get(soundPlayer.getSoundsPath() + "/" + name))) {
+									File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+									attachment.downloadToFile(newSoundFile).getNow(null);
+									event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".").queue();
+								} else {
+									if (event.getMember() != null) {
+										boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
+										if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
+												|| hasManageServerPerm) {
+											try {
+												Files.deleteIfExists(Paths.get(soundPlayer.getSoundsPath() + "/" + name));
+												File newSoundFile = new File(soundPlayer.getSoundsPath(), name);
+												attachment.downloadToFile().getNow(newSoundFile);
+												event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".").queue();
+											} catch (IOException e1) {
+												LOG.fatal("Problem deleting and re-adding sound file: " + name);
+											}
+										} else {
+											event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.").queue();
+										}
+									}
+								}
+							} else {
+								replyByPrivateMessage(event, "File `" + name + "` is too large to add to library.");
+							}
+						}
+					}
+				}
+			}
         }
     }
 
