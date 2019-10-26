@@ -11,18 +11,12 @@ username_to_join_channel=yourDiscordUsername
 respond_to_chat_commands=true
 
 #This is what you want your commands to start with. Ex: If configured to ? the bot with respond to anyone typing ?list
-respond_to_chat_commands=true
 respond_to_dm=true
 command_character=?
-message_size_limit=2000
 leave_suffix=_leave
+
 #Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
 message_size_limit=2000
-
-#The player that should be used. The valid options are musicPlayer or JDAPlayer. If using musicPlayer you
-#need extra dependencies: ffmpeg.exe, ffprobe.exe, youtube-dl, and python 2.5+ (I've tested with 3.5).
-#If using JDAPlayer, it seems to have issues with mono files, if you run into this convert the file to stereo.
-player=JDAPlayer
 
 #Specify the directory where your sound files are located. If left empty it will look for a
 #directory called "sounds/" in same directory the app was executed from.
@@ -38,3 +32,5 @@ allowedUsers=
 #bot through chat.
 bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
+#Set the activity string for the bot. If left empty the message will default
+activityString=

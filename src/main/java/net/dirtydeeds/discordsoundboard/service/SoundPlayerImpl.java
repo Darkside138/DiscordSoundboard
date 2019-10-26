@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.logging.impl.SimpleLog;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
@@ -131,8 +132,13 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-            bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
-                    "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
+            String activityString = appProperties.getProperty("activityString");
+            if (StringUtils.isEmpty(activityString)) {
+                bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
+                        "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
+            } else {
+                bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, activityString));
+            }
 
         } catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
