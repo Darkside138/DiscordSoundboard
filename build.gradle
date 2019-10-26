@@ -21,7 +21,7 @@ plugins {
     id 'org.springframework.boot' version '1.4.2.RELEASE'
 }
 
-version = '1.4.11'
+version = '3.0.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -89,6 +89,7 @@ task zip(type: Zip, dependsOn: 'bootRepackage') {
     with distributionsCopySpec
     archiveName "${fileName}.zip"
 }
+
 task tar(type: Tar, dependsOn: 'bootRepackage') {
     def fileName = "${baseName}-$version"
     with distributionsCopySpec
