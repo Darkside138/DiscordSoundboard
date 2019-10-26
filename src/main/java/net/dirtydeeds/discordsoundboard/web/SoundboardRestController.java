@@ -6,10 +6,7 @@ import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dirtydeeds.discordsoundboard.util.SortIgnoreCase;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.inject.Inject;
 import java.util.*;
@@ -36,46 +33,38 @@ public class SoundboardRestController {
         this.soundPlayer = soundPlayer;
     }
 
-    @RequestMapping(value = "/availableSounds", method = RequestMethod.GET)
+    @GetMapping(value = "/availableSounds")
     @Deprecated
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
-        Collections.sort(returnSounds, new SortIgnoreCase());
-        return returnSounds;
+        return soundMap.values().stream().sorted(new SortIgnoreCase()).collect(Collectors.toCollection(LinkedList::new));
     }
     
-    @RequestMapping(value = "/soundCategories", method = RequestMethod.GET)
+    @GetMapping(value = "/soundCategories")
     @Deprecated
     public Set<String> getSoundCategories() {
-        Set<String> categories = new HashSet<>();
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        categories.addAll(soundMap.entrySet().stream().map(entry -> entry.getValue().getCategory()).collect(Collectors.toList()));
-        return categories;
+        return soundMap.values().stream().map(SoundFile::getCategory).collect(Collectors.toSet());
     }
 
-    @RequestMapping(value = "/users", method = RequestMethod.GET)
+    @GetMapping(value = "/users")
     public List<User> getUsers() {
         return soundPlayer.getUsers();
     }
     
-    @RequestMapping(value = "/playFile", method = RequestMethod.POST)
+    @PostMapping(value = "/playFile")
     public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
-        try {
-            soundPlayer.playFileForUser(soundFileId, username);
-            return HttpStatus.OK;
-        } catch (SoundPlaybackException e) {
-            return HttpStatus.NOT_FOUND;
-        }
+        soundPlayer.playFileForUser(soundFileId, username);
+        return HttpStatus.OK;
     }
 
-    @RequestMapping(value = "/playUrl", method = RequestMethod.POST)
+    @PostMapping(value = "/playUrl")
     public HttpStatus playSoundUrl(@RequestParam String url, @RequestParam String username) {
             soundPlayer.playUrlForUser(url, username);
             return HttpStatus.OK;
     }
     
-    @RequestMapping(value = "/playRandom", method = RequestMethod.POST)
+    @PostMapping(value = "/playRandom")
     @Deprecated
     public HttpStatus playRandomSoundFile(@RequestParam String username) {
         try {
@@ -86,50 +75,44 @@ public class SoundboardRestController {
         return HttpStatus.OK;
     }
 
-    @RequestMapping(value = "/sounds", method = RequestMethod.GET)
+    @GetMapping(value = "/sounds")
     public List<SoundFile> getSoundFileListNew() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        List<SoundFile> returnSounds = soundMap.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(LinkedList::new));
-        Collections.sort(returnSounds, new SortIgnoreCase());
-        return returnSounds;
+        return soundMap.values().stream().sorted(new SortIgnoreCase()).collect(Collectors.toCollection(LinkedList::new));
     }
 
-    @RequestMapping(value = "/sounds", method = RequestMethod.POST)
+    @PostMapping(value = "/sounds")
     public HttpStatus soundCommand(@RequestParam String username, @RequestParam String command) {
-        switch (command) {
-            case "random":
-                try {
-                    soundPlayer.playRandomSoundFile(username, null);
-                } catch (SoundPlaybackException e) {
-                    return HttpStatus.INTERNAL_SERVER_ERROR;
-                }
-                return HttpStatus.OK;
-            default:
-                return HttpStatus.NOT_IMPLEMENTED;
+        if ("random".equals(command)) {
+            try {
+                soundPlayer.playRandomSoundFile(username, null);
+            } catch (SoundPlaybackException e) {
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            return HttpStatus.OK;
         }
+        return HttpStatus.NOT_IMPLEMENTED;
     }
 
-    @RequestMapping(value = "/sounds/category", method = RequestMethod.GET)
+    @GetMapping(value = "/sounds/category")
     public Set<String> getSoundCategoriesNew() {
-        Set<String> categories = new HashSet<>();
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        categories.addAll(soundMap.entrySet().stream().map(entry -> entry.getValue().getCategory()).collect(Collectors.toList()));
-        return categories;
+        return soundMap.values().stream().map(SoundFile::getCategory).collect(Collectors.toSet());
     }
 
-    @RequestMapping(value = "/stop", method = RequestMethod.POST)
+    @PostMapping(value = "/stop")
     public HttpStatus stopPlayback() {
         soundPlayer.stop();
         return HttpStatus.OK;
     }
     
-    @RequestMapping(value = "/volume", method = RequestMethod.POST)
+    @PostMapping(value = "/volume")
     public HttpStatus setVolume(@RequestParam Integer volume) {
         soundPlayer.setSoundPlayerVolume(volume);
         return HttpStatus.OK;
     }
     
-    @RequestMapping(value = "/volume", method = RequestMethod.GET) 
+    @GetMapping(value = "/volume")
     public float getVolume() {
         return soundPlayer.getSoundPlayerVolume();
     }

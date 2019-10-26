@@ -1,18 +1,9 @@
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'distribution'
-apply plugin: 'spring-boot'
-
-version = '1.4.11'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 buildscript {
     ext {
         springBootVersion = '1.3.3.RELEASE'
     }
     repositories {
+        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -22,28 +13,39 @@ buildscript {
     }
 }
 
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'distribution'
+    id 'org.springframework.boot' version '1.4.2.RELEASE'
+}
+
+version = '1.4.11'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 repositories {
-    repositories {
-        jcenter()
-        mavenCentral()
-    }
+    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    compile 'net.dv8tion:JDA:2.2.1_353'
-    compile 'net.dv8tion:jda-player:0.2.3_25'
+    compile 'net.dv8tion:JDA:4.0.0_54'
+    compile 'com.sedmelluq:lavaplayer:1.3.22.pbjtest3'
     compile 'commons-io:commons-io:2.4'
 
     compile 'org.springframework.boot:spring-boot-starter-web'
     compile 'org.springframework.boot:spring-boot-starter-jersey'
-    
+
     compile("org.springframework.boot:spring-boot-starter-data-jpa")
     compile("com.h2database:h2")
 
     compile "io.springfox:springfox-swagger2:2.4.0"
     compile 'io.springfox:springfox-swagger-ui:2.4.0'
 
-    testCompile 'org.springframework.boot:spring-boot-starter-test' 
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
 }
 
 processResources {
@@ -94,8 +96,3 @@ task tar(type: Tar, dependsOn: 'bootRepackage') {
 }
 
 build.dependsOn(zip,tar)
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.3'
-}
-
