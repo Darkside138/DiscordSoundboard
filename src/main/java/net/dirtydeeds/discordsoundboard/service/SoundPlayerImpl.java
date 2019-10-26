@@ -131,20 +131,16 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-//            bot.getAccountManager().setGame("Type " + appProperties.getProperty("command_character") + "help for a list of commands.");
+            bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
+                    "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
 
-//            File avatarFile = new File(System.getProperty("user.dir") + "/avatar.jpg");
-//            AvatarUtil.Avatar avatar = AvatarUtil.getAvatar(avatarFile);
-//            bot.getAccountManager().setAvatar(avatar).update();
         } catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
         } catch (LoginException e) {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
             LOG.fatal("Login Interrupted.");
-        } //catch (UnsupportedEncodingException e) {
-//            LOG.warn("Could not update avatar with provided file.");
-//        }
+        }
     }
 
     @Override
@@ -341,8 +337,9 @@ public class SoundPlayerImpl implements Observer {
 
     /**
      * Plays the fileName requested in the requested channel.
+     *
      * @param fileName - The name of the file to play.
-     * @param channel -  The channel to play the file in
+     * @param channel  -  The channel to play the file in
      */
     public void playFileInChannel(String fileName, VoiceChannel channel) {
         if (channel == null) return;
@@ -628,7 +625,6 @@ public class SoundPlayerImpl implements Observer {
     /**
      * This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
      * to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
-     *
      */
     private void updateFileList() {
         try {
