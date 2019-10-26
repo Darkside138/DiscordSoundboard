@@ -6,3 +6,4 @@ src/main/resources/app.properties
 build
 .gradle/
 sounds/*
+/src/main/resources/application.properties
