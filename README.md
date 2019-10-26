@@ -8,15 +8,15 @@ Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8
 ##Beta Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
 
-[2.2.2-BETA.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.2.2-BETA/DiscordSoundboard-2.2.2-beta.zip)
+[3.0.0.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.0/DiscordSoundboard-3.0.0.zip)
 
-[2.2.2-BETA.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/v2.2.2-BETA/DiscordSoundboard-2.2.2-beta.tar)
+[3.0.0.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.0/DiscordSoundboard-3.0.0.tar)
 
 ## Current Release
 Latest Release (Use BETA version above). 
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
-the "app.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
-configurable in the app.properties). Put all the clips you 
+the "application.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
+configurable in the application.properties). Put all the clips you 
 want to play in the sounds directory. In the app.properties file you should fill in the login information for 
 your bot (you should create a new discord BOT account for your soundboard). Once you've created your new bot you must invite 
 it to any server you want to use it on. The property "username_to_join_channel" is your username on discord. 
@@ -57,11 +57,6 @@ respond_to_chat_commands=true
 command_character=?
 message_size_limit=2000
 
-#The player that should be used. The valid options are musicPlayer or JDAPlayer. If using musicPlayer you
-#need extra dependencies: ffmpeg.exe, ffprobe.exe, youtube-dl, and python 2.5+ (I've tested with 3.5).
-#If using JDAPlayer, it seems to have issues with mono files, if you run into this convert the file to stereo.
-player=JDAPlayer
-
 #Specify the directory where your sound files are located. If left empty it will look for a
 #directory called "sounds/" in same directory the app was executed from.
 #If you specify a directory that does not exist yet the application will attempt to create it.
@@ -75,6 +70,9 @@ allowedUsers=
 #List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
 #bot through chat.
 bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
+
+#Set the activity string for the bot. If left empty the message will default
+activityString=
 ```
 
 ## Usage
@@ -83,9 +81,8 @@ Running locally from an IDE: Update the app.properties file with the login infor
 sound file the bot will look for the username specified in all the servers the bot account has access to and 
 join that channel, then play the sound that was clicked. For local usage sounds can be placed in src/main/resources/sounds/.
 
-### Executing the jar file
-Once you've compiled the jar file you will need to place the .jar file, the app.properties file, and your sounds/ 
-directory in a folder then simply execute the .jar file or the provided .bat file.
+### Executing the app
+Unzip the application. Update the application.properties with your bot token and any other preferences you would like. There are .bat and sh files in the /bin directory. Execute the proper one and the app should startup.
 
 ### Available commands
 ?help
