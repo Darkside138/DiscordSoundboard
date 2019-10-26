@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '1.3.3.RELEASE'
+        springBootVersion = '2.2.0.RELEASE'
     }
     repositories {
         jcenter()
@@ -13,13 +13,15 @@ buildscript {
     }
 }
 
-
 plugins {
     id 'java'
     id 'idea'
     id 'distribution'
-    id 'org.springframework.boot' version '1.4.2.RELEASE'
+    id 'org.springframework.boot' version '2.2.0.RELEASE'
+    id 'application'
 }
+
+mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
 version = '3.0.0'
 
@@ -36,64 +38,51 @@ dependencies {
     compile 'com.sedmelluq:lavaplayer:1.3.22.pbjtest3'
     compile 'commons-io:commons-io:2.4'
 
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-jersey'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.0.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: '2.2.0.RELEASE'
 
-    compile("org.springframework.boot:spring-boot-starter-data-jpa")
-    compile("com.h2database:h2")
+
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.2.0.RELEASE'
+    compile group: 'com.h2database', name: 'h2', version: '1.4.200'
 
     compile "io.springfox:springfox-swagger2:2.4.0"
     compile 'io.springfox:springfox-swagger-ui:2.4.0'
-
-    testCompile 'org.springframework.boot:spring-boot-starter-test'
 }
 
 processResources {
     exclude 'app.properties'
 }
 
-jar {
-    group = 'build'
-    manifest {
-        attributes 'Main-Class': 'net.dirtydeeds.discordsoundboard.MainController',
-        'Implementation-Version': version
+distributions {
+    main {
+        baseName = 'DiscordSoundboard'
     }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    jar.into('static') {
+}
+
+bootJar {
+    exclude ("application.properties")
+}
+
+bootDistZip {
+    archiveName = 'DiscordSoundboard.zip'
+    into ("DiscordSoundboard/bin") {
+        from ('/src/main/resources/application.properties.example')
+    }
+    into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
     }
-    exclude('/src/main/java/**')
-    exclude("/src/main/resources/*")
+    rename { String fileName ->
+        fileName.replace('application.properties.example', 'application.properties') }
 }
 
-def distributionsCopySpec = copySpec {
-    def baseName = "${jar.baseName}"
-    def fileName = "${baseName}-$version"
-    from file("$buildDir/libs")
-    from file("$buildDir/resources/main")
-    include "**/app.properties.example"
-    from file("/distFiles")
-    include "soundboard.bat"
-    include "ffmpeg.exe"
-    include "ffprobe.exe"
-    include "youtube-dl"
-    include "avatar.jpg"
-    include "${fileName}.jar"
-    exclude 'app.properties'
-    rename ("app.properties.example", "app.properties")
-    rename "${fileName}.jar", "${baseName}.jar"
+bootDistTar {
+    archiveName = 'DiscordSoundboard.tar'
+    into ("DiscordSoundboard/bin") {
+        from ('/src/main/resources/application.properties.example')
+    }
+    into("DiscordSoundboard/bin/static") {
+        from('src/main/webapp')
+    }
+    rename { String fileName ->
+        fileName.replace('application.properties.example', 'application.properties') }
 }
-
-task zip(type: Zip, dependsOn: 'bootRepackage') {
-    def fileName = "${baseName}-$version"
-    with distributionsCopySpec
-    archiveName "${fileName}.zip"
-}
-
-task tar(type: Tar, dependsOn: 'bootRepackage') {
-    def fileName = "${baseName}-$version"
-    with distributionsCopySpec
-    archiveName "${fileName}.tar"
-}
-
-build.dependsOn(zip,tar)

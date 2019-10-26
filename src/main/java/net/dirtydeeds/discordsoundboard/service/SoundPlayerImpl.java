@@ -670,7 +670,7 @@ public class SoundPlayerImpl implements Observer {
                     LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
-                    if (!repository.exists(fileName)) {
+                    if (!repository.existsById(fileName)) {
                         SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
                         repository.save(soundFile);
                     }

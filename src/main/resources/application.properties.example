@@ -5,7 +5,7 @@
 bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
 
 #The username to look for and join their channel when a sound is played from the UI
-username_to_join_channel=yourDiscordUsername
+username_to_join_channel=YourUserName
 
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
@@ -33,4 +33,4 @@ allowedUsers=
 bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
 #Set the activity string for the bot. If left empty the message will default
-activityString=
+activityString=Not empty
