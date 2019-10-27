@@ -10,8 +10,6 @@ Updated to the new JDA 3.X library and also updated to a new music player. This 
 
 [3.0.0.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.0/DiscordSoundboard-3.0.0.zip)
 
-[3.0.0.tar](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.0/DiscordSoundboard-3.0.0.tar)
-
 ## Current Release
 Latest Release (Use BETA version above). 
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
