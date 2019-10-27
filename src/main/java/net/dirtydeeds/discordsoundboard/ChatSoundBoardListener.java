@@ -109,18 +109,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     } else if (message.startsWith(commandCharacter + "volume")) {
                         int fadeoutIndex = message.indexOf('~');
                         int newVol = Integer.parseInt(message.substring(8, (fadeoutIndex > -1) ? fadeoutIndex - 1 : message.length()));
-                        int fadeoutTimeout = 1;
-                        if (fadeoutIndex > -1) {
-                            fadeoutTimeout = Integer.parseInt(message.substring(fadeoutIndex + 1));
-                        }
+
                         if (newVol >= 1 && newVol <= 100) {
                             muted = false;
-                            soundPlayer.setSoundPlayerVolume(newVol, fadeoutTimeout * 1000);
+                            soundPlayer.setSoundPlayerVolume(newVol);
                             replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
                             LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
                         } else if (newVol == 0) {
                             muted = true;
-                            soundPlayer.setSoundPlayerVolume(newVol, fadeoutTimeout * 1000);
+                            soundPlayer.setSoundPlayerVolume(newVol);
                             replyByPrivateMessage(event, requestingUser + " muted me.");
                             LOG.info("Bot muted by " + requestingUser + ".");
                         }

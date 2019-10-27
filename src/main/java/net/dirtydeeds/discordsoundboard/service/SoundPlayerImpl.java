@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author dfurrer.
@@ -59,8 +58,6 @@ public class SoundPlayerImpl implements Observer {
         this.mainWatch.addObserver(this);
         this.repository = repository;
 
-        setSoundPlayerVolume(75);
-
         init();
     }
 
@@ -74,6 +71,7 @@ public class SoundPlayerImpl implements Observer {
         playerManager.registerSourceManager(localAudioSourceManager);
 
         musicPlayer = playerManager.createPlayer();
+        musicPlayer.setVolume(75);
 
         leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
 
@@ -108,11 +106,7 @@ public class SoundPlayerImpl implements Observer {
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
                         messageSizeLimit, respondToDms);
                 this.addBotListener(chatListener);
-                EntranceSoundBoardListener entranceListener = new EntranceSoundBoardListener(this);
-                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this);
                 MovedChannelListener movedChannelListener = new MovedChannelListener(this);
-//                this.addBotListener(entranceListener);
-//                this.addBotListener(leaveSoundBoardListener);
                 this.addBotListener(movedChannelListener);
             }
 
@@ -173,50 +167,7 @@ public class SoundPlayerImpl implements Observer {
      * @param volume - The volume value to set.
      */
     public void setSoundPlayerVolume(int volume) {
-        setSoundPlayerVolume(volume, 1000);
-    }
-
-    /**
-     * Sets volume of the player.
-     *
-     * @param volume - The volume value to set.
-     */
-    public void setSoundPlayerVolume(int volume, int timeout) {
-        int currentVolume = playerVolume;
-
-        int volumeDiff = currentVolume - volume;
-        if (volumeDiff < 0) {
-            volumeDiff = volumeDiff * -1;
-        }
-
-        if (volumeDiff != 0) {
-            int microInterval = Math.round(timeout / volumeDiff);
-            boolean goingUp = false;
-            if (currentVolume < volume) {
-                goingUp = true;
-            }
-            while (currentVolume != volume) {
-                if (currentVolume < volume) {
-                    currentVolume++;
-                } else {
-                    currentVolume--;
-                }
-                playerVolume = currentVolume;
-                musicPlayer.setVolume(currentVolume);
-                LOG.info("Setting player volume to: " + currentVolume);
-
-                if (goingUp && currentVolume >= volume) {
-                    break;
-                } else if (!goingUp && currentVolume <= volume) {
-                    break;
-                }
-                try {
-                    TimeUnit.MILLISECONDS.sleep(microInterval);
-                } catch (InterruptedException e) {
-                    // mute...
-                }
-            }
-        }
+        musicPlayer.setVolume(volume);
     }
 
     /**
@@ -566,7 +517,7 @@ public class SoundPlayerImpl implements Observer {
      */
     private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
-            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
         } else {
             AudioManager audioManager = guild.getAudioManager();
             AudioSendHandler audioSendHandler = new MyAudioSendHandler(musicPlayer);
@@ -583,7 +534,7 @@ public class SoundPlayerImpl implements Observer {
 
     private void playUrl(String url, Guild guild) {
 //        if (guild == null) {
-//            LOG.fatal("Guild is null. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+//            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
 //        } else {
 //            if (isMusicPlayer()) {
 //                if (bot.getAudioManager(guild).getSendingHandler() == null) {
