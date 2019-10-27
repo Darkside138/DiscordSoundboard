@@ -341,6 +341,7 @@ public class SoundPlayerImpl implements Observer {
                 users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
             }
         }
+        users.sort(Comparator.comparing(User::getUsername));
         return users;
     }
 
@@ -456,7 +457,8 @@ public class SoundPlayerImpl implements Observer {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 for (Member user : channel.getMembers()) {
-                    if (user.getEffectiveName().equalsIgnoreCase(userName)) {
+                    if (user.getEffectiveName().equalsIgnoreCase(userName)
+                            || user.getUser().getName().equalsIgnoreCase(userName)) {
                         moveToChannel(channel, guild);
                     }
                 }
@@ -474,7 +476,8 @@ public class SoundPlayerImpl implements Observer {
         for (Guild guild : bot.getGuilds()) {
             for (VoiceChannel channel : guild.getVoiceChannels()) {
                 for (Member user : channel.getMembers()) {
-                    if (user.getEffectiveName().equalsIgnoreCase(userName)) {
+                    if (user.getEffectiveName().equalsIgnoreCase(userName)
+                            || user.getUser().getName().equalsIgnoreCase(userName)) {
                         return guild;
                     }
                 }

@@ -32,14 +32,6 @@ $(document).ready(function() {
         }
     });
 
-    $("#randomButton").click(function() {
-        var username = $(".userNameSelect option:selected").text();
-        $.ajax({
-            url: "/soundsApi/playRandom?username=" + username,
-            method: 'POST'
-        });
-    });
-
     $.ajax({
         url: "/soundsApi/users",
         success: function(data) {
