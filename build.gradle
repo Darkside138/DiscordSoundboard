@@ -23,10 +23,17 @@ plugins {
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
-version = '3.0.0'
+project.version = '3.0.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+bootJar {
+    manifest {
+        attributes 'Implementation-Title': rootProject.name,
+                'Implementation-Version': project.version
+    }
+}
 
 repositories {
     jcenter()
