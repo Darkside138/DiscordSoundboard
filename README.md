@@ -8,10 +8,10 @@ Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8
 ##Beta Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
 
-[3.0.0.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.0/DiscordSoundboard-3.0.0.zip)
+[3.0.2.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.2/DiscordSoundboard-3.0.2.zip)
 
 ## Current Release
-Latest Release (Use BETA version above). 
+Latest Release (Use version above). 
 Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
 the "application.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the application.properties). Put all the clips you 
