@@ -42,7 +42,7 @@ repositories {
 
 dependencies {
     compile 'net.dv8tion:JDA:4.0.0_54'
-    compile 'com.sedmelluq:lavaplayer:1.3.22'
+    compile 'com.sedmelluq:lavaplayer:1.3.23'
     compile 'commons-io:commons-io:2.4'
 
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.0.RELEASE'
