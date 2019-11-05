@@ -23,7 +23,7 @@ plugins {
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
-project.version = '3.0.2'
+project.version = '3.0.3'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -72,18 +72,6 @@ bootJar {
 
 bootDistZip {
     archiveName = 'DiscordSoundboard.zip'
-    into ("DiscordSoundboard/bin") {
-        from ('/src/main/resources/application.properties.example')
-    }
-    into("DiscordSoundboard/bin/static") {
-        from('src/main/webapp')
-    }
-    rename { String fileName ->
-        fileName.replace('application.properties.example', 'application.properties') }
-}
-
-bootDistTar {
-    archiveName = 'DiscordSoundboard.tar'
     into ("DiscordSoundboard/bin") {
         from ('/src/main/resources/application.properties.example')
     }

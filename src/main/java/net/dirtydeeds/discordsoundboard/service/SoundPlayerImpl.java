@@ -106,7 +106,11 @@ public class SoundPlayerImpl implements Observer {
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
                         messageSizeLimit, respondToDms);
                 this.addBotListener(chatListener);
+                EntranceSoundBoardListener entranceSoundBoardListener = new EntranceSoundBoardListener(this);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this);
                 MovedChannelListener movedChannelListener = new MovedChannelListener(this);
+                this.addBotListener(entranceSoundBoardListener);
+                this.addBotListener(leaveSoundBoardListener);
                 this.addBotListener(movedChannelListener);
             }
 

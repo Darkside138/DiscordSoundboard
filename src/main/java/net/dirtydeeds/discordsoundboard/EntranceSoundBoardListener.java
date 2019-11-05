@@ -1,7 +1,7 @@
 package net.dirtydeeds.discordsoundboard;
 
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.logging.impl.SimpleLog;
 
@@ -21,7 +21,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     }
 
     @SuppressWarnings({"rawtypes"})
-    public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
+    public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
         if(!event.getMember().getUser().isBot()) {
             String userJoined = event.getMember().getEffectiveName();
             String entranceFile = bot.getFileForUser(userJoined, true);

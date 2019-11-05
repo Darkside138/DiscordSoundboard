@@ -33,4 +33,4 @@ allowedUsers=
 bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
 #Set the activity string for the bot. If left empty the message will default
-activityString=Not empty
+activityString=
