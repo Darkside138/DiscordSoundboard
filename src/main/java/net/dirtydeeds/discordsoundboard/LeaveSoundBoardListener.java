@@ -10,7 +10,7 @@ import org.h2.util.StringUtils;
 
 /**
  * author: Dave Furrer
- *
+ * <p>
  * This class listens for users to leave a channel and plays a sound if there is one for the user.
  */
 public class LeaveSoundBoardListener extends ListenerAdapter {
@@ -29,21 +29,21 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
         String userDisconnected = event.getMember().getEffectiveName();
         String userDisconnectedId = event.getMember().getId();
-        String fileToPlay = bot.getFileForUser(userDisconnected, false);
-        if (!fileToPlay.equals("")) {
-            try {
-                bot.playFileInChannel(fileToPlay, event.getChannelLeft());
-            } catch (Exception e) {
-                LOG.fatal("Could not play file for disconnection of " + userDisconnected);
-            }
+        User user = userRepository.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
+        if (user != null && !StringUtils.isNullOrEmpty(user.getLeaveSound())) {
+            bot.playFileInChannel(user.getLeaveSound(), event.getChannelJoined());
         } else {
-            User user = userRepository.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
-            if (user != null) {
-                if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
-                    bot.playFileInChannel(user.getLeaveSound(), event.getChannelJoined());
+            //If DB doesn't have a leave sound check for a file
+            String fileToPlay = bot.getFileForUser(userDisconnected, false);
+            if (!fileToPlay.equals("")) {
+                try {
+                    bot.playFileInChannel(fileToPlay, event.getChannelLeft());
+                } catch (Exception e) {
+                    LOG.fatal("Could not play file for disconnection of " + userDisconnected);
                 }
+            } else {
+                LOG.debug("Could not find disconnection sound for " + userDisconnected + ", so ignoring disconnection event.");
             }
-            LOG.debug("Could not find disconnection sound for " + userDisconnected + ", so ignoring disconnection event.");
         }
     }
 }

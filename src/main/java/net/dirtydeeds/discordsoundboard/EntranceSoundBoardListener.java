@@ -10,7 +10,7 @@ import org.h2.util.StringUtils;
 
 /**
  * @author asafatli.
- *
+ * <p>
  * This class handles waiting for people to enter a discord voice channel and responding to their entrance.
  */
 public class EntranceSoundBoardListener extends ListenerAdapter {
@@ -27,24 +27,27 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     @SuppressWarnings({"rawtypes"})
     public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
-        if(!event.getMember().getUser().isBot()) {
+        if (!event.getMember().getUser().isBot()) {
             String userJoined = event.getMember().getEffectiveName();
             String userId = event.getMember().getId();
-            String entranceFile = bot.getFileForUser(userJoined, true);
-            if (!entranceFile.equals("")) {
-                try {
-                    bot.playFileInChannel(entranceFile, event.getChannelJoined());
-                } catch (Exception e) {
-                    LOG.fatal("Could not play file for entrance of " + userJoined);
-                }
+
+            User user = userRepository.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
+            if (user != null && !StringUtils.isNullOrEmpty(user.getEntranceSound())) {
+                bot.playFileInChannel(user.getEntranceSound(), event.getChannelJoined());
             } else {
-                User user = userRepository.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
-                if (user != null) {
-                    if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
-                        bot.playFileInChannel(user.getEntranceSound(), event.getChannelJoined());
+                //If DB doesn't have an entrance sound check for a file.
+                String entranceFile = bot.getFileForUser(userJoined, true);
+                if (!entranceFile.equals("")) {
+                    try {
+                        bot.playFileInChannel(entranceFile, event.getChannelJoined());
+                    } catch (Exception e) {
+                        LOG.fatal("Could not play file for entrance of " + userJoined);
                     }
+
+                } else {
+
+                    LOG.debug("Could not find any sound that starts with " + userJoined + ", so ignoring entrance.");
                 }
-                LOG.debug("Could not find any sound that starts with " + userJoined + ", so ignoring entrance.");
             }
         }
     }
