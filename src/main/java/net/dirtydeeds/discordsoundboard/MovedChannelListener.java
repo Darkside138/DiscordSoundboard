@@ -1,26 +1,42 @@
 package net.dirtydeeds.discordsoundboard;
 
+import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.logging.impl.SimpleLog;
+import org.h2.util.StringUtils;
 
 public class MovedChannelListener extends ListenerAdapter {
 
     private static final SimpleLog LOG = new SimpleLog("MovedChannelListener");
 
     private SoundPlayerImpl bot;
+    private UserRepository userRepository;
 
-    public MovedChannelListener(SoundPlayerImpl bot) {
+    public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository) {
         this.bot = bot;
+        this.userRepository = userRepository;
     }
 
     @SuppressWarnings({"rawtypes"})
     public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
         if (!event.getMember().getUser().isBot()) {
-            String user = event.getMember().getEffectiveName();
-            String entranceFile = bot.getFileForUser(user, true);
-            String disconnectFile = bot.getFileForUser(user, false);
+            String discordUser = event.getMember().getEffectiveName();
+            String discordUserId = event.getMember().getId();
+            String entranceFile = bot.getFileForUser(discordUser, true);
+            String disconnectFile = bot.getFileForUser(discordUser, false);
+
+            User user = userRepository.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
+            if (user != null) {
+                if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
+                    entranceFile = user.getEntranceSound();
+                }
+                if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
+                    disconnectFile = user.getLeaveSound();
+                }
+            }
 
             if (!entranceFile.equals("")) {
                 try {

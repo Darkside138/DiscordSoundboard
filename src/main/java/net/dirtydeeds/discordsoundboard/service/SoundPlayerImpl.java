@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service;
 
+import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.FunctionalResultHandler;
@@ -8,6 +9,7 @@ import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
+import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
@@ -15,6 +17,7 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.logging.impl.SimpleLog;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -48,15 +51,18 @@ public class SoundPlayerImpl implements Observer {
     private String soundFileDir;
     private List<String> allowedUsers;
     private List<String> bannedUsers;
-    private SoundFileRepository repository;
+    private SoundFileRepository soundFileRepository;
+    private UserRepository userRepository;
     private boolean leaveAfterPlayback = false;
     private String leaveSuffix = "_leave";
 
     @Inject
-    public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository repository) {
+    public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
+                           UserRepository userRepository) {
         this.mainWatch = mainWatch;
         this.mainWatch.addObserver(this);
-        this.repository = repository;
+        this.soundFileRepository = soundFileRepository;
+        this.userRepository = userRepository;
 
         init();
     }
@@ -65,6 +71,7 @@ public class SoundPlayerImpl implements Observer {
         loadProperties();
         initializeDiscordBot();
         updateFileList();
+        getUsers();
 
         playerManager = new DefaultAudioPlayerManager();
         LocalAudioSourceManager localAudioSourceManager = new LocalAudioSourceManager();
@@ -74,6 +81,8 @@ public class SoundPlayerImpl implements Observer {
         musicPlayer.setVolume(75);
 
         leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
+
+        ConnectorNativeLibLoader.loadConnectorLibrary();
 
         initialized = true;
     }
@@ -104,11 +113,11 @@ public class SoundPlayerImpl implements Observer {
                     respondToDms = Boolean.valueOf(respondToDmsString);
                 }
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
-                        messageSizeLimit, respondToDms);
+                        messageSizeLimit, respondToDms, userRepository, soundFileRepository);
                 this.addBotListener(chatListener);
-                EntranceSoundBoardListener entranceSoundBoardListener = new EntranceSoundBoardListener(this);
-                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this);
-                MovedChannelListener movedChannelListener = new MovedChannelListener(this);
+                EntranceSoundBoardListener entranceSoundBoardListener = new EntranceSoundBoardListener(this, userRepository);
+                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, userRepository);
+                MovedChannelListener movedChannelListener = new MovedChannelListener(this, userRepository);
                 this.addBotListener(entranceSoundBoardListener);
                 this.addBotListener(leaveSoundBoardListener);
                 this.addBotListener(movedChannelListener);
@@ -159,7 +168,7 @@ public class SoundPlayerImpl implements Observer {
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
         Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (SoundFile soundFile : repository.findAll()) {
+        for (SoundFile soundFile : soundFileRepository.findAll()) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
         return returnFiles;
@@ -335,17 +344,25 @@ public class SoundPlayerImpl implements Observer {
     public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
         String userNameToSelect = appProperties.getProperty("username_to_join_channel");
         List<User> users = new ArrayList<>();
-        for (net.dv8tion.jda.api.entities.User user : bot.getUsers()) {
-            if (user.getJDA().getStatus().equals(JDA.Status.CONNECTED)) {
+        for (net.dv8tion.jda.api.entities.User discordUser : bot.getUsers()) {
+            if (discordUser.getJDA().getStatus().equals(JDA.Status.CONNECTED)) {
                 boolean selected = false;
-                String username = user.getName();
+                String username = discordUser.getName();
                 if (userNameToSelect.equals(username)) {
                     selected = true;
                 }
-                users.add(new net.dirtydeeds.discordsoundboard.beans.User(user.getId(), username, selected));
+                Optional<User> optionalUser = userRepository.findById(discordUser.getId());
+                if (optionalUser.isPresent()) {
+                    User user = optionalUser.get();
+                    user.setSelected(selected);
+                    users.add(user);
+                } else {
+                    users.add(new net.dirtydeeds.discordsoundboard.beans.User(discordUser.getId(), username, selected));
+                }
             }
         }
         users.sort(Comparator.comparing(User::getUsername));
+        userRepository.saveAll(users);
         return users;
     }
 
@@ -371,7 +388,7 @@ public class SoundPlayerImpl implements Observer {
     }
 
     private SoundFile getSoundFileById(String soundFileId) {
-        return repository.findOneBySoundFileIdIgnoreCase(soundFileId);
+        return soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileId);
     }
 
     /**
@@ -618,7 +635,7 @@ public class SoundPlayerImpl implements Observer {
                 }
             }
 
-            repository.deleteAll();
+            soundFileRepository.deleteAll();
 
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
@@ -628,9 +645,9 @@ public class SoundPlayerImpl implements Observer {
                     LOG.info(fileName);
                     File file = filePath.toFile();
                     String parent = file.getParentFile().getName();
-                    if (!repository.existsById(fileName)) {
+                    if (!soundFileRepository.existsById(fileName)) {
                         SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                        repository.save(soundFile);
+                        soundFileRepository.save(soundFile);
                     }
                 }
             });

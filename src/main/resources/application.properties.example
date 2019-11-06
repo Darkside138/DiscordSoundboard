@@ -34,3 +34,11 @@ bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
 #Set the activity string for the bot. If left empty the message will default
 activityString=
+
+#Database setting stuff. Should probably change the user/pass for this.
+spring.datasource.url=jdbc:h2:file:~/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+spring.datasource.username=admin
+spring.datasource.password=password
+spring.datasource.driver-class-name=org.h2.Driver
+#spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
