@@ -8,6 +8,7 @@ import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
@@ -138,33 +139,39 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void entranceOrLeaveCommand(MessageReceivedEvent event, String message) {
-        String[] messageSplit = event.getMessage().getContentRaw().split(" ");
-        if (messageSplit.length >= 3) {
-            String userNameOrId = messageSplit[1];
-            String soundFileName = messageSplit[2];
+        if (userIsAdmin(event.getMember())) {
+            String[] messageSplit = event.getMessage().getContentRaw().split(" ");
+            if (messageSplit.length >= 3) {
+                String userNameOrId = messageSplit[1];
+                String soundFileName = messageSplit[2];
 
-            User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
-            if (user != null) {
-                SoundFile soundFile = soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileName);
-                if (soundFile == null) {
-                    replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
-                } else {
-                    if (message.startsWith(commandCharacter + "entrance")) {
-                        user.setEntranceSound(soundFileName);
-                        replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound set to: " + soundFileName);
+                User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+                if (user != null) {
+                    SoundFile soundFile = soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileName);
+                    if (soundFile == null) {
+                        replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
                     } else {
-                        user.setLeaveSound(soundFileName);
-                        replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound set to: " + soundFileName);
+                        if (message.startsWith(commandCharacter + "entrance")) {
+                            user.setEntranceSound(soundFileName);
+                            replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound set to: " + soundFileName);
+                        } else {
+                            user.setLeaveSound(soundFileName);
+                            replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound set to: " + soundFileName);
+                        }
+                        userRepository.save(user);
                     }
-                    userRepository.save(user);
+                } else {
+                    replyByPrivateMessage(event, "Could not find user with id or name: " + userNameOrId);
                 }
             } else {
-                replyByPrivateMessage(event, "Could not find user with id or name: " + userNameOrId);
+                replyByPrivateMessage(event, "Entrance command incorrect. Required input is " +
+                        commandCharacter + "entrance <userid/username> <soundfile>");
             }
-        } else {
-            replyByPrivateMessage(event, "Entrance command incorrect. Required input is " +
-                    commandCharacter + "entrance <userid/username> <soundfile>");
         }
+    }
+
+    private boolean userIsAdmin(Member member) {
+        return PermissionUtil.checkPermission(member, Permission.MANAGE_SERVER);
     }
 
     private void addAttachedSoundFile(MessageReceivedEvent event) {
@@ -181,7 +188,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".").queue();
                         } else {
                             if (event.getMember() != null) {
-                                boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
+                                boolean hasManageServerPerm = userIsAdmin(event.getMember());
                                 if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
                                         || hasManageServerPerm) {
                                     try {
@@ -244,10 +251,10 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void removeCommand(MessageReceivedEvent event, String message) {
-        String[] messageSplit = message.split(" ");
-        String soundToRemove = messageSplit[1];
         if (event.getMember() != null) {
             boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
+            String[] messageSplit = message.split(" ");
+            String soundToRemove = messageSplit[1];
             if (event.getAuthor().getName().equalsIgnoreCase(soundToRemove)
                     || hasManageServerPerm) {
                 SoundFile soundFileToRemove = soundPlayer.getAvailableSoundFiles().get(soundToRemove);
