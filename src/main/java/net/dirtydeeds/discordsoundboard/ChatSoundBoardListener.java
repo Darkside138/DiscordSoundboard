@@ -98,7 +98,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         entranceOrLeaveCommand(event, message);
                     } else if (message.startsWith(commandCharacter + "userdetails")) {
                         userDetails(event);
-                    } else if (message.startsWith(commandCharacter) && message.length() >= 2) {
+                    } else if (message.startsWith(commandCharacter) &&
+                            message.length() >= (commandCharacter.length() + 1)) {
                         soundFileCommand(event, requestingUser, message);
                     } else {
                         if (message.startsWith(commandCharacter) || event.isFromType(ChannelType.PRIVATE)) {
