@@ -78,6 +78,9 @@ bootDistZip {
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
     }
+    into("DiscordSoundboard/bin/sounds") {
+        from('sounds')
+    }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
 }
