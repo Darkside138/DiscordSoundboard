@@ -101,13 +101,16 @@ Unzip the application. Update the application.properties with your bot token and
 
 ?remove fileName (must have admin to remove files)
 
+?entrance userName soundFile (must have modify server permission)
+
+?leave userName soundFile (must have modify server permission)
+
+?userdetails userName
+
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
 Responses will be sent to the requesting user via direct message also.
 
 PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
-
-If the there is a file with the same name as a user added to the soundboard that sound will play every time a user
-enters a channel.
 
 ### Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
