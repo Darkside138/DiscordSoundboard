@@ -5,6 +5,9 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
+        maven {
+            url 'https://dl.bintray.com/sedmelluq/com.sedmelluq'
+        }
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -43,6 +46,7 @@ repositories {
 dependencies {
     compile 'net.dv8tion:JDA:4.0.0_54'
     compile 'com.sedmelluq:lavaplayer:1.3.23'
+    //compile 'lavaplayer-natives-extra:1.3.13'
     compile 'commons-io:commons-io:2.4'
 
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.0.RELEASE'

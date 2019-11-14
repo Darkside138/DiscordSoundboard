@@ -5,6 +5,9 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.FunctionalResultHandler;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
@@ -17,7 +20,6 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.logging.impl.SimpleLog;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -74,8 +76,10 @@ public class SoundPlayerImpl implements Observer {
         getUsers();
 
         playerManager = new DefaultAudioPlayerManager();
-        LocalAudioSourceManager localAudioSourceManager = new LocalAudioSourceManager();
-        playerManager.registerSourceManager(localAudioSourceManager);
+        playerManager.registerSourceManager(new LocalAudioSourceManager());
+        playerManager.registerSourceManager(new YoutubeAudioSourceManager());
+        playerManager.registerSourceManager(new VimeoAudioSourceManager());
+        playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
 
         musicPlayer = playerManager.createPlayer();
         musicPlayer.setVolume(75);
@@ -549,36 +553,18 @@ public class SoundPlayerImpl implements Observer {
 
             musicPlayer.setVolume(playerVolume);
 
-            playerManager.loadItem(audioFile.getAbsolutePath(),
-                    new FunctionalResultHandler(track -> musicPlayer.playTrack(track),
-                            null, null, null));
-
+            playFileString(audioFile.getAbsolutePath());
         }
     }
 
     private void playUrl(String url, Guild guild) {
-//        if (guild == null) {
-//            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
-//        } else {
-//            if (isMusicPlayer()) {
-//                if (bot.getAudioManager(guild).getSendingHandler() == null) {
-//                    bot.getAudioManager(guild).setSendingHandler(musicPlayer);
-//                }
-//
-//                musicPlayer.stop();
-//                musicPlayer.getAudioQueue().clear();
-//
-//                AudioSource audioSource = new RemoteSource(url, guild.getId());
-//                musicPlayer.getAudioQueue().add(audioSource);
-//
-//                musicPlayer.setVolume(playerVolume);
-//                bot.getAudioManager(guild).setConnectTimeout(100L);
-//
-//                musicPlayer.play();
-//            } else {
-//                throw new SoundPlaybackException("URL playback not supported by this player");
-//            }
-//        }
+        playFileString(url);
+    }
+
+    private void playFileString(String whatToPlay) {
+        playerManager.loadItem(whatToPlay,
+                new FunctionalResultHandler(track -> musicPlayer.playTrack(track),
+                        null, null, null));
     }
 
     public String getFileForUser(String userName, boolean entrance) {

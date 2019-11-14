@@ -8,7 +8,6 @@ import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
@@ -98,6 +97,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         entranceOrLeaveCommand(event, message);
                     } else if (message.startsWith(commandCharacter + "userdetails")) {
                         userDetails(event);
+                    } else if (message.startsWith(commandCharacter + "url")) {
+                        String[] messageSplit = event.getMessage().getContentRaw().split(" ");
+                        if (messageSplit.length >= 1) {
+                            String url = messageSplit[1];
+                            soundPlayer.playUrlForUser(url, requestingUser);
+                        }
                     } else if (message.startsWith(commandCharacter) &&
                             message.length() >= (commandCharacter.length() + 1)) {
                         soundFileCommand(event, requestingUser, message);
@@ -129,37 +134,60 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             String userNameOrId = messageSplit[1];
             User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
             if (user != null) {
-                replyByPrivateMessage(event, "User details for " + userNameOrId + "```" +
-                        "\nDiscord Id: " + user.getId() +
-                        "\nUsername: " + user.getUsername() +
-                        "\nEntrance Sound: " + user.getEntranceSound() +
-                        "\nLeave Sound: " + user.getLeaveSound() +
-                        "```");
+                StringBuilder response = new StringBuilder();
+                response.append("User details for ").append(userNameOrId).append("```")
+                        .append("\nDiscord Id: ").append(user.getId())
+                        .append("\nUsername: ").append(user.getUsername())
+                        .append("\nEntrance Sound: ");
+                if (user.getEntranceSound() != null) {
+                    response.append(user.getEntranceSound());
+                }
+                response.append("\nLeave Sound: ");
+                if (user.getLeaveSound() != null) {
+                    response.append(user.getLeaveSound());
+                }
+                response.append("```");
+                replyByPrivateMessage(event, response.toString());
             }
         }
     }
 
     private void entranceOrLeaveCommand(MessageReceivedEvent event, String message) {
-        if (userIsAdmin(event.getMember())) {
-            String[] messageSplit = event.getMessage().getContentRaw().split(" ");
+        String[] messageSplit = event.getMessage().getContentRaw().split(" ");
+        if (messageSplit.length >= 2) {
+            String userNameOrId = messageSplit[1];
+            String soundFileName = "";
             if (messageSplit.length >= 3) {
-                String userNameOrId = messageSplit[1];
-                String soundFileName = messageSplit[2];
-
+                soundFileName = messageSplit[2];
+            }
+            net.dv8tion.jda.api.entities.User pmUser = event.getAuthor();
+            if (userIsAdmin(event) ||
+                pmUser.getName().equalsIgnoreCase(userNameOrId)) {
                 User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
                 if (user != null) {
-                    SoundFile soundFile = soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileName);
-                    if (soundFile == null) {
-                        replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
-                    } else {
+                    if (soundFileName.isEmpty()) {
                         if (message.startsWith(commandCharacter + "entrance")) {
-                            user.setEntranceSound(soundFileName);
-                            replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound set to: " + soundFileName);
+                            user.setEntranceSound(null);
+                            replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound cleared");
                         } else {
-                            user.setLeaveSound(soundFileName);
-                            replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound set to: " + soundFileName);
+                            user.setLeaveSound(null);
+                            replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound cleared");
                         }
                         userRepository.save(user);
+                    } else {
+                        SoundFile soundFile = soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileName);
+                        if (soundFile == null) {
+                            replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
+                        } else {
+                            if (message.startsWith(commandCharacter + "entrance")) {
+                                user.setEntranceSound(soundFileName);
+                                replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound set to: " + soundFileName);
+                            } else {
+                                user.setLeaveSound(soundFileName);
+                                replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound set to: " + soundFileName);
+                            }
+                            userRepository.save(user);
+                        }
                     }
                 } else {
                     replyByPrivateMessage(event, "Could not find user with id or name: " + userNameOrId);
@@ -171,8 +199,11 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         }
     }
 
-    private boolean userIsAdmin(Member member) {
-        return PermissionUtil.checkPermission(member, Permission.MANAGE_SERVER);
+    private boolean userIsAdmin(MessageReceivedEvent event) {
+        if (event.getMember() == null) {
+            return false;
+        }
+        return PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
     }
 
     private void addAttachedSoundFile(MessageReceivedEvent event) {
@@ -189,7 +220,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             event.getChannel().sendMessage("Downloaded file `" + name + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".").queue();
                         } else {
                             if (event.getMember() != null) {
-                                boolean hasManageServerPerm = userIsAdmin(event.getMember());
+                                boolean hasManageServerPerm = userIsAdmin(event);
                                 if (event.getAuthor().getName().equalsIgnoreCase(name.substring(0, name.indexOf(".")))
                                         || hasManageServerPerm) {
                                     try {
@@ -253,7 +284,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     private void removeCommand(MessageReceivedEvent event, String message) {
         if (event.getMember() != null) {
-            boolean hasManageServerPerm = PermissionUtil.checkPermission(event.getMember(), Permission.MANAGE_SERVER);
+            boolean hasManageServerPerm = userIsAdmin(event);
             String[] messageSplit = message.split(" ");
             String soundToRemove = messageSplit[1];
             if (event.getAuthor().getName().equalsIgnoreCase(soundToRemove)
@@ -371,7 +402,10 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\n" + commandCharacter + "random           - Plays a random sound from the list." +
                 "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
                 "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
-                "\n" + commandCharacter + "info             - Returns info about the bot.```");
+                "\n" + commandCharacter + "info             - Returns info about the bot." +
+                "\n" + commandCharacter + "entrance userName soundFileName - Sets entrance sound for user" +
+                "\n" + commandCharacter + "leave userName soundFileName - Sets leave sound for user" +
+                "\n" + commandCharacter + "userDetails userName - Get details for user```");
     }
 
     private void listCommand(MessageReceivedEvent event, String requestingUser, String message, int maxLineLength) {
