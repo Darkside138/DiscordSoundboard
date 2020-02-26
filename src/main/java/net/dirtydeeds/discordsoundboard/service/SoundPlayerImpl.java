@@ -45,7 +45,6 @@ public class SoundPlayerImpl implements Observer {
 
     private Properties appProperties;
     private JDA bot;
-    private int playerVolume = 75;
     private final MainWatch mainWatch;
     private boolean initialized = false;
     private DefaultAudioPlayerManager playerManager;
@@ -193,7 +192,7 @@ public class SoundPlayerImpl implements Observer {
      * @return float representing the current volume.
      */
     public float getSoundPlayerVolume() {
-        return playerVolume;
+        return musicPlayer.getVolume();
     }
 
     @SuppressWarnings("unchecked")
@@ -550,8 +549,6 @@ public class SoundPlayerImpl implements Observer {
             AudioManager audioManager = guild.getAudioManager();
             AudioSendHandler audioSendHandler = new MyAudioSendHandler(musicPlayer);
             audioManager.setSendingHandler(audioSendHandler);
-
-            musicPlayer.setVolume(playerVolume);
 
             playFileString(audioFile.getAbsolutePath());
         }
