@@ -1,4 +1,4 @@
-cFROM ubuntu:16.04
+FROM ubuntu:16.04
 RUN apt update && apt upgrade -y
 RUN apt install wget openjdk-8-jdk dos2unix unzip jq -y
 WORKDIR "/etc"
