@@ -3,7 +3,7 @@ set -e
 cd /etc/DiscordSoundboard/bin
 
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
-sed -i 's/username_to_join_channel=yourDiscordUsername/username_to_join_channel='$username'/g' application.properties
+sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 sed -i 's/respond_to_chat_commands=true/respond_to_chat_commands='$chatcommands'/g' application.properties
 sed -i 's/respond_to_dm=true/respond_to_dm='$dm'/g' application.properties
 sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
