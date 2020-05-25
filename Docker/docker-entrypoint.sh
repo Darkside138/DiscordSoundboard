@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-cd /etc/Discord-Soundbot
+cd /etc/DiscordSoundboard/bin
 
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' app.properties
 sed -i 's/username_to_join_channel=yourDiscordUsername/username_to_join_channel='$username'/g' app.properties
@@ -12,7 +12,7 @@ sed -i 's/leave_suffix=_leave/leave_suffix='$leavesuffix'/g' app.properties
 sed -i 's/player=JDAPlayer/player='$player'/g' app.properties
 sed -i 's/allowedUserIds=/allowedUserIds='$allowedusers'/g' app.properties
 sed -i 's/bannedUserIds=/bannedUserIds='$bannedusers'/g' app.properties
-
-exec java -Dserver.port=8080 -jar /etc/Discord-Soundbot/DiscordSoundboard.jar
+cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
+exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/lib/DiscordSoundboard.jar
 
 exec "$@"
