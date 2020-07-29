@@ -17,7 +17,7 @@ docker run -d -p 8080:8080 \\
 -e commandcharacter="?" \\  
 -e sizelimit="2000" \\  
 -e leavesuffix="_leave" \\  
--v sounds:/etc/Discord-Soundbot/sounds \\  
+-v "full path to sounds directory":/etc/DiscordSoundboard/bin/sounds \\  
 --name DiscordSoundbot \\  
 obenned/discordsoundbot
  
