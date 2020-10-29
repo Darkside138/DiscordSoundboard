@@ -1,4 +1,5 @@
 # DiscordSoundboard
+![Java CI with Gradle](https://github.com/Darkside138/DiscordSoundboard/workflows/Java%20CI%20with%20Gradle/badge.svg)
 
 Simple soundboard for discord. You can trigger sounds by commands typed in discord chat or you can 
 choose the sound from the web UI. You will need to create a bot account that the bot will use to join 
