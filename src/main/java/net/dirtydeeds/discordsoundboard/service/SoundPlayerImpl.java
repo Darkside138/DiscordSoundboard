@@ -32,6 +32,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static java.util.Map.*;
+
 /**
  * @author dfurrer.
  * <p>
@@ -43,17 +45,18 @@ public class SoundPlayerImpl implements Observer {
 
     private static final SimpleLog LOG = new SimpleLog("SoundPlayerImpl");
 
+    private final SoundFileRepository soundFileRepository;
+    private final UserRepository userRepository;
+    private final MainWatch mainWatch;
+
     private Properties appProperties;
     private JDA bot;
-    private final MainWatch mainWatch;
     private boolean initialized = false;
     private DefaultAudioPlayerManager playerManager;
     private AudioPlayer musicPlayer;
     private String soundFileDir;
     private List<String> allowedUsers;
     private List<String> bannedUsers;
-    private SoundFileRepository soundFileRepository;
-    private UserRepository userRepository;
     private boolean leaveAfterPlayback = false;
     private String leaveSuffix = "_leave";
 
@@ -100,9 +103,8 @@ public class SoundPlayerImpl implements Observer {
             }
 
             String botToken = appProperties.getProperty("bot_token");
-            bot = new JDABuilder()
+            bot = JDABuilder.createDefault(botToken)
                     .setAutoReconnect(true)
-                    .setToken(botToken)
                     .build()
                     .awaitReady();
 
@@ -111,9 +113,9 @@ public class SoundPlayerImpl implements Observer {
                 String messageSizeLimit = appProperties.getProperty("message_size_limit");
                 leaveSuffix = appProperties.getProperty("leave_suffix");
                 String respondToDmsString = appProperties.getProperty("respond_to_dm");
-                Boolean respondToDms = true;
+                boolean respondToDms = true;
                 if (respondToDmsString != null) {
-                    respondToDms = Boolean.valueOf(respondToDmsString);
+                    respondToDms = Boolean.parseBoolean(respondToDmsString);
                 }
                 ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
                         messageSizeLimit, respondToDms, userRepository, soundFileRepository);
@@ -351,7 +353,7 @@ public class SoundPlayerImpl implements Observer {
             if (discordUser.getJDA().getStatus().equals(JDA.Status.CONNECTED)) {
                 boolean selected = false;
                 String username = discordUser.getName();
-                if (userNameToSelect.equals(username)) {
+                if (userNameToSelect != null && userNameToSelect.equals(username)) {
                     selected = true;
                 }
                 Optional<User> optionalUser = userRepository.findById(discordUser.getId());
@@ -424,10 +426,8 @@ public class SoundPlayerImpl implements Observer {
             if (audioManager.isAttemptingToConnect()) {
                 audioManager.closeAudioConnection();
             }
-            audioManager.openAudioConnection(channel);
-        } else {
-            audioManager.openAudioConnection(channel);
         }
+        audioManager.openAudioConnection(channel);
 
         int i = 0;
         int waitTime = 100;
@@ -568,7 +568,7 @@ public class SoundPlayerImpl implements Observer {
         Set<Map.Entry<String, SoundFile>> entrySet = getAvailableSoundFiles().entrySet();
         String fileToPlay = "";
         if (entrySet.size() > 0) {
-            for (Map.Entry entry : entrySet) {
+            for (Entry entry : entrySet) {
                 String fileEntry = (String) entry.getKey();
                 if (entrance) {
                     if (userName.toLowerCase().startsWith(fileEntry.toLowerCase())

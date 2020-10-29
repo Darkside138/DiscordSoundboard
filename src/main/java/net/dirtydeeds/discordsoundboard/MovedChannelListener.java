@@ -12,15 +12,14 @@ public class MovedChannelListener extends ListenerAdapter {
 
     private static final SimpleLog LOG = new SimpleLog("MovedChannelListener");
 
-    private SoundPlayerImpl bot;
-    private UserRepository userRepository;
+    private final SoundPlayerImpl bot;
+    private final UserRepository userRepository;
 
     public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository) {
         this.bot = bot;
         this.userRepository = userRepository;
     }
 
-    @SuppressWarnings({"rawtypes"})
     public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
         if (!event.getMember().getUser().isBot()) {
             String discordUser = event.getMember().getEffectiveName();

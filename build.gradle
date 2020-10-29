@@ -73,7 +73,7 @@ bootJar {
 }
 
 bootDistZip {
-    archiveName = 'DiscordSoundboard-' + projectVersion + '.zip'
+    archiveName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
         from ('/src/main/resources/application.properties.example')
     }

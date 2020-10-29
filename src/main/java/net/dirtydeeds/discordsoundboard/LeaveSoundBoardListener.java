@@ -17,15 +17,14 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
 
     private static final SimpleLog LOG = new SimpleLog("LeaveListener");
 
-    private SoundPlayerImpl bot;
-    private UserRepository userRepository;
+    private final SoundPlayerImpl bot;
+    private final UserRepository userRepository;
 
     public LeaveSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository) {
         this.bot = bot;
         this.userRepository = userRepository;
     }
 
-    @SuppressWarnings({"rawtypes"})
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
         String userDisconnected = event.getMember().getEffectiveName();
         String userDisconnectedId = event.getMember().getId();

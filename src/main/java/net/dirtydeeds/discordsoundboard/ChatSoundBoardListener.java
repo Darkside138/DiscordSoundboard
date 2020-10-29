@@ -36,15 +36,16 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     private static final SimpleLog LOG = new SimpleLog("ChatListener");
 
-    private SoundPlayerImpl soundPlayer;
-    private String commandCharacter = "?";
-    private Integer messageSizeLimit = 2000;
-    private boolean respondToDms;
-    private boolean muted;
-    private static DecimalFormat df2 = new DecimalFormat("#.##");
     private static final int MAX_FILE_SIZE_IN_BYTES = 10000000; // 10 MB
-    private UserRepository userRepository;
-    private SoundFileRepository soundFileRepository;
+    private final static DecimalFormat df2 = new DecimalFormat("#.##");
+
+    private final SoundPlayerImpl soundPlayer;
+    private final boolean respondToDms;
+    private final UserRepository userRepository;
+    private final SoundFileRepository soundFileRepository;
+    private Integer messageSizeLimit = 2000;
+    private String commandCharacter = "?";
+    private boolean muted;
 
     public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit,
                                   Boolean respondToDms, UserRepository userRepository,
@@ -98,11 +99,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                     } else if (message.startsWith(commandCharacter + "userdetails")) {
                         userDetails(event);
                     } else if (message.startsWith(commandCharacter + "url")) {
-                        String[] messageSplit = event.getMessage().getContentRaw().split(" ");
-                        if (messageSplit.length >= 1) {
-                            String url = messageSplit[1];
-                            soundPlayer.playUrlForUser(url, requestingUser);
-                        }
+                        playFromURL(event, requestingUser);
                     } else if (message.startsWith(commandCharacter) &&
                             message.length() >= (commandCharacter.length() + 1)) {
                         soundFileCommand(event, requestingUser, message);
@@ -125,6 +122,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             } else {
                 addAttachedSoundFile(event);
             }
+        }
+    }
+
+    private void playFromURL(MessageReceivedEvent event, String requestingUser) {
+        String[] messageSplit = event.getMessage().getContentRaw().split(" ");
+        if (messageSplit.length >= 1) {
+            String url = messageSplit[1];
+            soundPlayer.playUrlForUser(url, requestingUser);
+            deleteMessage(event);
         }
     }
 
@@ -403,6 +409,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
                 "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
                 "\n" + commandCharacter + "info             - Returns info about the bot." +
+                "\n" + commandCharacter + "url              - Play file from URL (Youtube, Vimeo, Soundcloud)." +
                 "\n" + commandCharacter + "entrance userName soundFileName - Sets entrance sound for user" +
                 "\n" + commandCharacter + "leave userName soundFileName - Sets leave sound for user" +
                 "\n" + commandCharacter + "userDetails userName - Get details for user```");
@@ -479,9 +486,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         Set<Map.Entry<String, SoundFile>> entrySet = soundPlayer.getAvailableSoundFiles().entrySet();
 
         if (entrySet.size() > 0) {
-            for (Map.Entry entry : entrySet) {
-                sb.append(commandCharacter).append(entry.getKey()).append("\n");
-            }
+            entrySet.forEach(entry -> sb.append(commandCharacter).append(entry.getKey()).append("\n"));
         }
         return sb;
     }
