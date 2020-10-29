@@ -78,7 +78,7 @@ public class SoundPlayerImpl implements Observer {
         playerManager.registerSourceManager(new LocalAudioSourceManager());
         playerManager.registerSourceManager(new YoutubeAudioSourceManager());
         playerManager.registerSourceManager(new VimeoAudioSourceManager());
-        playerManager.registerSourceManager(new SoundCloudAudioSourceManager());
+        playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
 
         musicPlayer = playerManager.createPlayer();
         musicPlayer.setVolume(75);
