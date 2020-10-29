@@ -42,7 +42,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private boolean respondToDms;
     private boolean muted;
     private static DecimalFormat df2 = new DecimalFormat("#.##");
-    private static final int MAX_FILE_SIZE_IN_BYTES = 1000000; // 1 MB
+    private static final int MAX_FILE_SIZE_IN_BYTES = 10000000; // 10 MB
     private UserRepository userRepository;
     private SoundFileRepository soundFileRepository;
 
