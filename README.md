@@ -50,14 +50,20 @@ The contents of the app.properties file are below with sample values:
 bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
 
 #The username to look for and join their channel when a sound is played from the UI
-username_to_join_channel=yourDiscordUsername
-
-#The title to be used for the app
-app_title=Sound Board
+username_to_join_channel=YourUserName
 
 #If the bot should respond to chat commands (true|false)
 respond_to_chat_commands=true
+
+#Configure the port the bot uses for hosting the web UI. 8080 is the default
+#server.port=8080
+
+#This is what you want your commands to start with. Ex: If configured to ? the bot with respond to anyone typing ?list
+respond_to_dm=true
 command_character=?
+leave_suffix=_leave
+
+#Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
 message_size_limit=2000
 
 #Specify the directory where your sound files are located. If left empty it will look for a
@@ -76,6 +82,14 @@ bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
 #Set the activity string for the bot. If left empty the message will default
 activityString=
+
+#Database setting stuff. Should probably change the user/pass for this.
+spring.datasource.url=jdbc:h2:file:~/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+spring.datasource.username=admin
+spring.datasource.password=password
+spring.datasource.driver-class-name=org.h2.Driver
+#spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
 ```
 
 ## Usage
@@ -100,18 +114,20 @@ Unzip the application. Update the application.properties with your bot token and
 
 ?random
 
+?url urlToSound (Supports Youtube, Vimeo, and Soundcloud)
+
 ?remove fileName (must have admin to remove files)
 
-?entrance userName soundFile (must have modify server permission)
+?entrance userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
 
-?leave userName soundFile (must have modify server permission)
+?leave userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
 
 ?userdetails userName
 
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
 Responses will be sent to the requesting user via direct message also.
 
-PM the bot a wav or mp3 file < 1MB and it will add it to the soundboard.
+PM the bot a wav or mp3 file < 10MB and it will add it to the soundboard.
 
 ### Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
