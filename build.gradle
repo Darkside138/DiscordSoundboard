@@ -26,15 +26,13 @@ plugins {
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
-project.version = '3.0.4'
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 bootJar {
     manifest {
         attributes 'Implementation-Title': rootProject.name,
-                'Implementation-Version': project.version
+                'Implementation-Version': projectVersion
     }
 }
 
@@ -75,7 +73,7 @@ bootJar {
 }
 
 bootDistZip {
-    archiveName = 'DiscordSoundboard.zip'
+    archiveName = 'DiscordSoundboard-' + projectVersion + '.zip'
     into ("DiscordSoundboard/bin") {
         from ('/src/main/resources/application.properties.example')
     }
