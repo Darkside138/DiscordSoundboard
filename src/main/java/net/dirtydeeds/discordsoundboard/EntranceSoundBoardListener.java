@@ -17,15 +17,14 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     private static final SimpleLog LOG = new SimpleLog("EntranceListener");
 
-    private SoundPlayerImpl bot;
-    private UserRepository userRepository;
+    private final SoundPlayerImpl bot;
+    private final UserRepository userRepository;
 
     public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository) {
         this.bot = bot;
         this.userRepository = userRepository;
     }
 
-    @SuppressWarnings({"rawtypes"})
     public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
         if (!event.getMember().getUser().isBot()) {
             String userJoined = event.getMember().getEffectiveName();
