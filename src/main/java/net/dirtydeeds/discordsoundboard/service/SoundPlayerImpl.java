@@ -544,7 +544,7 @@ public class SoundPlayerImpl implements Observer {
      */
     private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
-            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discordapp.com/developers/docs/topics/oauth2");
+            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
         } else {
             AudioManager audioManager = guild.getAudioManager();
             AudioSendHandler audioSendHandler = new MyAudioSendHandler(musicPlayer);
