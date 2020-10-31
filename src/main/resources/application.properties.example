@@ -1,7 +1,7 @@
 ##Soundboard Specific configuration##
 
-#Your bots token. If you don't have a token for your bot visit this link to get one. https://discordapp.com/developers/applications/me
-#For more information on how to create an application and bot account visit this link https://discordapp.com/developers/docs/topics/oauth2
+#Your bots token. If you don't have a token for your bot visit this link to get one. https://discord.com/developers/applications
+#For more information on how to create an application and bot account visit this link https://discord.com/developers/docs/topics/oauth2
 bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
 
 #The username to look for and join their channel when a sound is played from the UI
