@@ -36,7 +36,7 @@ This will walk you through the process of getting your bot up and running.
 
 ## Setting correct permissions on your discord bot
 To fix the issue of being stuck on "Connecting to websocket":
-Login to your Discord Developer Portal and enable Privileged Intents for your bot. Go to https://discord.com/developers/applications(https://discord.com/developers/applications) select your bot, click Bot on the left, and then enable both of the sliders under Privileged Gateway Intents.
+Login to your Discord Developer Portal and enable Privileged Intents for your bot. Go to https://discord.com/developers/applications select your bot, click Bot on the left, and then enable both of the sliders under Privileged Gateway Intents.
 
 ## Donations
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
