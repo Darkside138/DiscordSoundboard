@@ -9,7 +9,7 @@ Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8
 ##Beta Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
 
-[3.0.4.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.4/DiscordSoundboard.zip)
+[3.0.5.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/3.0.5/discordSoundboard.zip)
 
 ## Must have Java 8+ 64bit version installed in order for the soundboard to work properly
 
@@ -33,6 +33,10 @@ opening a browser and navigating to "http://localhost:8080".
 ## Installation and Setup Video
 Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
 This will walk you through the process of getting your bot up and running.
+
+## Setting correct permissions on your discord bot
+To fix the issue of being stuck on "Connecting to websocket":
+Login to your Discord Developer Portal and enable Privileged Intents for your bot. Go to https://discord.com/developers/applications select your bot, click Bot on the left, and then enable both of the sliders under Privileged Gateway Intents.
 
 ## Donations
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
