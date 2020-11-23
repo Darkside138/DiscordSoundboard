@@ -30,7 +30,7 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
         String userDisconnectedId = event.getMember().getId();
         User user = userRepository.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
         if (user != null && !StringUtils.isNullOrEmpty(user.getLeaveSound())) {
-            bot.playFileInChannel(user.getLeaveSound(), event.getChannelJoined());
+            bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
         } else {
             //If DB doesn't have a leave sound check for a file
             String fileToPlay = bot.getFileForUser(userDisconnected, false);
