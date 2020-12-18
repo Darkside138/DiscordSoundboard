@@ -44,8 +44,10 @@ If you'd like to buy me a beer for my efforts, it's always appreciated. You can 
 ## Planned Future Features
 Creating a bot instance for each unique channel/server combination for busy servers. Currently there is one bot thread for each server.
 
-## app.properties file
-The contents of the app.properties file are below with sample values:
+## application.properties file
+Currently there is no config included in the release. create an file named "application.properties" in the "/bin/" subdirectory with the following contents.
+
+The contents of the application.properties file are below with sample values:
 ```
 ##Soundboard Specific configuration##
 
@@ -106,27 +108,17 @@ join that channel, then play the sound that was clicked. For local usage sounds 
 Unzip the application. Update the application.properties with your bot token and any other preferences you would like. There are .bat and sh files in the /bin directory. Execute the proper one and the app should startup.
 
 ### Available commands
-?help
-
-?info
-
-?list
-
-?volume
-
-?stop
-
-?random
-
-?url urlToSound (Supports Youtube, Vimeo, and Soundcloud)
-
-?remove fileName (must have admin to remove files)
-
-?entrance userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
-
-?leave userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
-
-?userdetails userName
+* ?help
+* ?info
+* ?list
+* ?volume
+* ?stop
+* ?random
+* ?url <urlToSound> (Supports Youtube, Vimeo, and Soundcloud)
+* ?remove fileName (must have admin to remove files)
+* ?entrance userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
+* ?leave userName soundFile (must have modify server permission, Send with blank soundFile to remove.)
+* ?userdetails userName
 
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
 Responses will be sent to the requesting user via direct message also.
