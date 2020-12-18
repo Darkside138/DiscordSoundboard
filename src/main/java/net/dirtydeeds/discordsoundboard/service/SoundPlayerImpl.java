@@ -376,7 +376,7 @@ public class SoundPlayerImpl implements Observer {
             return true;
         } else if (allowedUsers.isEmpty()) {
             return true;
-        } else return !allowedUsers.contains(username);
+        } else return allowedUsers.contains(username);
     }
 
     public boolean isUserBanned(String username) {
