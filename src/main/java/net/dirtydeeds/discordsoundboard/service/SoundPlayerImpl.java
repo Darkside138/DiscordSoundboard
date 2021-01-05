@@ -59,6 +59,7 @@ public class SoundPlayerImpl implements Observer {
     private List<String> bannedUsers;
     private boolean leaveAfterPlayback = false;
     private String leaveSuffix = "_leave";
+    private TrackScheduler trackScheduler;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
@@ -85,6 +86,7 @@ public class SoundPlayerImpl implements Observer {
 
         musicPlayer = playerManager.createPlayer();
         musicPlayer.setVolume(75);
+        trackScheduler = new TrackScheduler(musicPlayer);
 
         leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
 
@@ -532,7 +534,7 @@ public class SoundPlayerImpl implements Observer {
      * @param guild     - The guild (discord server) the playback is going to happen in.
      */
     private void playFile(File audioFile, Guild guild) {
-        playFile(audioFile, guild, 1);
+        playFile(audioFile, guild, 0);
     }
 
     /**
@@ -641,7 +643,7 @@ public class SoundPlayerImpl implements Observer {
     }
 
 
-    private void disconnectFromChannel(Guild guild) {
+    public void disconnectFromChannel(Guild guild) {
         if (guild != null) {
             guild.getAudioManager().closeAudioConnection();
             LOG.info("Disconnecting from channel.");

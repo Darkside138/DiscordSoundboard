@@ -168,7 +168,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             }
             net.dv8tion.jda.api.entities.User pmUser = event.getAuthor();
             if (userIsAdmin(event) ||
-                pmUser.getName().equalsIgnoreCase(userNameOrId)) {
+                    (pmUser.getName().equalsIgnoreCase(userNameOrId)
+                    || pmUser.getId().equals(userNameOrId))) {
                 User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
                 if (user != null) {
                     if (soundFileName.isEmpty()) {
