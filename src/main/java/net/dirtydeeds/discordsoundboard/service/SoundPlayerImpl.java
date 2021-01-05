@@ -132,17 +132,21 @@ public class SoundPlayerImpl implements Observer {
 
             String allowedUsersString = appProperties.getProperty("allowedUsers");
             if (allowedUsersString != null) {
-                String[] allowedUsersArray = allowedUsersString.trim().split(",");
-                if (allowedUsersArray.length > 0) {
-                    allowedUsers = Arrays.asList(allowedUsersArray);
+                if (!allowedUsersString.isEmpty()) {
+                    String[] allowedUsersArray = allowedUsersString.trim().split(",");
+                    if (allowedUsersArray.length > 0) {
+                        allowedUsers = Arrays.asList(allowedUsersArray);
+                    }
                 }
             }
 
             String bannedUsersString = appProperties.getProperty("bannedUsers");
             if (bannedUsersString != null) {
-                String[] bannedUsersArray = bannedUsersString.split(",");
-                if (bannedUsersArray.length > 0) {
-                    bannedUsers = Arrays.asList(bannedUsersArray);
+                if (!bannedUsersString.isEmpty()) {
+                    String[] bannedUsersArray = bannedUsersString.split(",");
+                    if (bannedUsersArray.length > 0) {
+                        bannedUsers = Arrays.asList(bannedUsersArray);
+                    }
                 }
             }
 
