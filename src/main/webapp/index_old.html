@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Discord Soundboard</title>
+    
+    <script src="js/vendor/jquery-2.2.1.js"></script>
+    <script src="js/vendor/jquery-ui.min.js"></script>
+    
+    <script src="js/soundboard.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="style/soundboard.css">
+    <link rel="stylesheet" type="text/css" href="jquery-ui.min.css">
+</head>
+<body>
+    <span class="userNameContainer">
+        <label for="userSelect" class="ui-widget">Select the username:</label>
+        <select id="userSelect" class="userNameSelect resizeselect">
+        </select>
+    </span>
+    <span class="categoryContainer">
+        <label for="categorySelect" class="ui-widget">Select the category:</label>
+        <select id="categorySelect" class="categorySelect resizeselect">
+            <option value="">All</option>
+        </select>
+    </span>
+    <span class="randomButtonContainer">
+        <label for="randomButton" class="ui-widget">Play Random Sound File:</label>
+        <button id="randomButton" class="randomButton" value="random">Random</button>
+    </span>
+    <div class="buttonContainer"></div>
+    
+    <div id="player">
+		<div id="volume"></div>
+	</div>
+</body>
+</html>

@@ -1,36 +1,228 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Layout by Jona, made for github.com/Darkside138/DiscordSoundboard -->
+    <!-- Feel free to use as fit -->
     <title>Discord Soundboard</title>
-    
-    <script src="js/vendor/jquery-2.2.1.js"></script>
-    <script src="js/vendor/jquery-ui.min.js"></script>
-    
-    <script src="js/soundboard.js"></script>
-    
-    <link rel="stylesheet" type="text/css" href="style/soundboard.css">
-    <link rel="stylesheet" type="text/css" href="jquery-ui.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha256-L/W5Wfqfa0sdBNIKN9cG6QA5F2qx4qICmU2VgLruv9Y=" crossorigin="anonymous" />
+
+    <style>
+        .bg-darker,.btn-secondary{
+            background-color:rgba(25,25,25,0.7);
+            border: none;
+        }
+        html, body{
+          height: 100%;
+        }
+        /* Rainbow background: https://codepen.io/nohoid/pen/kIfto */
+        .bg-rgb {
+          height: 100%;
+          width: 100%;
+          background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+          background-size: 1800% 1800%;
+
+          -webkit-animation: rainbow 18s ease infinite;
+          -z-animation: rainbow 18s ease infinite;
+          -o-animation: rainbow 18s ease infinite;
+          animation: rainbow 18s ease infinite;
+        }
+
+        @-webkit-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @-moz-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @-o-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+    </style>
 </head>
-<body>
-    <span class="userNameContainer">
-        <label for="userSelect" class="ui-widget">Select the username:</label>
-        <select id="userSelect" class="userNameSelect resizeselect">
-        </select>
-    </span>
-    <span class="categoryContainer">
-        <label for="categorySelect" class="ui-widget">Select the category:</label>
-        <select id="categorySelect" class="categorySelect resizeselect">
-            <option value="">All</option>
-        </select>
-    </span>
-    <span class="randomButtonContainer">
-        <label for="randomButton" class="ui-widget">Play Random Sound File:</label>
-        <button id="randomButton" class="randomButton" value="random">Random</button>
-    </span>
-    <div class="buttonContainer"></div>
-    
-    <div id="player">
-		<div id="volume"></div>
-	</div>
+<body class="bg-dark">
+<nav class="navbar navbar-expand navbar-dark bg-darker" >
+    <a class="navbar-brand" href="#">Discord Soundboard</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul id="categories" class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-category="All">All</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav mr-auto">
+            <li id="more" class="nav-item dropdown" style="display:none;">
+                <a class="nav-link dropdown-toggle" href="#" id="moreLabel" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More...
+                </a>
+                <div class="dropdown-menu" aria-labelledby="moreLabel">
+                </div>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a id="random" class="nav-link" href="#"><i class="fas fa-fw fa-random"></i></a>
+            </li>
+            <li class="nav-item">
+                <a id="stop" class="nav-link" href="#"><i class="fas fa-fw fa-ban"></i></a>
+            </li>
+            <li id="settings" class="nav-item dropdown">
+                <a class="nav-link" href="#" id="settingsLabel" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-fw fa-cogs"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="settingsLabel">
+                    <form class="px-3 pt-2">
+                        <div class="form-group">
+                            <label for="search">Search</label>
+                            <input id="search" class="form-control" type="search" placeholder="Sound title">
+                        </div>
+                        <div class="form-group">
+                            <label for="user">Play sounds for</label>
+                            <select id="user" class="custom-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="volume">Volume</label>
+                            <input id="volume" type="range" class="custom-range">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="rgb">
+                            <label class="custom-control-label" for="rgb">RGB</label>
+                        </div>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div id="sounds" class="container-fluid p-3"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.bundle.min.js" integrity="sha256-OUFW7hFO0/r5aEGTQOz9F/aXQOt+TwqI1Z4fbVvww04=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    $(function() {
+        var category = 'All';
+
+        // Determine what categories to show in navigation and what categories to show in the more-dropdown
+        function determineShownNavigation(){
+            // Get available width for shown categories.
+            // 250px extra for spacing, more-dropdown and buttons
+            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 250;
+            console.log(availableWidth);
+            $.each($('#categories li'), function(i, obj){
+                var willFit = availableWidth - $(obj).width() > 0;
+                $(obj).toggle(willFit);
+                $('#more a[data-category="' + $(obj).find('a').data('category') + '"]').toggle(!willFit);
+                if(willFit) availableWidth -= $(obj).width();
+            });
+            $('#more').toggle($('#categories li:hidden').length > 0);
+        }
+
+        // Filter the list by category and search-term
+        function filterSounds(search){
+            $('#sounds button').hide();
+            $('#sounds button').filter(function(){
+                return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
+            }).show();
+        }
+
+        $(document).on('click', 'a[data-category]', function(){
+            // Filter by category
+            category = $(this).data('category');
+            $('a[data-category]').removeClass('active');
+            $('a[data-category="' + category + '"]').addClass('active');
+            $('#more').toggleClass('active', $('a[data-category].active:visible').closest('#more').length > 0);
+            filterSounds($('#search').val());
+        }).on('input', '#search', function(){
+            // Search sound by name
+            filterSounds($(this).val());
+        }).on('click', '#sounds button', function(){
+            // Play sound
+            $.ajax({
+                method: "POST",
+                url: "/soundsApi/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
+            });
+        }).on('click', '#random', function(){
+            // Play random sound
+            $.ajax({
+                method: "POST",
+                url: "/soundsApi/playRandom?username=" + $('#user').val()
+            });
+        }).on('click', '#stop', function(){
+            // Stop sound
+            $.ajax({
+                method: "POST",
+                url: "/soundsApi/stop"
+            });
+        }).on('change', '#rgb', function(){
+            // Enable RGB
+            $('body').toggleClass('bg-rgb', $('#rgb').is(':checked'));
+        }).on('change', '#volume', function(){
+            // Change volume
+            $.ajax({
+                method: "POST",
+                url: "/soundsApi/volume?volume=" + $(this).val()
+            });
+        }).on('show.bs.dropdown', '#settings', function(){
+            // Get current volume when opening settings
+            $.ajax({
+                method: "GET",
+                url: "/soundsApi/volume"
+            }).done(function( data ) {
+                $('#volume').val(data);
+            });
+        });
+
+        // Determine shown categories in navigation when windows get resized
+        $(window).on('resize', determineShownNavigation);
+
+        // Get sounds
+        $.ajax({
+            method: "GET",
+            url: "/soundsApi/sounds"
+        }).done(function( data ) {
+            $.each(data, function(i, obj){
+                $('#sounds').append('<button id="' + obj.soundFileId + '" type="button" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + obj.soundFileId + '</button>');
+            });
+        });
+
+        // Get users
+        $.ajax({
+            method: "GET",
+            url: "/soundsApi/users"
+        }).done(function( data ) {
+            $.each(data.sort(), function(i, obj){
+                $('#user').append('<option value="' + obj.username + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
+            });
+        });
+
+        // Get categories
+        $.ajax({
+            method: "GET",
+            url: "/soundsApi/soundCategories"
+        }).done(function( data ) {
+            $.each(data.sort(), function(i, obj){
+                if(obj !== 'sounds') {
+                    // Add to main navigation
+                    $('#categories').append('<li class="nav-item"><a class="nav-link" href="#" data-category="' + obj + '">' + obj + '</a></li>');
+                    // Add hidden to more-dropdown
+                    $('#more .dropdown-menu').append('<a class="dropdown-item" href="#" data-category="' + obj + '" style="display:none;">' + obj + '</a>');
+                }
+            });
+
+            // Determine shown categories in navigation
+            determineShownNavigation();
+        });
+    });
+    </script>
 </body>
 </html>
