@@ -45,58 +45,8 @@ If you'd like to buy me a beer for my efforts, it's always appreciated. You can 
 Creating a bot instance for each unique channel/server combination for busy servers. Currently there is one bot thread for each server.
 
 ## application.properties file
-Currently there is no config included in the release. create an file named "application.properties" in the "/bin/" subdirectory with the following contents.
-
-The contents of the application.properties file are below with sample values:
-```
-##Soundboard Specific configuration##
-
-#Your bots token. If you don't have a token for your bot visit this link to get one. https://discordapp.com/developers/applications/me
-#For more information on how to create an application and bot account visit this link https://discordapp.com/developers/docs/topics/oauth2
-bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD
-
-#The username to look for and join their channel when a sound is played from the UI
-username_to_join_channel=YourUserName
-
-#If the bot should respond to chat commands (true|false)
-respond_to_chat_commands=true
-
-#Configure the port the bot uses for hosting the web UI. 8080 is the default
-#server.port=8080
-
-#This is what you want your commands to start with. Ex: If configured to ? the bot with respond to anyone typing ?list
-respond_to_dm=true
-command_character=?
-leave_suffix=_leave
-
-#Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
-message_size_limit=2000
-
-#Specify the directory where your sound files are located. If left empty it will look for a
-#directory called "sounds/" in same directory the app was executed from.
-#If you specify a directory that does not exist yet the application will attempt to create it.
-#Example: C:/Users/someUser/Music
-sounds_directory=
-
-#List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
-#repsond to all users.
-allowedUsers=
-
-#List of banned users. Also, comma separated. If a user is listed here they will no be able to issues commands to the
-#bot through chat.
-bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
-
-#Set the activity string for the bot. If left empty the message will default
-activityString=
-
-#Database setting stuff. Should probably change the user/pass for this.
-spring.datasource.url=jdbc:h2:file:~/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
-spring.datasource.username=admin
-spring.datasource.password=password
-spring.datasource.driver-class-name=org.h2.Driver
-#spring.jpa.show-sql=true
-spring.jpa.hibernate.ddl-auto=update
-```
+Backup your application.properties before the update to a new Version.
+A new (clean) one is provided in the release file and will overwrite your config.
 
 ## Usage
 Running locally from an IDE: Update the app.properties file with the login information for your "bot". Property 
