@@ -1,15 +1,15 @@
 # DiscordSoundboard
 ![Java CI with Gradle](https://github.com/Darkside138/DiscordSoundboard/workflows/Java%20CI%20with%20Gradle/badge.svg)
 
-Simple soundboard for discord. You can trigger sounds by commands typed in discord chat or you can 
+Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can 
 choose the sound from the web UI. You will need to create a bot account that the bot will use to join 
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
 ##3.0 Release
-Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ablity to play youtube URLs.
+Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 
-[3.0.6.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v3.0.6/DiscordSoundboard.zip)
+[3.1.1.zip](https://github.com/Darkside138/DiscordSoundboard/releases/download/v3.1.1/DiscordSoundboard-3.1.1.zip)
 
 ## Must have Java 8+ 64bit version installed in order for the soundboard to work properly
 
@@ -17,7 +17,7 @@ Join the official discord: [https://discord.gg/kZTNtfW](https://discord.gg/kZTNt
 
 ## Current Release
 Latest Release (Use version above). 
-Download the zip|tar file and extract it's contents in a directory. If you have an existing install do not overwrite 
+Download the zip|tar file and extract its contents in a directory. If you have an existing install, do not overwrite 
 the "application.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
 configurable in the application.properties). Put all the clips you 
 want to play in the sounds directory. In the app.properties file you should fill in the login information for 
@@ -26,7 +26,7 @@ it to any server you want to use it on. The property "username_to_join_channel" 
 When you click a sound file to play in the soundboard the app will look for this username and join the voice 
 channel that user is in. If you don't have this configured properly the bot will not work. Also, the bot can 
 respond to text channel commands. See below for information on those commands. Once this is complete execute 
-the .jar file or the .bat file. You should see a bunch of logging and eventually something like 
+the .jar file, or the .bat file. You should see a bunch of logging and eventually something like 
 "Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by 
 opening a browser and navigating to "http://localhost:8080".
 
@@ -42,7 +42,7 @@ Login to your Discord Developer Portal and enable Privileged Intents for your bo
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
 
 ## Planned Future Features
-Creating a bot instance for each unique channel/server combination for busy servers. Currently there is one bot thread for each server.
+Creating a bot instance for each unique channel/server combination for busy servers. Currently, there is one bot thread for each server.
 
 ## application.properties file
 Backup your application.properties before the update to a new Version.
@@ -60,6 +60,7 @@ Unzip the application. Update the application.properties with your bot token and
 ### Available commands
 * ?help
 * ?info
+* ?reload
 * ?list
 * ?volume
 * ?stop
