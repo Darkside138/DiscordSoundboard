@@ -1,14 +1,8 @@
 buildscript {
     ext {
-        springBootVersion = '2.2.0.RELEASE'
+        springBootVersion = '2.6.5'
     }
-    repositories {
-        jcenter()
-        mavenCentral()
-        maven {
-            url 'https://dl.bintray.com/sedmelluq/com.sedmelluq'
-        }
-    }
+
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         classpath("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
@@ -20,8 +14,30 @@ plugins {
     id 'java'
     id 'idea'
     id 'distribution'
-    id 'org.springframework.boot' version '2.2.0.RELEASE'
+    id 'org.springframework.boot' version '2.6.5'
     id 'application'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
+    maven { url 'https://jitpack.io' }
+//    flatDir {
+//        dirs 'lib'
+//    }
+}
+
+processResources {
+    filesMatching('application.yml') {
+        expand(project.properties)
+    }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
@@ -36,15 +52,11 @@ bootJar {
     }
 }
 
-repositories {
-    jcenter()
-    mavenCentral()
-}
 
 dependencies {
-    compile 'net.dv8tion:JDA:4.2.0_214'
-    compile 'com.sedmelluq:lavaplayer:1.3.55'
-    //compile 'com.sedmelluq:lavaplayer-natives-extra:1.3.13'
+    implementation("net.dv8tion:JDA:4.4.0_350")
+    implementation 'com.sedmelluq:lavaplayer:1.3.77'
+    implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     compile 'commons-io:commons-io:2.8.0'
 
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.0.RELEASE'
@@ -56,16 +68,16 @@ dependencies {
 
     compile "io.springfox:springfox-swagger2:2.4.0"
     compile 'io.springfox:springfox-swagger-ui:2.4.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-params:5.2.0'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
+    testCompile "org.mockito:mockito-core:4.4.0"
+    testCompile 'org.mockito:mockito-junit-jupiter:2.18.3'
 }
 
 processResources {
     exclude 'app.properties'
-}
-
-distributions {
-    main {
-        baseName = 'DiscordSoundboard'
-    }
 }
 
 bootJar {
@@ -73,7 +85,7 @@ bootJar {
 }
 
 bootDistZip {
-    archiveName = 'DiscordSoundboard.zip'
+    archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
         from ('/src/main/resources/application.properties.example')
     }

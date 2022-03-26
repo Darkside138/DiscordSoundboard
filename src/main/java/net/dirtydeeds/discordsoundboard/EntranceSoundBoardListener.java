@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.logging.impl.SimpleLog;
 import org.h2.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author asafatli.
@@ -19,14 +20,16 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
+    private final boolean playEntranceOnJoin;
 
-    public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository) {
+    public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository, boolean playEntranceOnJoin) {
         this.bot = bot;
         this.userRepository = userRepository;
+        this.playEntranceOnJoin = playEntranceOnJoin;
     }
 
-    public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
-        if (!event.getMember().getUser().isBot()) {
+    public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent event) {
+        if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
             String userJoined = event.getMember().getEffectiveName();
             String userId = event.getMember().getId();
 

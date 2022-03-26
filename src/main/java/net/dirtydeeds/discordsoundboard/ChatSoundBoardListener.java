@@ -8,6 +8,7 @@ import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
@@ -93,11 +94,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         removeCommand(event, message);
                     } else if (message.startsWith(commandCharacter + "random")) {
                         randomCommand(event, requestingUser);
+                    } else if (message.startsWith(commandCharacter + "disconnect")){
+                        disconnectFromChannel(event.getGuild());
                     } else if (message.startsWith(commandCharacter + "entrance") ||
                             message.startsWith(commandCharacter + "leave")) {
                         entranceOrLeaveCommand(event, message);
                     } else if (message.startsWith(commandCharacter + "userdetails")) {
                         userDetails(event);
+                    } else if (message.startsWith(commandCharacter + "reload")) {
+                        reloadSounds(event);
                     } else if (message.startsWith(commandCharacter + "url")) {
                         playFromURL(event, requestingUser);
                     } else if (message.startsWith(commandCharacter) &&
@@ -123,6 +128,16 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 addAttachedSoundFile(event);
             }
         }
+    }
+
+    private void reloadSounds(MessageReceivedEvent event) {
+        soundPlayer.updateFileList();
+        deleteMessage(event);
+        replyByPrivateMessage(event, "Sound files reloaded");
+    }
+
+    private void disconnectFromChannel(Guild guild) {
+        soundPlayer.disconnectFromChannel(guild);
     }
 
     private void playFromURL(MessageReceivedEvent event, String requestingUser) {
@@ -367,6 +382,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
                 "\nCommand Prefix: " + commandCharacter +
                 "\nSound File Path: " + soundPlayer.getSoundsPath() +
+                "\nSoundboard Version: " + soundPlayer.getApplicationVersion() +
                 "```");
     }
 
@@ -406,13 +422,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         replyByPrivateMessage(event, "You can type any of the following commands:" +
                 "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
                 "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
+                "\n" + commandCharacter + "reload           - Reloads the sound files from disk." +
                 "\n" + commandCharacter + "random           - Plays a random sound from the list." +
                 "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
                 "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
+                "\n" + commandCharacter + "disconnect       - Disconnects the bot from the current channel." +
                 "\n" + commandCharacter + "info             - Returns info about the bot." +
                 "\n" + commandCharacter + "url              - Play file from URL (Youtube, Vimeo, Soundcloud)." +
-                "\n" + commandCharacter + "entrance userName soundFileName - Sets entrance sound for user" +
-                "\n" + commandCharacter + "leave userName soundFileName - Sets leave sound for user" +
+                "\n" + commandCharacter + "entrance userName soundFileName - Sets entrance sound for user. Leave soundFileName empty to remove." +
+                "\n" + commandCharacter + "leave userName soundFileName - Sets leave sound for user. Leave soundFileName empty to remove." +
                 "\n" + commandCharacter + "userDetails userName - Get details for user```");
     }
 

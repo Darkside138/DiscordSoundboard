@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.logging.impl.SimpleLog;
 import org.h2.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class MovedChannelListener extends ListenerAdapter {
 
@@ -14,14 +15,17 @@ public class MovedChannelListener extends ListenerAdapter {
 
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
+    private final boolean playEntranceOnMove;
 
-    public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository) {
+    public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository,
+                                boolean playEntranceOnMove) {
         this.bot = bot;
         this.userRepository = userRepository;
+        this.playEntranceOnMove = playEntranceOnMove;
     }
 
-    public void onGuildVoiceMove(GuildVoiceMoveEvent event) {
-        if (!event.getMember().getUser().isBot()) {
+    public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent event) {
+        if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
             String discordUser = event.getMember().getEffectiveName();
             String discordUserId = event.getMember().getId();
             String entranceFile = bot.getFileForUser(discordUser, true);
