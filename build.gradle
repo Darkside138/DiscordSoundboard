@@ -25,9 +25,6 @@ repositories {
         url 'https://m2.dv8tion.net/releases'
     }
     maven { url 'https://jitpack.io' }
-//    flatDir {
-//        dirs 'lib'
-//    }
 }
 
 processResources {
@@ -83,6 +80,8 @@ processResources {
 bootJar {
     exclude ("application.properties")
 }
+
+//Run tasks -> distributions -> assembleBootDist to create a release zip
 
 bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
