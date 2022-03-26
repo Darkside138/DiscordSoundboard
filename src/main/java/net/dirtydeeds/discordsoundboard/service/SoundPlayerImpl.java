@@ -84,6 +84,11 @@ public class SoundPlayerImpl implements Observer {
 
     private void init() {
         loadProperties();
+
+        leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
+        playEntranceOnJoin = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnJoin"));
+        playEntranceOnMove = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnMove"));
+
         initializeDiscordBot();
         if (bot == null) {
             shutdownManager.initiateShutdown(0);
@@ -101,10 +106,6 @@ public class SoundPlayerImpl implements Observer {
         musicPlayer = playerManager.createPlayer();
         musicPlayer.setVolume(75);
         trackScheduler = new TrackScheduler(musicPlayer);
-
-        leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
-        playEntranceOnJoin = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnJoin"));
-        playEntranceOnMove = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnMove"));
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
 

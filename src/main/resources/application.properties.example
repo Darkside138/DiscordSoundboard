@@ -18,6 +18,10 @@ respond_to_dm=true
 command_character=?
 leave_suffix=_leave
 
+playEntranceOnMove=true
+playEntranceOnJoin=true
+leaveAfterPlayback=false
+
 #Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
 message_size_limit=2000
 
