@@ -35,8 +35,13 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
             User user = userRepository.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
             if (user != null && !StringUtils.isNullOrEmpty(user.getEntranceSound())) {
-                bot.playFileInChannel(user.getEntranceSound(), event.getChannelJoined());
-            } else {
+                String entranceSound = user.getEntranceSound();
+                LOG.info(String.format("Playing entrance sound %s", entranceSound));
+                bot.playFileInChannel(entranceSound, event.getChannelJoined());
+            } else if (!StringUtils.isNullOrEmpty(bot.entranceForAll)) {
+                LOG.info(String.format("Playing entrance for all sound %s", bot.entranceForAll));
+                bot.playFileInChannel(bot.entranceForAll, event.getChannelJoined());
+            } {
                 //If DB doesn't have an entrance sound check for a file.
                 String entranceFile = bot.getFileForUser(userJoined, true);
                 if (!entranceFile.equals("")) {
@@ -45,9 +50,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     } catch (Exception e) {
                         LOG.fatal("Could not play file for entrance of " + userJoined);
                     }
-
                 } else {
-
                     LOG.debug("Could not find any sound that starts with " + userJoined + ", so ignoring entrance.");
                 }
             }

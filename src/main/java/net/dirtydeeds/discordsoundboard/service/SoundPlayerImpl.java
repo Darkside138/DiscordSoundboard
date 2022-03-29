@@ -69,6 +69,7 @@ public class SoundPlayerImpl implements Observer {
     @SuppressWarnings("unused")
     private String applicationVersion;
     private final ShutdownManager shutdownManager;
+    public String entranceForAll;
 
     @Inject
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
@@ -88,6 +89,7 @@ public class SoundPlayerImpl implements Observer {
         leaveAfterPlayback = Boolean.parseBoolean(appProperties.getProperty("leaveAfterPlayback"));
         playEntranceOnJoin = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnJoin"));
         playEntranceOnMove = Boolean.parseBoolean(appProperties.getProperty("playEntranceOnMove"));
+        entranceForAll = appProperties.getProperty("entranceForAll");
 
         initializeDiscordBot();
         if (bot == null) {

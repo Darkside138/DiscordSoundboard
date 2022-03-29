@@ -96,4 +96,15 @@ bootDistZip {
     }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
+
+    file("distributions/DiscordSoundboard.zip").renameTo("distributions/DiscordSoundboard-" + projectVersion + ".zip")
 }
+
+task renameDist {
+    doLast {
+    new File("$buildDir/distributions/DiscordSoundboard.zip")
+            .renameTo("$buildDir/distributions/DiscordSoundboard-"+projectVersion+".zip")
+    }
+}
+
+bootDistZip.finalizedBy renameDist

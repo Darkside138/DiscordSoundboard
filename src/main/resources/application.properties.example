@@ -18,6 +18,7 @@ respond_to_dm=true
 command_character=?
 leave_suffix=_leave
 
+entranceForAll=
 playEntranceOnMove=true
 playEntranceOnJoin=true
 leaveAfterPlayback=false

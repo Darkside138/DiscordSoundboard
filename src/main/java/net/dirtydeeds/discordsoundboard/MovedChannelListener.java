@@ -35,10 +35,16 @@ public class MovedChannelListener extends ListenerAdapter {
             if (user != null) {
                 if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
                     entranceFile = user.getEntranceSound();
+                    LOG.info(String.format("Playing move sound %s", entranceFile));
                 }
                 if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
                     disconnectFile = user.getLeaveSound();
+                    LOG.info(String.format("Playing leave sound %s", disconnectFile));
                 }
+            }
+            if (!StringUtils.isNullOrEmpty(bot.entranceForAll)) {
+                entranceFile = bot.entranceForAll;
+                LOG.info(String.format("Playing entrance for all sound %s", entranceFile));
             }
 
             if (!entranceFile.equals("")) {
@@ -54,7 +60,7 @@ public class MovedChannelListener extends ListenerAdapter {
                     LOG.fatal("Could not play file for disconnection of " + user);
                 }
             } else {
-                LOG.debug("Could not entrance or disconnect sound for " + user + ", so ignoring GuildVoiceMoveEvent.");
+                LOG.debug("Could not find entrance or disconnect sound for " + user + ", so ignoring GuildVoiceMoveEvent.");
             }
         }
     }
