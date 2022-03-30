@@ -24,7 +24,7 @@ jobs:
         username: Darkside138
         password: ${{ secrets.SOUNDBOARD_GHCR }}
         registry: ghcr.io
-        repository: Darkside138/DiscordSoundboard
+        repository: darkside138/discordsoundboard
         tags: ${{ github.sha }}
         dockerfile: Dockerfile
 
