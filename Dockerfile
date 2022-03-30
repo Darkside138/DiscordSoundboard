@@ -1,5 +1,7 @@
 FROM ubuntu:latest
 
+LABEL org.opencontainers.image.source https://github.com/Darkside138/DiscordSoundboard
+
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Chicago
 
