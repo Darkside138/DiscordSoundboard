@@ -24,9 +24,11 @@ RUN gradle assembleBootDist
 WORKDIR build/distributions
 RUN mv DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
 
-WORKDIR /etc/DiscordSoundboard
+WORKDIR /etc
 RUN unzip DiscordSoundboard.zip
 RUN rm DiscordSoundboard.zip
+
+WORKDIR /etc/DiscordSoundboard
 
 EXPOSE 8080
 
