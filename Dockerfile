@@ -7,7 +7,7 @@ RUN apt update && apt upgrade -y
 RUN apt install wget openjdk-8-jdk dos2unix unzip jq curl git -y
 
 #install Gradle
-RUN wget -q https://services.gradle.org/distributions/gradle-6.9.2-bin.zip
+RUN wget -q https://services.gradle.org/distributions/gradle-6.9.2-bin.zip \
     && unzip gradle-6.9.2-bin.zip -d /opt \
     && rm gradle-6.9.2-bin.zip
 
