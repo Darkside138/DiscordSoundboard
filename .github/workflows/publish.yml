@@ -19,14 +19,14 @@ jobs:
 #        dockerfile: Dockerfile
 
     - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with:
-          username: Darkside138
-          password: ${{ secrets.SOUNDBOARD_GHCR }}
-          registry: ghcr.io
-          repository: Darkside138/DiscordSoundboard
-          tags: ${{ github.sha }}
-          dockerfile: Dockerfile
+      uses: docker/build-push-action@v1
+      with:
+        username: Darkside138
+        password: ${{ secrets.SOUNDBOARD_GHCR }}
+        registry: ghcr.io
+        repository: Darkside138/DiscordSoundboard
+        tags: ${{ github.sha }}
+        dockerfile: Dockerfile
 
 #    - name: Build the Discord Soundboard Docker image
 #      run: |
