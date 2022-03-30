@@ -18,6 +18,6 @@ jobs:
         
     - name: Build the Discord Soundboard Docker image
       run: |
-        docker build . --tag ghcr.io/darkside138/discord-soundboard:latest
-        docker run ghcr.io/darkside138/discord-soundboard:latest
-        docker push ghcr.io/darkside138/discord-soundboard:latest
+        docker build . --tag ghcr.io/Darkside138/discord-soundboard:latest
+        docker run ghcr.io/Darkside138/discord-soundboard:latest
+        docker push ghcr.io/Darkside138/discord-soundboard:latest
