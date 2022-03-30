@@ -1,5 +1,8 @@
 FROM ubuntu:latest
 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Chicago
+
 RUN apt update && apt upgrade -y
 RUN apt install wget openjdk-8-jdk dos2unix unzip jq curl git -y
 
