@@ -9,15 +9,27 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v1
-      with:
-        registry: ghcr.io
-        username: Darkside138
-        password: ${{ secrets.SOUNDBOARD_GHCR }}
-        
-    - name: Build the Discord Soundboard Docker image
-      run: |
-        docker build . --tag ghcr.io/Darkside138/discord-soundboard:latest
-        docker run ghcr.io/Darkside138/discord-soundboard:latest
-        docker push ghcr.io/Darkside138/discord-soundboard:latest
+#    - name: Login to GitHub Container Registry
+#      uses: docker/login-action@v1
+#      with:
+#        registry: ghcr.io
+#        username: Darkside138
+#        password: ${{ secrets.SOUNDBOARD_GHCR }}
+#        repository: Darkside138/DiscordSoundboard
+#        dockerfile: Dockerfile
+
+    - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: Darkside138
+          password: ${{ secrets.SOUNDBOARD_GHCR }}
+          registry: ghcr.io
+          repository: Darkside138/DiscordSoundboard
+          tags: ${{ github.sha }}
+          dockerfile: Dockerfile
+
+#    - name: Build the Discord Soundboard Docker image
+#      run: |
+#        docker build . --tag ghcr.io/darkside138/discord-soundboard:latest
+#        docker run ghcr.io/darkside138/discord-soundboard:latest
+#        docker push ghcr.io/darkside138/discord-soundboard:latest
