@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 
-LABEL org.opencontainers.image.source https://github.com/Darkside138/DiscordSoundboard
+LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Chicago
@@ -9,13 +9,13 @@ RUN apt update && apt upgrade -y
 RUN apt install wget openjdk-8-jdk dos2unix unzip jq curl git -y
 
 #install Gradle
-RUN wget -q https://services.gradle.org/distributions/gradle-6.9.2-bin.zip \
-    && unzip gradle-6.9.2-bin.zip -d /opt \
-    && rm gradle-6.9.2-bin.zip
+RUN wget -q https://services.gradle.org/distributions/gradle-7.4.2-bin.zip \
+    && unzip gradle-7.4.2-bin.zip -d /opt \
+    && rm gradle-7.4.2-bin.zip
 
 # Set Gradle in the environment variables
-ENV GRADLE_HOME /opt/gradle-6.9.2
-ENV PATH $PATH:/opt/gradle-6.9.2/bin
+ENV GRADLE_HOME /opt/gradle-7.4.2
+ENV PATH $PATH:/opt/gradle-7.4.2/bin
 
 WORKDIR "/tmp"
 RUN git clone https://github.com/Darkside138/DiscordSoundboard.git

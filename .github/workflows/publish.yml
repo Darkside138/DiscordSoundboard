@@ -37,15 +37,3 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-#    - name: Push to GitHub Packages
-#      uses: docker/build-push-action@v1
-#      with:
-#        username: Darkside138
-#        password: ${{ secrets.SOUNDBOARD_GHCR }}
-#        registry: ghcr.io
-#        repository: darkside138/discordsoundboard
-#        tags: ${{ github.sha }}
-#        dockerfile: Dockerfile
-
-
