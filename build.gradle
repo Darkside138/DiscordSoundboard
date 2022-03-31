@@ -42,13 +42,12 @@ mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 sourceCompatibility = 17
 targetCompatibility = 17
 
-bootJar {
+tasks.named("bootJar") {
     manifest {
         attributes 'Implementation-Title': rootProject.name,
                 'Implementation-Version': projectVersion
     }
 }
-
 
 dependencies {
     implementation("net.dv8tion:JDA:4.4.0_350")
@@ -86,7 +85,7 @@ bootJar {
 bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
-        from ('/src/main/resources/application.properties.example')
+        from ('src/main/resources/application.properties.example')
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
