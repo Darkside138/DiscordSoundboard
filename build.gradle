@@ -39,8 +39,8 @@ test {
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
-sourceCompatibility = 1.15
-targetCompatibility = 1.15
+sourceCompatibility = 17
+targetCompatibility = 17
 
 bootJar {
     manifest {
