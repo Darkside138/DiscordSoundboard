@@ -34,14 +34,12 @@ public class SoundboardRestController {
     }
 
     @GetMapping(value = "/availableSounds")
-    @Deprecated
     public List<SoundFile> getSoundFileList() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         return soundMap.values().stream().sorted(new SortIgnoreCase()).collect(Collectors.toCollection(LinkedList::new));
     }
     
     @GetMapping(value = "/soundCategories")
-    @Deprecated
     public Set<String> getSoundCategories() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
         return soundMap.values().stream().map(SoundFile::getCategory).collect(Collectors.toSet());
@@ -65,7 +63,6 @@ public class SoundboardRestController {
     }
     
     @PostMapping(value = "/playRandom")
-    @Deprecated
     public HttpStatus playRandomSoundFile(@RequestParam String username) {
         try {
             soundPlayer.playRandomSoundFile(username, null);

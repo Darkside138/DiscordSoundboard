@@ -21,17 +21,17 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.logging.impl.SimpleLog;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 
 import static java.util.Map.*;
@@ -43,7 +43,7 @@ import static java.util.Map.*;
  * and the configuration properties.
  */
 @Service
-public class SoundPlayerImpl implements Observer {
+public class SoundPlayerImpl {
 
     private static final SimpleLog LOG = new SimpleLog("SoundPlayerImpl");
 
@@ -53,7 +53,6 @@ public class SoundPlayerImpl implements Observer {
 
     private Properties appProperties;
     private JDA bot;
-    private boolean initialized = false;
     private DefaultAudioPlayerManager playerManager;
     private AudioPlayer musicPlayer;
     private String soundFileDir;
@@ -68,6 +67,9 @@ public class SoundPlayerImpl implements Observer {
     @Value("${spring.application.version:unknown}")
     @SuppressWarnings("unused")
     private String applicationVersion;
+    @SuppressWarnings("unused")
+    @Autowired
+    private ServletWebServerApplicationContext webServerAppCtxt;
     private final ShutdownManager shutdownManager;
     public String entranceForAll;
 
@@ -75,7 +77,7 @@ public class SoundPlayerImpl implements Observer {
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
                            UserRepository userRepository, ShutdownManager shutdownManager) {
         this.mainWatch = mainWatch;
-        this.mainWatch.addObserver(this);
+        this.mainWatch.setSoundPlayer(this);
         this.soundFileRepository = soundFileRepository;
         this.userRepository = userRepository;
         this.shutdownManager = shutdownManager;
@@ -111,7 +113,7 @@ public class SoundPlayerImpl implements Observer {
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
 
-        initialized = true;
+        mainWatch.watchDirectoryPath(Paths.get(soundFileDir));
     }
 
     /**
@@ -128,10 +130,11 @@ public class SoundPlayerImpl implements Observer {
                 LOG.error("No Discord Token found. Please confirm you have an application.properties file and you have the property bot_token filled with a valid token from https://discord.com/developers/applications");
                 return;
             }
+
             bot = JDABuilder.createDefault(botToken)
                     .setAutoReconnect(true)
-                    .build()
-                    .awaitReady();
+                    .build();
+            bot.awaitReady();
 
             if (Boolean.parseBoolean(appProperties.getProperty("respond_to_chat_commands"))) {
                 String commandCharacter = appProperties.getProperty("command_character");
@@ -176,7 +179,7 @@ public class SoundPlayerImpl implements Observer {
             }
 
             String activityString = appProperties.getProperty("activityString");
-            if (StringUtils.isEmpty(activityString)) {
+            if (ObjectUtils.isEmpty(activityString)) {
                 bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
                         "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
             } else {
@@ -196,9 +199,8 @@ public class SoundPlayerImpl implements Observer {
         return applicationVersion;
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        updateFileList();
+    public ServletWebServerApplicationContext getApplicationContext() {
+        return webServerAppCtxt;
     }
 
     /**
@@ -625,21 +627,17 @@ public class SoundPlayerImpl implements Observer {
             LOG.info("Loading from " + soundFileDir);
             Path soundFilePath = Paths.get(soundFileDir);
 
-            if (!initialized) {
-                mainWatch.watchDirectoryPath(soundFilePath);
-            }
-
             if (!soundFilePath.toFile().exists()) {
-                System.out.println("creating directory: " + soundFilePath.toFile().toString());
+                System.out.println("creating directory: " + soundFilePath.toFile());
                 boolean result = false;
 
                 try {
                     result = soundFilePath.toFile().mkdir();
                 } catch (SecurityException se) {
-                    LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
+                    LOG.fatal("Could not create directory: " + soundFilePath.toFile());
                 }
                 if (result) {
-                    LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
+                    LOG.info("DIR: " + soundFilePath.toFile() + " created.");
                 }
             }
 

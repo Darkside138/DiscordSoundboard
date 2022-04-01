@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.apache.commons.logging.impl.SimpleLog;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -383,6 +385,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\nCommand Prefix: " + commandCharacter +
                 "\nSound File Path: " + soundPlayer.getSoundsPath() +
                 "\nSoundboard Version: " + soundPlayer.getApplicationVersion() +
+                "\nWeb UI URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() +
+                "\nSwagger URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() + "/swagger-ui/index.html" +
                 "```");
     }
 
