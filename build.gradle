@@ -81,7 +81,6 @@ bootJar {
 }
 
 //Run tasks -> distributions -> assembleBootDist to create a release zip
-
 bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
@@ -95,8 +94,6 @@ bootDistZip {
     }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
-
-    file("distributions/DiscordSoundboard.zip").renameTo("distributions/DiscordSoundboard-" + projectVersion + ".zip")
 }
 
 task renameDist {

@@ -37,12 +37,12 @@ RUN cp DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
 
 WORKDIR /etc
 RUN unzip DiscordSoundboard.zip
-#RUN rm DiscordSoundboard.zip
+RUN rm DiscordSoundboard.zip
 
 WORKDIR /etc/DiscordSoundboard
 
 EXPOSE 8080
 
 COPY docker-entrypoint.sh /
-#RUN chmod +x /docker-entrypoint.sh
-#ENTRYPOINT [ "/docker-entrypoint.sh" ]
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
