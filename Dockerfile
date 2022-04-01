@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
