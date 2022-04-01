@@ -39,38 +39,40 @@ test {
 
 mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
-bootJar {
+tasks.named("bootJar") {
     manifest {
         attributes 'Implementation-Title': rootProject.name,
                 'Implementation-Version': projectVersion
     }
 }
 
-
 dependencies {
-    implementation("net.dv8tion:JDA:4.4.0_350")
+    implementation 'net.dv8tion:JDA:4.4.0_350'
     implementation 'com.sedmelluq:lavaplayer:1.3.77'
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
-    compile 'commons-io:commons-io:2.8.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
 
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.2.0.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: '2.2.0.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.6.5'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: '2.6.5'
 
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.2.0.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.2.0.RELEASE'
-    compile group: 'com.h2database', name: 'h2', version: '1.4.200'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.6.5'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.6.5'
+    implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 
-    compile "io.springfox:springfox-swagger2:2.4.0"
-    compile 'io.springfox:springfox-swagger-ui:2.4.0'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-params:5.2.0'
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
-    testCompile "org.mockito:mockito-core:4.4.0"
-    testCompile 'org.mockito:mockito-junit-jupiter:2.18.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+    testImplementation "org.mockito:mockito-core:4.4.0"
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.3.1'
 }
 
 processResources {
@@ -82,11 +84,10 @@ bootJar {
 }
 
 //Run tasks -> distributions -> assembleBootDist to create a release zip
-
 bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
-        from ('/src/main/resources/application.properties.example')
+        from ('src/main/resources/application.properties.example')
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
@@ -96,8 +97,6 @@ bootDistZip {
     }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
-
-    file("distributions/DiscordSoundboard.zip").renameTo("distributions/DiscordSoundboard-" + projectVersion + ".zip")
 }
 
 task renameDist {

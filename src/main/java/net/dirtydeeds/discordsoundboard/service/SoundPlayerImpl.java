@@ -20,18 +20,19 @@ import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
-import org.apache.commons.logging.impl.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.security.auth.login.LoginException;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 
 import static java.util.Map.*;
@@ -43,9 +44,9 @@ import static java.util.Map.*;
  * and the configuration properties.
  */
 @Service
-public class SoundPlayerImpl implements Observer {
+public class SoundPlayerImpl {
 
-    private static final SimpleLog LOG = new SimpleLog("SoundPlayerImpl");
+    private static final Logger LOG = LoggerFactory.getLogger(SoundPlayerImpl.class);
 
     private final SoundFileRepository soundFileRepository;
     private final UserRepository userRepository;
@@ -53,7 +54,6 @@ public class SoundPlayerImpl implements Observer {
 
     private Properties appProperties;
     private JDA bot;
-    private boolean initialized = false;
     private DefaultAudioPlayerManager playerManager;
     private AudioPlayer musicPlayer;
     private String soundFileDir;
@@ -68,6 +68,9 @@ public class SoundPlayerImpl implements Observer {
     @Value("${spring.application.version:unknown}")
     @SuppressWarnings("unused")
     private String applicationVersion;
+    @SuppressWarnings("unused")
+    @Autowired
+    private ServletWebServerApplicationContext webServerAppCtxt;
     private final ShutdownManager shutdownManager;
     public String entranceForAll;
 
@@ -75,7 +78,7 @@ public class SoundPlayerImpl implements Observer {
     public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
                            UserRepository userRepository, ShutdownManager shutdownManager) {
         this.mainWatch = mainWatch;
-        this.mainWatch.addObserver(this);
+        this.mainWatch.setSoundPlayer(this);
         this.soundFileRepository = soundFileRepository;
         this.userRepository = userRepository;
         this.shutdownManager = shutdownManager;
@@ -111,7 +114,7 @@ public class SoundPlayerImpl implements Observer {
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
 
-        initialized = true;
+        mainWatch.watchDirectoryPath(Paths.get(soundFileDir));
     }
 
     /**
@@ -128,10 +131,11 @@ public class SoundPlayerImpl implements Observer {
                 LOG.error("No Discord Token found. Please confirm you have an application.properties file and you have the property bot_token filled with a valid token from https://discord.com/developers/applications");
                 return;
             }
+
             bot = JDABuilder.createDefault(botToken)
                     .setAutoReconnect(true)
-                    .build()
-                    .awaitReady();
+                    .build();
+            bot.awaitReady();
 
             if (Boolean.parseBoolean(appProperties.getProperty("respond_to_chat_commands"))) {
                 String commandCharacter = appProperties.getProperty("command_character");
@@ -176,7 +180,7 @@ public class SoundPlayerImpl implements Observer {
             }
 
             String activityString = appProperties.getProperty("activityString");
-            if (StringUtils.isEmpty(activityString)) {
+            if (ObjectUtils.isEmpty(activityString)) {
                 bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
                         "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
             } else {
@@ -188,7 +192,7 @@ public class SoundPlayerImpl implements Observer {
         } catch (LoginException e) {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
-            LOG.fatal("Login Interrupted.");
+            LOG.error("Login Interrupted.");
         }
     }
 
@@ -196,9 +200,8 @@ public class SoundPlayerImpl implements Observer {
         return applicationVersion;
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        updateFileList();
+    public ServletWebServerApplicationContext getApplicationContext() {
+        return webServerAppCtxt;
     }
 
     /**
@@ -257,7 +260,7 @@ public class SoundPlayerImpl implements Observer {
                     }
                 }
             } catch (Exception e) {
-                LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+                LOG.error("Could not play random file: " + randomValue.getSoundFileId());
             }
         } catch (Exception e) {
             throw new SoundPlaybackException("Problem playing random file.");
@@ -569,7 +572,7 @@ public class SoundPlayerImpl implements Observer {
      */
     private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
-            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
+            LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
         } else {
             AudioManager audioManager = guild.getAudioManager();
             AudioSendHandler audioSendHandler = new MyAudioSendHandler(musicPlayer);
@@ -625,21 +628,17 @@ public class SoundPlayerImpl implements Observer {
             LOG.info("Loading from " + soundFileDir);
             Path soundFilePath = Paths.get(soundFileDir);
 
-            if (!initialized) {
-                mainWatch.watchDirectoryPath(soundFilePath);
-            }
-
             if (!soundFilePath.toFile().exists()) {
-                System.out.println("creating directory: " + soundFilePath.toFile().toString());
+                System.out.println("creating directory: " + soundFilePath.toFile());
                 boolean result = false;
 
                 try {
                     result = soundFilePath.toFile().mkdir();
                 } catch (SecurityException se) {
-                    LOG.fatal("Could not create directory: " + soundFilePath.toFile().toString());
+                    LOG.error("Could not create directory: " + soundFilePath.toFile());
                 }
                 if (result) {
-                    LOG.info("DIR: " + soundFilePath.toFile().toString() + " created.");
+                    LOG.info("DIR: " + soundFilePath.toFile() + " created.");
                 }
             }
 
@@ -663,7 +662,7 @@ public class SoundPlayerImpl implements Observer {
                 }
             });
         } catch (IOException e) {
-            LOG.fatal(e.toString());
+            LOG.error(e.toString());
             e.printStackTrace();
         }
     }
@@ -688,20 +687,19 @@ public class SoundPlayerImpl implements Observer {
             stream.close();
             return;
         } catch (FileNotFoundException e) {
-            LOG.warn("Could not find application.properties file.");
+            LOG.info(String.format("Could not find application.properties file in directory %s.", System.getProperty("user.dir")));
         } catch (IOException e) {
             e.printStackTrace();
         }
         if (stream == null) {
-            LOG.warn("Loading application.properties file from resources folder");
+            LOG.info("Loading application.properties file from resources folder");
             try {
                 stream = this.getClass().getResourceAsStream("/application.properties");
                 if (stream != null) {
                     appProperties.load(stream);
                     stream.close();
                 } else {
-                    //TODO: Would be nice if we could auto create a default application.properties here.
-                    LOG.fatal("You do not have an application.properties file. Please create one.");
+                    LOG.error("You do not have an application.properties file. Please create one.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();

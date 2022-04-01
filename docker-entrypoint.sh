@@ -12,7 +12,7 @@ sed -i 's/leave_suffix=_leave/leave_suffix='$leavesuffix'/g' application.propert
 sed -i 's/player=JDAPlayer/player='$player'/g' application.properties
 sed -i 's/allowedUserIds=/allowedUserIds='$allowedusers'/g' application.properties
 sed -i 's/bannedUserIds=/bannedUserIds='$bannedusers'/g' application.properties
-sed -i 's/entranceForAll=/entranceForAll='$entranceForAll'g' application.properties
+sed -i 's/entranceForAll=/entranceForAll='$entranceForAll'/g' application.properties
 sed -i 's/playEntranceOnMove=_leave/playEntranceOnMove='playEntranceOnMove'/g' application.properties
 sed -i 's/playEntranceOnJoin=_leave/playEntranceOnJoin='playEntranceOnJoin'/g' application.properties
 sed -i 's/leaveAfterPlayback=_leave/leaveAfterPlayback='leaveAfterPlayback'/g' application.properties

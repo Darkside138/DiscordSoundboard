@@ -14,7 +14,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.internal.utils.PermissionUtil;
-import org.apache.commons.logging.impl.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ChatSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = new SimpleLog("ChatListener");
+    private static final Logger LOG = LoggerFactory.getLogger(ChatSoundBoardListener.class);
 
     private static final int MAX_FILE_SIZE_IN_BYTES = 10000000; // 10 MB
     private final static DecimalFormat df2 = new DecimalFormat("#.##");
@@ -251,7 +252,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                         attachment.downloadToFile().getNow(newSoundFile);
                                         event.getChannel().sendMessage("Downloaded file `" + name + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".").queue();
                                     } catch (IOException e1) {
-                                        LOG.fatal("Problem deleting and re-adding sound file: " + name);
+                                        LOG.error("Problem deleting and re-adding sound file: {}", name);
                                     }
                                 } else {
                                     event.getChannel().sendMessage("The file '" + name + "' already exists. Only " + name.substring(0, name.indexOf(".")) + " can change update this sound.").queue();
@@ -282,7 +283,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1)); // +1 to ignore the ~ character
                     }
                 }
-                LOG.info("Attempting to play file: " + fileNameRequested + " " + repeatNumber + " times. Requested by " + requestingUser + ".");
+                LOG.info("Attempting to play file: {} {} times. Requested by {}}.", fileNameRequested, repeatNumber, requestingUser);
 
                 soundPlayer.playFileForUser(fileNameRequested, event.getAuthor().getName());
                 deleteMessage(event);
@@ -291,7 +292,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             }
         } else {
             replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
-            LOG.info("Attempting to play a sound file while muted. Requested by " + requestingUser + ".");
+            LOG.info("Attempting to play a sound file while muted. Requested by {}", requestingUser);
         }
     }
 
@@ -321,7 +322,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             replyByPrivateMessage(event, "Could not find sound file: " + soundToRemove + ".");
                         }
                     } catch (IOException e) {
-                        LOG.fatal("Could not remove sound file " + soundToRemove);
+                        LOG.error("Could not remove sound file {}", soundToRemove);
                     }
                 }
             } else {
@@ -331,7 +332,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     }
 
     private void infoCommand(MessageReceivedEvent event, String requestingUser) {
-        LOG.info("Responding to info request by " + requestingUser + ".");
+        LOG.info("Responding to info request by {}", requestingUser);
 
         OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
@@ -383,6 +384,8 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\nCommand Prefix: " + commandCharacter +
                 "\nSound File Path: " + soundPlayer.getSoundsPath() +
                 "\nSoundboard Version: " + soundPlayer.getApplicationVersion() +
+                "\nWeb UI URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() +
+                "\nSwagger URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() + "/swagger-ui/index.html" +
                 "```");
     }
 
@@ -392,7 +395,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         if (fadeoutIndex > -1) {
             fadeoutTimeout = Integer.parseInt(message.substring(fadeoutIndex + 1));
         }
-        LOG.info("Stop requested by " + requestingUser + " with a fadeout of " + fadeoutTimeout + " seconds");
+        LOG.info("Stop requested by {} with a fadeout of {} seconds", requestingUser, fadeoutTimeout);
         if (soundPlayer.stop()) {
             replyByPrivateMessage(event, "Playback stopped.");
         } else {
@@ -408,17 +411,17 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             muted = false;
             soundPlayer.setSoundPlayerVolume(newVol);
             replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
-            LOG.info("Volume set to " + newVol + "% by " + requestingUser + ".");
+            LOG.info("Volume set to {}% by {}.", newVol, requestingUser);
         } else if (newVol == 0) {
             muted = true;
             soundPlayer.setSoundPlayerVolume(newVol);
             replyByPrivateMessage(event, requestingUser + " muted me.");
-            LOG.info("Bot muted by " + requestingUser + ".");
+            LOG.info("Bot muted by {}", requestingUser);
         }
     }
 
     private void helpCommand(MessageReceivedEvent event, String requestingUser) {
-        LOG.info("Responding to help command. Requested by " + requestingUser + ".");
+        LOG.info("Responding to help command. Requested by {}", requestingUser);
         replyByPrivateMessage(event, "You can type any of the following commands:" +
                 "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
                 "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
@@ -438,7 +441,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         StringBuilder commandString = getCommandListString();
         List<String> soundList = getCommandList(commandString);
 
-        LOG.info("Responding to list command. Requested by " + requestingUser + ".");
+        LOG.info("Responding to list command. Requested by {}", requestingUser);
         if (message.equals(commandCharacter + "list")) {
             if (commandString.length() > maxLineLength) {
                 replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
@@ -462,7 +465,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private void nonRecognizedCommand(MessageReceivedEvent event, String requestingUser) {
         replyByPrivateMessage(event, "Hello @" + requestingUser + ". I don't know how to respond to this message!");
         replyByPrivateMessage(event, "You can type " + commandCharacter + "help to see a list of recognized commands.");
-        LOG.info("Responding to PM of " + requestingUser + ". Unknown Command. Sending help text.");
+        LOG.info("Responding to PM of {}. Unknown Command. Sending help text.", requestingUser);
     }
 
     private List<String> getCommandList(StringBuilder commandString) {
