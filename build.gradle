@@ -61,8 +61,8 @@ dependencies {
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.6.5'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: '2.6.5'
 
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.2.0.RELEASE'
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.2.0.RELEASE'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.6.5'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.6.5'
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 
     implementation 'io.springfox:springfox-swagger2:3.0.0'
