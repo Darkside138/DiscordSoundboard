@@ -20,7 +20,8 @@ import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
-import org.apache.commons.logging.impl.SimpleLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
@@ -45,7 +46,7 @@ import static java.util.Map.*;
 @Service
 public class SoundPlayerImpl {
 
-    private static final SimpleLog LOG = new SimpleLog("SoundPlayerImpl");
+    private static final Logger LOG = LoggerFactory.getLogger(SoundPlayerImpl.class);
 
     private final SoundFileRepository soundFileRepository;
     private final UserRepository userRepository;
@@ -191,7 +192,7 @@ public class SoundPlayerImpl {
         } catch (LoginException e) {
             LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
-            LOG.fatal("Login Interrupted.");
+            LOG.error("Login Interrupted.");
         }
     }
 
@@ -259,7 +260,7 @@ public class SoundPlayerImpl {
                     }
                 }
             } catch (Exception e) {
-                LOG.fatal("Could not play random file: " + randomValue.getSoundFileId());
+                LOG.error("Could not play random file: " + randomValue.getSoundFileId());
             }
         } catch (Exception e) {
             throw new SoundPlaybackException("Problem playing random file.");
@@ -571,7 +572,7 @@ public class SoundPlayerImpl {
      */
     private void playFile(File audioFile, Guild guild, int repeatNumber) {
         if (guild == null) {
-            LOG.fatal("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
+            LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
         } else {
             AudioManager audioManager = guild.getAudioManager();
             AudioSendHandler audioSendHandler = new MyAudioSendHandler(musicPlayer);
@@ -634,7 +635,7 @@ public class SoundPlayerImpl {
                 try {
                     result = soundFilePath.toFile().mkdir();
                 } catch (SecurityException se) {
-                    LOG.fatal("Could not create directory: " + soundFilePath.toFile());
+                    LOG.error("Could not create directory: " + soundFilePath.toFile());
                 }
                 if (result) {
                     LOG.info("DIR: " + soundFilePath.toFile() + " created.");
@@ -661,7 +662,7 @@ public class SoundPlayerImpl {
                 }
             });
         } catch (IOException e) {
-            LOG.fatal(e.toString());
+            LOG.error(e.toString());
             e.printStackTrace();
         }
     }
@@ -686,20 +687,19 @@ public class SoundPlayerImpl {
             stream.close();
             return;
         } catch (FileNotFoundException e) {
-            LOG.warn("Could not find application.properties file.");
+            LOG.info(String.format("Could not find application.properties file in directory %s.", System.getProperty("user.dir")));
         } catch (IOException e) {
             e.printStackTrace();
         }
         if (stream == null) {
-            LOG.warn("Loading application.properties file from resources folder");
+            LOG.info("Loading application.properties file from resources folder");
             try {
                 stream = this.getClass().getResourceAsStream("/application.properties");
                 if (stream != null) {
                     appProperties.load(stream);
                     stream.close();
                 } else {
-                    //TODO: Would be nice if we could auto create a default application.properties here.
-                    LOG.fatal("You do not have an application.properties file. Please create one.");
+                    LOG.error("You do not have an application.properties file. Please create one.");
                 }
             } catch (IOException e) {
                 e.printStackTrace();

@@ -1,6 +1,8 @@
 package net.dirtydeeds.discordsoundboard;
 
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,8 @@ import java.nio.file.*;
 @Service
 public class MainWatch {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MainWatch.class);
+
     private SoundPlayerImpl soundPlayer;
 
     @Async
@@ -31,7 +35,7 @@ public class MainWatch {
                 throw new IllegalArgumentException("Path: " + path + " is not a folder");
             }
 
-            System.out.println("Watching path: " + path);
+            LOG.info("Watching path: {} for changes. Will update sound file list when modified", path);
 
             WatchKey watchKey = path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);

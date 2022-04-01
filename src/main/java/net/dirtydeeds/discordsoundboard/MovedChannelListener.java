@@ -5,13 +5,14 @@ import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.apache.commons.logging.impl.SimpleLog;
 import org.h2.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MovedChannelListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = new SimpleLog("MovedChannelListener");
+    private static final Logger LOG = LoggerFactory.getLogger(MovedChannelListener.class);
 
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
@@ -35,32 +36,32 @@ public class MovedChannelListener extends ListenerAdapter {
             if (user != null) {
                 if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
                     entranceFile = user.getEntranceSound();
-                    LOG.info(String.format("Playing move sound %s", entranceFile));
+                    LOG.info("Playing move sound {}", entranceFile);
                 }
                 if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
                     disconnectFile = user.getLeaveSound();
-                    LOG.info(String.format("Playing leave sound %s", disconnectFile));
+                    LOG.info("Playing leave sound {}", disconnectFile);
                 }
             }
             if (!StringUtils.isNullOrEmpty(bot.entranceForAll)) {
                 entranceFile = bot.entranceForAll;
-                LOG.info(String.format("Playing entrance for all sound %s", entranceFile));
+                LOG.info("Playing entrance for all sound {}", entranceFile);
             }
 
             if (!entranceFile.equals("")) {
                 try {
                     bot.playFileInChannel(entranceFile, event.getChannelJoined());
                 } catch (Exception e) {
-                    LOG.fatal("Could not play file for entrance of " + user);
+                    LOG.error("Could not play file for entrance of {}", user);
                 }
             } else if (!disconnectFile.equals("")) {
                 try {
                     bot.playFileInChannel(disconnectFile, event.getChannelLeft());
                 } catch (Exception e) {
-                    LOG.fatal("Could not play file for disconnection of " + user);
+                    LOG.error("Could not play file for disconnection of {}", user);
                 }
             } else {
-                LOG.debug("Could not find entrance or disconnect sound for " + user + ", so ignoring GuildVoiceMoveEvent.");
+                LOG.debug("Could not find entrance or disconnect sound for {}, so ignoring GuildVoiceMoveEvent.", user);
             }
         }
     }

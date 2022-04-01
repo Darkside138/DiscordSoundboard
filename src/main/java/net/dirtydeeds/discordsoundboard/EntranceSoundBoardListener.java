@@ -5,9 +5,10 @@ import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.apache.commons.logging.impl.SimpleLog;
 import org.h2.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author asafatli.
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class EntranceSoundBoardListener extends ListenerAdapter {
 
-    private static final SimpleLog LOG = new SimpleLog("EntranceListener");
+    private static final Logger LOG = LoggerFactory.getLogger(EntranceSoundBoardListener.class);
 
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
@@ -48,10 +49,10 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     try {
                         bot.playFileInChannel(entranceFile, event.getChannelJoined());
                     } catch (Exception e) {
-                        LOG.fatal("Could not play file for entrance of " + userJoined);
+                        LOG.error("Could not play file for entrance of {}", userJoined);
                     }
                 } else {
-                    LOG.debug("Could not find any sound that starts with " + userJoined + ", so ignoring entrance.");
+                    LOG.debug("Could not find any sound that starts with {}, so ignoring entrance.", userJoined);
                 }
             }
         }
