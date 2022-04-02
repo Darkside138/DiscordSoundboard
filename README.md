@@ -6,12 +6,12 @@ choose the sound from the web UI. You will need to create a bot account that the
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
-##3.0 Release
+## 3.0 Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 
-[3.1.2.zip](https://github.com/Darkside138/DiscordSoundboard/releases/tag/v3.1.2)
+[3.1.3.zip](https://github.com/Darkside138/DiscordSoundboard/releases/tag/v3.1.3)
 
-## Must have Java 8+ 64bit version installed in order for the soundboard to work properly
+## Must have Java 17+ 64bit version installed in order for the soundboard to work properly
 
 Join the official discord: [https://discord.gg/kZTNtfW](https://discord.gg/kZTNtfW)
 
@@ -29,6 +29,9 @@ respond to text channel commands. See below for information on those commands. O
 the .jar file, or the .bat file. You should see a bunch of logging and eventually something like 
 "Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by 
 opening a browser and navigating to "http://localhost:8080".
+
+## How to Get a Bot Token and Invite your Bot
+https://github.com/Darkside138/DiscordSoundboard/wiki
 
 ## Installation and Setup Video
 Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
