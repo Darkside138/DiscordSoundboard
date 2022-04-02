@@ -1,4 +1,8 @@
 # DiscordSoundboard
+[![Downloads](https://img.shields.io/github/downloads/Darkside138/DiscordSoundboard/total.svg)](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
+[![Stars](https://img.shields.io/github/stars/Darkside138/DiscordSoundboard.svg)](https://github.com/Darkside138/DiscordSoundboard/stargazers)
+[![Release](https://img.shields.io/github/release/Darkside138/DiscordSoundboard.svg)](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
+[![License](https://img.shields.io/github/license/Darkside138/DiscordSoundboard.svg)](https://github.com/Darkside138/DiscordSoundboard/blob/master/LICENSE)
 ![Java CI with Gradle](https://github.com/Darkside138/DiscordSoundboard/workflows/Java%20CI%20with%20Gradle/badge.svg)
 
 Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can 
