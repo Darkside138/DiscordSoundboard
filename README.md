@@ -11,7 +11,7 @@ Updated to the new JDA 3.X library and also updated to a new music player. This 
 
 [3.1.2.zip](https://github.com/Darkside138/DiscordSoundboard/releases/tag/v3.1.2)
 
-## Must have Java 8+ 64bit version installed in order for the soundboard to work properly
+## Must have Java 17+ 64bit version installed in order for the soundboard to work properly
 
 Join the official discord: [https://discord.gg/kZTNtfW](https://discord.gg/kZTNtfW)
 
@@ -29,6 +29,9 @@ respond to text channel commands. See below for information on those commands. O
 the .jar file, or the .bat file. You should see a bunch of logging and eventually something like 
 "Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by 
 opening a browser and navigating to "http://localhost:8080".
+
+## How to Get a Bot Token and Invite your Bot
+https://github.com/Darkside138/DiscordSoundboard/wiki
 
 ## Installation and Setup Video
 Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
