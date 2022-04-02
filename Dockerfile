@@ -32,6 +32,8 @@ RUN git clone https://github.com/Darkside138/DiscordSoundboard.git
 WORKDIR DiscordSoundboard
 RUN gradle bootDistZip assembleBootDist
 
+FROM ubuntu:20.04
+
 WORKDIR build/distributions
 RUN cp DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
 
