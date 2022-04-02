@@ -44,29 +44,28 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/discordsoundboard:${{ steps.get_version.outputs.VERSION }}
 
-      - name: Discord Success Notification
+      - name: Discord Soundboard Notification
         uses: meisnate12/discord-notifications@master
         if: success()
         with:
           webhook_id: ${{ secrets.BUILD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.BUILD_WEBHOOK_TOKEN }}
-          title: "${{ steps.get_version.outputs.VERSION }} build: **Success**"
+          title: "Docker Image ${{ steps.get_version.outputs.VERSION }} build: **Success**"
           url: https://github.com/Darkside138/DiscordSoundboard/actions/runs/${{ github.run_id }}
-          username: Metabot
+          username: Discord Soundboard Docker Release
           avatar_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
           author: Docker
           author_icon_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/.github/docker.png
 
-      - name: Discord Failure Notification
+      - name: Discord Soundboard Notification
         uses: meisnate12/discord-notifications@master
-        if: failure()
+        if: success()
         with:
           webhook_id: ${{ secrets.BUILD_WEBHOOK_ID }}
           webhook_token: ${{ secrets.BUILD_WEBHOOK_TOKEN }}
-          title: "${{ steps.get_version.outputs.VERSION }} build: **Failure**"
-          color: 0xe30c43
-          url: https://github.com/Darkside138/DiscordSoundboard/actions/runs/${{ github.run_id }}
-          username: Metabot
+          title: "Discord Soundboard ${{ steps.get_version.outputs.VERSION }} Released"
+          url: https://github.com/Darkside138/DiscordSoundboard/releases/tag/${{ steps.get_version.outputs.VERSION }}
+          username: Discord Soundboard Release Notifier
           avatar_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
-          author: Docker
-          author_icon_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/.github/docker.png
+          author: Discord Soundboard
+          author_icon_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
