@@ -6,10 +6,10 @@ choose the sound from the web UI. You will need to create a bot account that the
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
-##3.0 Release
+## 3.0 Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 
-[3.1.2.zip](https://github.com/Darkside138/DiscordSoundboard/releases/tag/v3.1.2)
+[3.1.3.zip](https://github.com/Darkside138/DiscordSoundboard/releases/tag/v3.1.3)
 
 ## Must have Java 17+ 64bit version installed in order for the soundboard to work properly
 
