@@ -1,5 +1,6 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.listeners;
 
+import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
@@ -22,11 +23,14 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
     private final boolean playEntranceOnJoin;
+    private final BotConfig botConfig;
 
-    public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository, boolean playEntranceOnJoin) {
+    public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository, boolean playEntranceOnJoin,
+                                      BotConfig botConfig) {
         this.bot = bot;
         this.userRepository = userRepository;
         this.playEntranceOnJoin = playEntranceOnJoin;
+        this.botConfig = botConfig;
     }
 
     public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent event) {
@@ -39,9 +43,9 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 String entranceSound = user.getEntranceSound();
                 LOG.info(String.format("Playing entrance sound %s", entranceSound));
                 bot.playFileInChannel(entranceSound, event.getChannelJoined());
-            } else if (!StringUtils.isNullOrEmpty(bot.entranceForAll)) {
-                LOG.info(String.format("Playing entrance for all sound %s", bot.entranceForAll));
-                bot.playFileInChannel(bot.entranceForAll, event.getChannelJoined());
+            } else if (!StringUtils.isNullOrEmpty(botConfig.getEntranceForAll())) {
+                LOG.info(String.format("Playing entrance for all sound %s", botConfig.getEntranceForAll()));
+                bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined());
             } {
                 //If DB doesn't have an entrance sound check for a file.
                 String entranceFile = bot.getFileForUser(userJoined, true);

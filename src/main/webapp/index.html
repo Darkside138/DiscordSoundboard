@@ -161,7 +161,7 @@
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/stop"
+                url: "/soundsApi/stop?username=" + $('#user').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -170,13 +170,13 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/volume?volume=" + $(this).val()
+                url: "/soundsApi/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
-                url: "/soundsApi/volume"
+                url: "/soundsApi/volume?username=" + $('#user').val()
             }).done(function( data ) {
                 $('#volume').val(data);
             });

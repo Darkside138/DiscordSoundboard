@@ -51,8 +51,8 @@ public class SoundboardRestController {
     }
     
     @PostMapping(value = "/playFile")
-    public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username) {
-        soundPlayer.playFileForUser(soundFileId, username);
+    public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username, @RequestParam(defaultValue = "1") Integer repeatTimes) {
+        soundPlayer.playFileForUser(soundFileId, username, repeatTimes);
         return HttpStatus.OK;
     }
 
@@ -98,19 +98,19 @@ public class SoundboardRestController {
     }
 
     @PostMapping(value = "/stop")
-    public HttpStatus stopPlayback() {
-        soundPlayer.stop();
+    public HttpStatus stopPlayback(@RequestParam String username) {
+        soundPlayer.stop(username);
         return HttpStatus.OK;
     }
     
     @PostMapping(value = "/volume")
-    public HttpStatus setVolume(@RequestParam Integer volume) {
-        soundPlayer.setSoundPlayerVolume(volume);
+    public HttpStatus setVolume(@RequestParam Integer volume, @RequestParam String username) {
+        soundPlayer.setSoundPlayerVolume(volume, username);
         return HttpStatus.OK;
     }
     
     @GetMapping(value = "/volume")
-    public float getVolume() {
-        return soundPlayer.getSoundPlayerVolume();
+    public float getVolume(@RequestParam String username) {
+        return soundPlayer.getSoundPlayerVolume(username);
     }
 }

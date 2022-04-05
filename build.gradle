@@ -20,6 +20,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    jcenter()
     maven {
         name 'm2-dv8tion'
         url 'https://m2.dv8tion.net/releases'
@@ -58,6 +59,9 @@ dependencies {
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     implementation 'ch.qos.logback:logback-classic:1.2.11'
+    implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.5', ext: 'pom'
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.6.5'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jersey', version: '2.6.5'
@@ -73,6 +77,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     testImplementation "org.mockito:mockito-core:4.4.0"
     testImplementation 'org.mockito:mockito-junit-jupiter:4.3.1'
+    testCompileOnly 'org.projectlombok:lombok:1.18.22'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 }
 
 processResources {

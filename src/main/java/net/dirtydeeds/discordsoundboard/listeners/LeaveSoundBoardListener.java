@@ -1,4 +1,4 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.UserRepository;

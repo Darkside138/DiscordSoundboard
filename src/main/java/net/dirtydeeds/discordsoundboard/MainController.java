@@ -17,8 +17,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class MainController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
-
     public MainController() {
     }
 
@@ -27,6 +25,7 @@ public class MainController {
     }
 
     @Bean
+    @SuppressWarnings("unused")
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("discord-soundboard")

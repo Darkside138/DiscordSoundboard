@@ -1,6 +1,8 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.listeners;
 
 import com.sun.management.OperatingSystemMXBean;
+import net.dirtydeeds.discordsoundboard.BotConfig;
+import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
@@ -45,23 +47,15 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private final boolean respondToDms;
     private final UserRepository userRepository;
     private final SoundFileRepository soundFileRepository;
-    private Integer messageSizeLimit = 2000;
-    private String commandCharacter = "?";
     private boolean muted;
+    private final BotConfig botConfig;
 
-    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, String commandCharacter, String messageSizeLimit,
+    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, BotConfig botConfig,
                                   Boolean respondToDms, UserRepository userRepository,
                                   SoundFileRepository soundFileRepository) {
         this.soundPlayer = soundPlayer;
-        if (commandCharacter != null && !commandCharacter.isEmpty()) {
-            this.commandCharacter = commandCharacter;
-        }
-        if (messageSizeLimit != null && !messageSizeLimit.isEmpty() && messageSizeLimit.matches("^-?\\d+$")) {
-            this.messageSizeLimit = Integer.parseInt(messageSizeLimit);
-            if (this.messageSizeLimit > 1994) {
-                this.messageSizeLimit = 1994;
-            }
-        }
+        this.botConfig = botConfig;
+
         muted = false;
         this.respondToDms = respondToDms;
         this.userRepository = userRepository;
@@ -75,42 +69,42 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 !event.isFromType(ChannelType.PRIVATE))) {
 
             String message = event.getMessage().getContentRaw().toLowerCase();
-            if (message.startsWith(commandCharacter)) {
+            if (message.startsWith(botConfig.getCommandCharacter())) {
                 if (soundPlayer.isUserAllowed(requestingUser) && !soundPlayer.isUserBanned(requestingUser)) {
-                    final int maxLineLength = messageSizeLimit;
+                    final int maxLineLength = botConfig.getMessageSizeLimit();
 
                     //Respond
-                    if (message.startsWith(commandCharacter + "list")) {
+                    if (message.startsWith(botConfig.getCommandCharacter() + "list")) {
                         listCommand(event, requestingUser, message, maxLineLength);
                         //If the command is not list and starts with the specified command character try and play that "command" or sound file.
-                    } else if (message.startsWith(commandCharacter + "help")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "help")) {
                         helpCommand(event, requestingUser);
-                    } else if (message.startsWith(commandCharacter + "volume")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "volume")) {
                         volumeCommand(event, requestingUser, message);
-                    } else if (message.startsWith(commandCharacter + "stop")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "stop")) {
                         stopCommand(event, requestingUser, message);
-                    } else if (message.startsWith(commandCharacter + "info")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "info")) {
                         infoCommand(event, requestingUser);
-                    } else if (message.startsWith(commandCharacter + "remove")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "remove")) {
                         removeCommand(event, message);
-                    } else if (message.startsWith(commandCharacter + "random")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "random")) {
                         randomCommand(event, requestingUser);
-                    } else if (message.startsWith(commandCharacter + "disconnect")){
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "disconnect")){
                         disconnectFromChannel(event.getGuild());
-                    } else if (message.startsWith(commandCharacter + "entrance") ||
-                            message.startsWith(commandCharacter + "leave")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "entrance") ||
+                            message.startsWith(botConfig.getCommandCharacter() + "leave")) {
                         entranceOrLeaveCommand(event, message);
-                    } else if (message.startsWith(commandCharacter + "userdetails")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "userdetails")) {
                         userDetails(event);
-                    } else if (message.startsWith(commandCharacter + "reload")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "reload")) {
                         reloadSounds(event);
-                    } else if (message.startsWith(commandCharacter + "url")) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter() + "url")) {
                         playFromURL(event, requestingUser);
-                    } else if (message.startsWith(commandCharacter) &&
-                            message.length() >= (commandCharacter.length() + 1)) {
+                    } else if (message.startsWith(botConfig.getCommandCharacter()) &&
+                            message.length() >= (botConfig.getCommandCharacter().length() + 1)) {
                         soundFileCommand(event, requestingUser, message);
                     } else {
-                        if (message.startsWith(commandCharacter) || event.isFromType(ChannelType.PRIVATE)) {
+                        if (message.startsWith(botConfig.getCommandCharacter()) || event.isFromType(ChannelType.PRIVATE)) {
                             nonRecognizedCommand(event, requestingUser);
                         } else {
                             replyByPrivateMessage(event, "You seem to need help.");
@@ -189,7 +183,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
                 if (user != null) {
                     if (soundFileName.isEmpty()) {
-                        if (message.startsWith(commandCharacter + "entrance")) {
+                        if (message.startsWith(botConfig.getCommandCharacter() + "entrance")) {
                             user.setEntranceSound(null);
                             replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound cleared");
                         } else {
@@ -202,7 +196,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                         if (soundFile == null) {
                             replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
                         } else {
-                            if (message.startsWith(commandCharacter + "entrance")) {
+                            if (message.startsWith(botConfig.getCommandCharacter() + "entrance")) {
                                 user.setEntranceSound(soundFileName);
                                 replyByPrivateMessage(event, "User: " + userNameOrId + " entrance sound set to: " + soundFileName);
                             } else {
@@ -217,7 +211,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 }
             } else {
                 replyByPrivateMessage(event, "Entrance command incorrect. Required input is " +
-                        commandCharacter + "entrance <userid/username> <soundfile>");
+                        botConfig.getCommandCharacter() + "entrance <userid/username> <soundfile>");
             }
         }
     }
@@ -276,22 +270,20 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 // If there is the repeat character (~) then cut up the message string.
                 int repeatIndex = message.indexOf('~');
                 if (repeatIndex > -1) {
-                    fileNameRequested = message.substring(1, repeatIndex - 1); // -1 to ignore the previous space
-                    if (repeatIndex + 1 == message.length()) { // If there is only a ~ then repeat-infinite
-                        repeatNumber = -1;
-                    } else { // If there is something after the ~ then repeat for that value
-                        repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1)); // +1 to ignore the ~ character
+                    fileNameRequested = message.substring(1, repeatIndex ).trim();
+                    if (repeatIndex + 1 != message.length()) { // If there is something after the ~ then repeat for that value
+                        repeatNumber = Integer.parseInt(message.substring(repeatIndex + 1).trim()); // +1 to ignore the ~ character
                     }
                 }
-                LOG.info("Attempting to play file: {} {} times. Requested by {}}.", fileNameRequested, repeatNumber, requestingUser);
+                LOG.info("Attempting to play file: {} {} times. Requested by {}.", fileNameRequested, repeatNumber, requestingUser);
 
-                soundPlayer.playFileForUser(fileNameRequested, event.getAuthor().getName());
+                soundPlayer.playFileForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber);
                 deleteMessage(event);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            replyByPrivateMessage(event, "I seem to be muted! Try " + commandCharacter + "help");
+            replyByPrivateMessage(event, "I seem to be muted! Try " + botConfig.getCommandCharacter() + "help");
             LOG.info("Attempting to play a sound file while muted. Requested by {}", requestingUser);
         }
     }
@@ -381,7 +373,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                 "\nUptime: Days: " + uptimeDays + " Hours: " + uptimeHours + " Minutes: " + uptimeMinutes + " Seconds: " + upTimeSeconds +
                 "\nVersion: " + version +
                 "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
-                "\nCommand Prefix: " + commandCharacter +
+                "\nCommand Prefix: " + botConfig.getCommandCharacter() +
                 "\nSound File Path: " + soundPlayer.getSoundsPath() +
                 "\nSoundboard Version: " + soundPlayer.getApplicationVersion() +
                 "\nWeb UI URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() +
@@ -396,7 +388,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             fadeoutTimeout = Integer.parseInt(message.substring(fadeoutIndex + 1));
         }
         LOG.info("Stop requested by {} with a fadeout of {} seconds", requestingUser, fadeoutTimeout);
-        if (soundPlayer.stop()) {
+        if (soundPlayer.stop(requestingUser)) {
             replyByPrivateMessage(event, "Playback stopped.");
         } else {
             replyByPrivateMessage(event, "Nothing was playing.");
@@ -409,12 +401,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
         if (newVol >= 1 && newVol <= 100) {
             muted = false;
-            soundPlayer.setSoundPlayerVolume(newVol);
+            soundPlayer.setSoundPlayerVolume(newVol, requestingUser);
             replyByPrivateMessage(event, "*Volume set to " + newVol + "%*");
             LOG.info("Volume set to {}% by {}.", newVol, requestingUser);
         } else if (newVol == 0) {
             muted = true;
-            soundPlayer.setSoundPlayerVolume(newVol);
+            soundPlayer.setSoundPlayerVolume(newVol, requestingUser);
             replyByPrivateMessage(event, requestingUser + " muted me.");
             LOG.info("Bot muted by {}", requestingUser);
         }
@@ -423,18 +415,18 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private void helpCommand(MessageReceivedEvent event, String requestingUser) {
         LOG.info("Responding to help command. Requested by {}", requestingUser);
         replyByPrivateMessage(event, "You can type any of the following commands:" +
-                "\n```" + commandCharacter + "list             - Returns a list of available sound files." +
-                "\n" + commandCharacter + "soundFileName    - Plays the specified sound from the list." +
-                "\n" + commandCharacter + "reload           - Reloads the sound files from disk." +
-                "\n" + commandCharacter + "random           - Plays a random sound from the list." +
-                "\n" + commandCharacter + "volume 0-100     - Sets the playback volume." +
-                "\n" + commandCharacter + "stop             - Stops the sound that is currently playing." +
-                "\n" + commandCharacter + "disconnect       - Disconnects the bot from the current channel." +
-                "\n" + commandCharacter + "info             - Returns info about the bot." +
-                "\n" + commandCharacter + "url              - Play file from URL (Youtube, Vimeo, Soundcloud)." +
-                "\n" + commandCharacter + "entrance userName soundFileName - Sets entrance sound for user. Leave soundFileName empty to remove." +
-                "\n" + commandCharacter + "leave userName soundFileName - Sets leave sound for user. Leave soundFileName empty to remove." +
-                "\n" + commandCharacter + "userDetails userName - Get details for user```");
+                "\n```" + botConfig.getCommandCharacter() + "list             - Returns a list of available sound files." +
+                "\n" + botConfig.getCommandCharacter() + "soundFileName    - Plays the specified sound from the list. Add ~number after sound file to repeat" +
+                "\n" + botConfig.getCommandCharacter() + "reload           - Reloads the sound files from disk." +
+                "\n" + botConfig.getCommandCharacter() + "random           - Plays a random sound from the list." +
+                "\n" + botConfig.getCommandCharacter() + "volume 0-100     - Sets the playback volume." +
+                "\n" + botConfig.getCommandCharacter() + "stop             - Stops the sound that is currently playing." +
+                "\n" + botConfig.getCommandCharacter() + "disconnect       - Disconnects the bot from the current channel." +
+                "\n" + botConfig.getCommandCharacter() + "info             - Returns info about the bot." +
+                "\n" + botConfig.getCommandCharacter() + "url              - Play file from URL (Youtube, Vimeo, Soundcloud)." +
+                "\n" + botConfig.getCommandCharacter() + "entrance userName soundFileName - Sets entrance sound for user. Leave soundFileName empty to remove." +
+                "\n" + botConfig.getCommandCharacter() + "leave userName soundFileName - Sets leave sound for user. Leave soundFileName empty to remove." +
+                "\n" + botConfig.getCommandCharacter() + "userDetails userName - Get details for user```");
     }
 
     private void listCommand(MessageReceivedEvent event, String requestingUser, String message, int maxLineLength) {
@@ -442,9 +434,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         List<String> soundList = getCommandList(commandString);
 
         LOG.info("Responding to list command. Requested by {}", requestingUser);
-        if (message.equals(commandCharacter + "list")) {
+        if (message.equals(botConfig.getCommandCharacter() + "list")) {
             if (commandString.length() > maxLineLength) {
-                replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + commandCharacter + "list pageNumber``` to request a specific page of results.");
+                replyByPrivateMessage(event, "You have " + soundList.size() + " pages of soundFiles. Reply: ```" + botConfig.getCommandCharacter() + "list pageNumber``` to request a specific page of results.");
             } else {
                 replyByPrivateMessage(event, "Type any of the following into the chat to play the sound:"+
 				"\n"+soundList.get(0));
@@ -464,12 +456,12 @@ public class ChatSoundBoardListener extends ListenerAdapter {
 
     private void nonRecognizedCommand(MessageReceivedEvent event, String requestingUser) {
         replyByPrivateMessage(event, "Hello @" + requestingUser + ". I don't know how to respond to this message!");
-        replyByPrivateMessage(event, "You can type " + commandCharacter + "help to see a list of recognized commands.");
+        replyByPrivateMessage(event, "You can type " + botConfig.getCommandCharacter() + "help to see a list of recognized commands.");
         LOG.info("Responding to PM of {}. Unknown Command. Sending help text.", requestingUser);
     }
 
     private List<String> getCommandList(StringBuilder commandString) {
-        final int maxLineLength = messageSizeLimit;
+        final int maxLineLength = botConfig.getMessageSizeLimit();
         List<String> soundFiles = new ArrayList<>();
 
         //if text has \n, \r or \t symbols it's better to split by \s+
@@ -508,7 +500,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         Set<Map.Entry<String, SoundFile>> entrySet = soundPlayer.getAvailableSoundFiles().entrySet();
 
         if (entrySet.size() > 0) {
-            entrySet.forEach(entry -> sb.append(commandCharacter).append(entry.getKey()).append("\n"));
+            entrySet.forEach(entry -> sb.append(botConfig.getCommandCharacter()).append(entry.getKey()).append("\n"));
         }
         return sb;
     }

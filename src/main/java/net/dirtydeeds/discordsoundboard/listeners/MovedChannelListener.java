@@ -1,5 +1,6 @@
-package net.dirtydeeds.discordsoundboard;
+package net.dirtydeeds.discordsoundboard.listeners;
 
+import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.repository.UserRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
@@ -17,12 +18,14 @@ public class MovedChannelListener extends ListenerAdapter {
     private final SoundPlayerImpl bot;
     private final UserRepository userRepository;
     private final boolean playEntranceOnMove;
+    private final BotConfig botConfig;
 
     public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository,
-                                boolean playEntranceOnMove) {
+                                boolean playEntranceOnMove, BotConfig botConfig) {
         this.bot = bot;
         this.userRepository = userRepository;
         this.playEntranceOnMove = playEntranceOnMove;
+        this.botConfig = botConfig;
     }
 
     public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent event) {
@@ -43,8 +46,8 @@ public class MovedChannelListener extends ListenerAdapter {
                     LOG.info("Playing leave sound {}", disconnectFile);
                 }
             }
-            if (!StringUtils.isNullOrEmpty(bot.entranceForAll)) {
-                entranceFile = bot.entranceForAll;
+            if (!StringUtils.isNullOrEmpty(botConfig.getEntranceForAll())) {
+                entranceFile = botConfig.getEntranceForAll();
                 LOG.info("Playing entrance for all sound {}", entranceFile);
             }
 
