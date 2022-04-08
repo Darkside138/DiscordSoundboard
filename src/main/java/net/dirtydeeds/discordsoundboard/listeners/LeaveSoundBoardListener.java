@@ -1,8 +1,8 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.beans.User;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
-import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.h2.util.StringUtils;
@@ -18,18 +18,18 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(LeaveSoundBoardListener.class);
 
-    private final SoundPlayerImpl bot;
-    private final UserRepository userRepository;
+    private final SoundPlayer bot;
+    private final UserService userService;
 
-    public LeaveSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository) {
+    public LeaveSoundBoardListener(SoundPlayer bot, UserService userService) {
         this.bot = bot;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
         String userDisconnected = event.getMember().getEffectiveName();
         String userDisconnectedId = event.getMember().getId();
-        User user = userRepository.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
+        User user = userService.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
         if (user != null && !StringUtils.isNullOrEmpty(user.getLeaveSound())) {
             bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
         } else {

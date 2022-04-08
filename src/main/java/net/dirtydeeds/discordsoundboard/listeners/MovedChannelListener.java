@@ -2,8 +2,8 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.User;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
-import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.h2.util.StringUtils;
@@ -15,15 +15,15 @@ public class MovedChannelListener extends ListenerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(MovedChannelListener.class);
 
-    private final SoundPlayerImpl bot;
-    private final UserRepository userRepository;
+    private final SoundPlayer bot;
+    private final UserService userService;
     private final boolean playEntranceOnMove;
     private final BotConfig botConfig;
 
-    public MovedChannelListener(SoundPlayerImpl bot, UserRepository userRepository,
+    public MovedChannelListener(SoundPlayer bot, UserService userService,
                                 boolean playEntranceOnMove, BotConfig botConfig) {
         this.bot = bot;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.playEntranceOnMove = playEntranceOnMove;
         this.botConfig = botConfig;
     }
@@ -35,7 +35,7 @@ public class MovedChannelListener extends ListenerAdapter {
             String entranceFile = bot.getFileForUser(discordUser, true);
             String disconnectFile = bot.getFileForUser(discordUser, false);
 
-            User user = userRepository.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
+            User user = userService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
             if (user != null) {
                 if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
                     entranceFile = user.getEntranceSound();

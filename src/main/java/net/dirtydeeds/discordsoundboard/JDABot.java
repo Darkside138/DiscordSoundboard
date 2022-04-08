@@ -2,7 +2,7 @@ package net.dirtydeeds.discordsoundboard;
 
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.listeners.OnReadyListener;
-import net.dirtydeeds.discordsoundboard.service.PlayerManager;
+import net.dirtydeeds.discordsoundboard.handlers.PlayerManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;

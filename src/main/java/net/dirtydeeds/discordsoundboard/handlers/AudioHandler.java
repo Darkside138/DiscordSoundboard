@@ -1,4 +1,4 @@
-package net.dirtydeeds.discordsoundboard.service;
+package net.dirtydeeds.discordsoundboard.handlers;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;

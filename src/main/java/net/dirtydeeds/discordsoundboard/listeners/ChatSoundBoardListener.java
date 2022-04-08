@@ -5,9 +5,9 @@ import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
-import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
-import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.SoundService;
+import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
@@ -43,23 +43,23 @@ public class ChatSoundBoardListener extends ListenerAdapter {
     private static final int MAX_FILE_SIZE_IN_BYTES = 10000000; // 10 MB
     private final static DecimalFormat df2 = new DecimalFormat("#.##");
 
-    private final SoundPlayerImpl soundPlayer;
+    private final SoundPlayer soundPlayer;
     private final boolean respondToDms;
-    private final UserRepository userRepository;
-    private final SoundFileRepository soundFileRepository;
+    private final UserService userService;
+    private final SoundService soundService;
     private boolean muted;
     private final BotConfig botConfig;
 
-    public ChatSoundBoardListener(SoundPlayerImpl soundPlayer, BotConfig botConfig,
-                                  Boolean respondToDms, UserRepository userRepository,
-                                  SoundFileRepository soundFileRepository) {
+    public ChatSoundBoardListener(SoundPlayer soundPlayer, BotConfig botConfig,
+                                  Boolean respondToDms, UserService userService,
+                                  SoundService soundService) {
         this.soundPlayer = soundPlayer;
         this.botConfig = botConfig;
 
         muted = false;
         this.respondToDms = respondToDms;
-        this.userRepository = userRepository;
-        this.soundFileRepository = soundFileRepository;
+        this.userService = userService;
+        this.soundService = soundService;
     }
 
     @Override
@@ -148,7 +148,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
         String[] messageSplit = event.getMessage().getContentRaw().split(" ");
         if (messageSplit.length >= 2) {
             String userNameOrId = messageSplit[1];
-            User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+            User user = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
             if (user != null) {
                 StringBuilder response = new StringBuilder();
                 response.append("User details for ").append(userNameOrId).append("```")
@@ -180,7 +180,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
             if (userIsAdmin(event) ||
                     (pmUser.getName().equalsIgnoreCase(userNameOrId)
                     || pmUser.getId().equals(userNameOrId))) {
-                User user = userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+                User user = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
                 if (user != null) {
                     if (soundFileName.isEmpty()) {
                         if (message.startsWith(botConfig.getCommandCharacter() + "entrance")) {
@@ -190,9 +190,9 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                             user.setLeaveSound(null);
                             replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound cleared");
                         }
-                        userRepository.save(user);
+                        userService.save(user);
                     } else {
-                        SoundFile soundFile = soundFileRepository.findOneBySoundFileIdIgnoreCase(soundFileName);
+                        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileName);
                         if (soundFile == null) {
                             replyByPrivateMessage(event, "Could not find sound file: " + soundFileName);
                         } else {
@@ -203,7 +203,7 @@ public class ChatSoundBoardListener extends ListenerAdapter {
                                 user.setLeaveSound(soundFileName);
                                 replyByPrivateMessage(event, "User: " + userNameOrId + " leave sound set to: " + soundFileName);
                             }
-                            userRepository.save(user);
+                            userService.save(user);
                         }
                     }
                 } else {

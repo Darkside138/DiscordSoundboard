@@ -26,5 +26,5 @@ public class User {
     private String entranceSound;
     private String leaveSound;
     @NonNull
-    private boolean selected;
+    private Boolean selected;
 }

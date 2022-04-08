@@ -1,7 +1,6 @@
-package net.dirtydeeds.discordsoundboard.service;
+package net.dirtydeeds.discordsoundboard;
 
 import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
-import net.dirtydeeds.discordsoundboard.*;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.listeners.ChatSoundBoardListener;
@@ -9,7 +8,9 @@ import net.dirtydeeds.discordsoundboard.listeners.EntranceSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.LeaveSoundBoardListener;
 import net.dirtydeeds.discordsoundboard.listeners.MovedChannelListener;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
+import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
+import net.dirtydeeds.discordsoundboard.service.SoundService;
+import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
@@ -20,10 +21,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -36,13 +38,14 @@ import static java.util.Map.*;
  * This class handles moving into channels and playing sounds. Also, it loads the available sound files
  * and the configuration properties.
  */
-@Service
-public class SoundPlayerImpl {
+@Component
+@Singleton
+public class SoundPlayer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SoundPlayerImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SoundPlayer.class);
 
-    private final SoundFileRepository soundFileRepository;
-    private final UserRepository userRepository;
+    private final SoundService soundService;
+    private final UserService userService;
     private final MainWatch mainWatch;
     @Value("${spring.application.version:unknown}")
     @SuppressWarnings("unused")
@@ -56,12 +59,12 @@ public class SoundPlayerImpl {
     private JDABot jdaBot;
 
     @Inject
-    public SoundPlayerImpl(MainWatch mainWatch, SoundFileRepository soundFileRepository,
-                           UserRepository userRepository, ShutdownManager shutdownManager, BotConfig botConfig) {
+    public SoundPlayer(MainWatch mainWatch, SoundService soundService,
+                       UserService userService, ShutdownManager shutdownManager, BotConfig botConfig) {
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
-        this.soundFileRepository = soundFileRepository;
-        this.userRepository = userRepository;
+        this.soundService = soundService;
+        this.userService = userService;
         this.shutdownManager = shutdownManager;
         this.botConfig = botConfig;
 
@@ -84,13 +87,13 @@ public class SoundPlayerImpl {
                 respondToDms = Boolean.parseBoolean(botConfig.getRespondToDmsString());
             }
             bot.addEventListener(new ChatSoundBoardListener(this, botConfig, respondToDms,
-                    userRepository, soundFileRepository));
+                    userService, soundService));
         }
 
-        bot.addEventListener(new EntranceSoundBoardListener(this, userRepository,
+        bot.addEventListener(new EntranceSoundBoardListener(this, userService,
                 botConfig.isPlayEntranceOnJoin(), botConfig));
-        bot.addEventListener(new LeaveSoundBoardListener(this, userRepository));
-        bot.addEventListener(new MovedChannelListener(this, userRepository,
+        bot.addEventListener(new LeaveSoundBoardListener(this, userService));
+        bot.addEventListener(new MovedChannelListener(this, userService,
                 botConfig.isPlayEntranceOnMove(), botConfig));
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
@@ -113,7 +116,7 @@ public class SoundPlayerImpl {
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
         Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (SoundFile soundFile : soundFileRepository.findAll()) {
+        for (SoundFile soundFile : soundService.findAll()) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
         return returnFiles;
@@ -233,7 +236,7 @@ public class SoundPlayerImpl {
      *                     the sound back in.
      */
     private void playFileForEvent(String fileName, MessageReceivedEvent event) {
-        SoundFile fileToPlay = soundFileRepository.findOneBySoundFileIdIgnoreCase(fileName);
+        SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
         if (event != null) {
             Guild guild = event.getGuild();
             if (fileToPlay != null) {
@@ -277,7 +280,7 @@ public class SoundPlayerImpl {
      * @param fileName - fileName to play.
      */
     private void playFile(String fileName, Guild guild, Integer repeatTimes) throws SoundPlaybackException {
-        SoundFile fileToPlay = soundFileRepository.findOneBySoundFileIdIgnoreCase(fileName);
+        SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
         if (fileToPlay != null) {
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             playFile(soundFile, guild, repeatTimes);
@@ -360,7 +363,7 @@ public class SoundPlayerImpl {
                 if (userNameToSelect != null && userNameToSelect.equals(username)) {
                     selected = true;
                 }
-                Optional<User> optionalUser = userRepository.findById(discordUser.getId());
+                Optional<User> optionalUser = userService.findById(discordUser.getId());
                 if (optionalUser.isPresent()) {
                     User user = optionalUser.get();
                     user.setSelected(selected);
@@ -371,7 +374,7 @@ public class SoundPlayerImpl {
             }
         }
         users.sort(Comparator.comparing(User::getUsername));
-        userRepository.saveAll(users);
+        userService.saveAll(users);
         return users;
     }
 
@@ -424,7 +427,7 @@ public class SoundPlayerImpl {
                 }
             }
 
-            soundFileRepository.deleteAll();
+            soundService.deleteAll();
 
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
@@ -436,9 +439,9 @@ public class SoundPlayerImpl {
                         LOG.info(fileName);
                         File file = filePath.toFile();
                         String parent = file.getParentFile().getName();
-                        if (!soundFileRepository.existsById(fileName)) {
+                        if (!soundService.existsById(fileName)) {
                             SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
-                            soundFileRepository.save(soundFile);
+                            soundService.save(soundFile);
                         }
                     }
                 }

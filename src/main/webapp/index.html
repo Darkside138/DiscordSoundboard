@@ -149,19 +149,19 @@
             // Play sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
+                url: "/bot/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
             });
         }).on('click', '#random', function(){
             // Play random sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/playRandom?username=" + $('#user').val()
+                url: "/bot/random?username=" + $('#user').val()
             });
         }).on('click', '#stop', function(){
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/stop?username=" + $('#user').val()
+                url: "/bot/stop?username=" + $('#user').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -170,13 +170,13 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
-                url: "/soundsApi/volume?username=" + $('#user').val()
+                url: "/bot/volume?username=" + $('#user').val()
             }).done(function( data ) {
                 $('#volume').val(data);
             });
@@ -188,7 +188,7 @@
         // Get sounds
         $.ajax({
             method: "GET",
-            url: "/soundsApi/sounds"
+            url: "/sounds"
         }).done(function( data ) {
             $.each(data, function(i, obj){
                 $('#sounds').append('<button id="' + obj.soundFileId + '" type="button" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + obj.soundFileId + '</button>');
@@ -198,7 +198,7 @@
         // Get users
         $.ajax({
             method: "GET",
-            url: "/soundsApi/users"
+            url: "/users"
         }).done(function( data ) {
             $.each(data.sort(), function(i, obj){
                 $('#user').append('<option value="' + obj.username + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
@@ -208,7 +208,7 @@
         // Get categories
         $.ajax({
             method: "GET",
-            url: "/soundsApi/soundCategories"
+            url: "/sounds/categories"
         }).done(function( data ) {
             $.each(data.sort(), function(i, obj){
                 if(obj !== 'sounds') {

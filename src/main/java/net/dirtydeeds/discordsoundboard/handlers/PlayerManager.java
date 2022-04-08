@@ -1,10 +1,11 @@
-package net.dirtydeeds.discordsoundboard.service;
+package net.dirtydeeds.discordsoundboard.handlers;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import net.dirtydeeds.discordsoundboard.JDABot;
+import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
 import net.dv8tion.jda.api.entities.Guild;
 
 public class PlayerManager extends DefaultAudioPlayerManager {

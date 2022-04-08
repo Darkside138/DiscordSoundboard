@@ -2,8 +2,8 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.User;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
-import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.h2.util.StringUtils;
@@ -20,15 +20,15 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntranceSoundBoardListener.class);
 
-    private final SoundPlayerImpl bot;
-    private final UserRepository userRepository;
+    private final SoundPlayer bot;
+    private final UserService userService;
     private final boolean playEntranceOnJoin;
     private final BotConfig botConfig;
 
-    public EntranceSoundBoardListener(SoundPlayerImpl bot, UserRepository userRepository, boolean playEntranceOnJoin,
+    public EntranceSoundBoardListener(SoundPlayer bot, UserService userService, boolean playEntranceOnJoin,
                                       BotConfig botConfig) {
         this.bot = bot;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.playEntranceOnJoin = playEntranceOnJoin;
         this.botConfig = botConfig;
     }
@@ -38,7 +38,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
             String userJoined = event.getMember().getEffectiveName();
             String userId = event.getMember().getId();
 
-            User user = userRepository.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
+            User user = userService.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
             if (user != null && !StringUtils.isNullOrEmpty(user.getEntranceSound())) {
                 String entranceSound = user.getEntranceSound();
                 LOG.info(String.format("Playing entrance sound %s", entranceSound));

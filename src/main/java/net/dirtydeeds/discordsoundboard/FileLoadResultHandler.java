@@ -4,11 +4,8 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dirtydeeds.discordsoundboard.service.AudioHandler;
+import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
 import net.dv8tion.jda.api.entities.Guild;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class FileLoadResultHandler implements AudioLoadResultHandler {
     private final Guild guild;
