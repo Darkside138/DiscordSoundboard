@@ -150,19 +150,19 @@
             // Play sound
             $.ajax({
                 method: "POST",
-                url: "/bot/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
+                url: "/bot/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
             });
         }).on('click', '#random', function(){
             // Play random sound
             $.ajax({
                 method: "POST",
-                url: "/bot/random?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
+                url: "/bot/random?username=" + $('#user').val()
             });
         }).on('click', '#stop', function(){
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/bot/stop?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
+                url: "/bot/stop?username=" + $('#user').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -171,7 +171,7 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             // Get current volume when opening settings

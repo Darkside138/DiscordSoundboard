@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -448,7 +449,7 @@ public class SoundPlayer {
     public void updateFileList() {
         try {
             String soundFileDir = botConfig.getSoundFileDir();
-            if (soundFileDir == null || soundFileDir.isEmpty()) {
+            if (StringUtils.isBlank(soundFileDir)) {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }
             LOG.info("Loading from " + soundFileDir);
@@ -501,7 +502,7 @@ public class SoundPlayer {
      * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
      */
     private Guild getGuildForUserOrChannelId(String userName, String voiceChannelId) {
-        if (!botConfig.isControlByChannel() ||  voiceChannelId == null || voiceChannelId.isBlank()) {
+        if (!botConfig.isControlByChannel() || StringUtils.isBlank(voiceChannelId)) {
             for (Guild guild : bot.getGuilds()) {
                 for (VoiceChannel channel : guild.getVoiceChannels()) {
                     for (Member user : channel.getMembers()) {
@@ -540,7 +541,7 @@ public class SoundPlayer {
      * Join the users current channel.
      */
     private void joinUsersCurrentChannel(String userName, String voiceChannelId) {
-        if (botConfig.isControlByChannel() && voiceChannelId != null && !voiceChannelId.isBlank()) {
+        if (botConfig.isControlByChannel() && !StringUtils.isBlank(voiceChannelId)) {
             moveToChannel(bot.getVoiceChannelById(voiceChannelId), bot.getVoiceChannelById(voiceChannelId).getGuild());
         } else {
             for (Guild guild : bot.getGuilds()) {
