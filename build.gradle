@@ -20,10 +20,12 @@ plugins {
 
 repositories {
     mavenCentral()
-    jcenter()
     maven {
         name 'm2-dv8tion'
         url 'https://m2.dv8tion.net/releases'
+    }
+    maven {
+        url 'https://jitpack.io'
     }
     maven { url 'https://jitpack.io' }
 }
@@ -55,11 +57,10 @@ tasks.named("bootJar") {
 
 dependencies {
     implementation 'net.dv8tion:JDA:4.4.0_350'
-    implementation 'com.sedmelluq:lavaplayer:1.3.77'
+    implementation 'com.github.walkyst:lavaplayer-fork:1.3.97'
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     implementation 'ch.qos.logback:logback-classic:1.2.11'
-    implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.5', ext: 'pom'
     compileOnly 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
 

@@ -1,6 +1,8 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
 import lombok.*;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -21,10 +23,18 @@ public class User {
     @Id
     @NonNull
     private String id;
-    @NonNull
     private String username;
     private String entranceSound;
     private String leaveSound;
     @NonNull
     private Boolean selected;
+    @NonNull
+    private JDA.Status status;
+
+    public User(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status) {
+        this.id = id;
+        this.username = username;
+        this.selected = selected;
+        this.status = status;
+    }
 }

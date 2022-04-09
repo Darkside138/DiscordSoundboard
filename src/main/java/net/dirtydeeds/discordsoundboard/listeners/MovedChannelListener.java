@@ -11,6 +11,11 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @author Dave Furrer
+ * <p>
+ * Class to handle user moving from one voice channel to another
+ */
 public class MovedChannelListener extends ListenerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(MovedChannelListener.class);
@@ -28,6 +33,7 @@ public class MovedChannelListener extends ListenerAdapter {
         this.botConfig = botConfig;
     }
 
+    @Override
     public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent event) {
         if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
             String discordUser = event.getMember().getEffectiveName();

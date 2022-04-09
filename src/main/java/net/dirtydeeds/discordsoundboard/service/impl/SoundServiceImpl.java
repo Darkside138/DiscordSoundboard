@@ -25,6 +25,7 @@ public class SoundServiceImpl implements SoundService {
 
     @Override
     public void deleteAll() {
+        soundRepository.deleteAll();
     }
 
     @Override
@@ -35,5 +36,10 @@ public class SoundServiceImpl implements SoundService {
     @Override
     public SoundFile save(SoundFile soundFile) {
         return soundRepository.save(soundFile);
+    }
+
+    @Override
+    public void delete(SoundFile soundFile) {
+        soundRepository.delete(soundFile);
     }
 }

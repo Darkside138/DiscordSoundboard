@@ -23,8 +23,7 @@ public class FileLoadResultHandler implements AudioLoadResultHandler {
         handler.addTrack(track);
     }
 
-    private int loadPlaylist(AudioPlaylist playlist, AudioTrack exclude)
-    {
+    private int loadPlaylist(AudioPlaylist playlist, AudioTrack exclude) {
         int[] count = {0};
         playlist.getTracks().forEach((track) -> {
             AudioHandler handler = (AudioHandler)guild.getAudioManager().getSendingHandler();
@@ -36,14 +35,12 @@ public class FileLoadResultHandler implements AudioLoadResultHandler {
     }
 
     @Override
-    public void trackLoaded(AudioTrack track)
-    {
+    public void trackLoaded(AudioTrack track) {
         loadSingle(track, null);
     }
 
     @Override
-    public void playlistLoaded(AudioPlaylist playlist)
-    {
+    public void playlistLoaded(AudioPlaylist playlist) {
         if (playlist.getTracks().size()==1 || playlist.isSearchResult()) {
             AudioTrack single = playlist.getSelectedTrack()==null ? playlist.getTracks().get(0) : playlist.getSelectedTrack();
             loadSingle(single, null);

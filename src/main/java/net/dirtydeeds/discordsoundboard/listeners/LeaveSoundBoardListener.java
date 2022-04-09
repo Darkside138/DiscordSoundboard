@@ -26,6 +26,7 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
         this.userService = userService;
     }
 
+    @Override
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
         String userDisconnected = event.getMember().getEffectiveName();
         String userDisconnectedId = event.getMember().getId();

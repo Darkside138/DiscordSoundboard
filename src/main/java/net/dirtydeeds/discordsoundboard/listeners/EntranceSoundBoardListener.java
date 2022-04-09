@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author asafatli.
+ * @author Dave Furrer
  * <p>
  * This class handles waiting for people to enter a discord voice channel and responding to their entrance.
  */
@@ -33,6 +33,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
         this.botConfig = botConfig;
     }
 
+    @Override
     public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent event) {
         if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
             String userJoined = event.getMember().getEffectiveName();
@@ -46,7 +47,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
             } else if (!StringUtils.isNullOrEmpty(botConfig.getEntranceForAll())) {
                 LOG.info(String.format("Playing entrance for all sound %s", botConfig.getEntranceForAll()));
                 bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined());
-            } {
+            } else {
                 //If DB doesn't have an entrance sound check for a file.
                 String entranceFile = bot.getFileForUser(userJoined, true);
                 if (!entranceFile.equals("")) {

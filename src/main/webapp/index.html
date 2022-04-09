@@ -89,6 +89,7 @@
                         <div class="form-group">
                             <label for="user">Play sounds for</label>
                             <select id="user" class="custom-select"></select>
+<!--                            <select id="channel" class="custom-select"></select>-->
                         </div>
                         <div class="form-group">
                             <label for="volume">Volume</label>
@@ -149,19 +150,19 @@
             // Play sound
             $.ajax({
                 method: "POST",
-                url: "/bot/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
+                url: "/bot/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             });
         }).on('click', '#random', function(){
             // Play random sound
             $.ajax({
                 method: "POST",
-                url: "/bot/random?username=" + $('#user').val()
+                url: "/bot/random?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             });
         }).on('click', '#stop', function(){
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/bot/stop?username=" + $('#user').val()
+                url: "/bot/stop?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -170,13 +171,13 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
-                url: "/bot/volume?username=" + $('#user').val()
+                url: "/bot/volume?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             }).done(function( data ) {
                 $('#volume').val(data);
             });
@@ -204,6 +205,16 @@
                 $('#user').append('<option value="' + obj.username + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
             });
         });
+
+<!--        // Get channels-->
+<!--        $.ajax({-->
+<!--            method: "GET",-->
+<!--            url: "/bot/channels"-->
+<!--        }).done(function( data ) {-->
+<!--            $.each(data.sort(), function(i, obj){-->
+<!--                $('#channel').append('<option value="' + obj.id + '"' + ((obj.defaultChannel) ? 'selected' : '') + '>' + obj.name + '</option>');-->
+<!--            });-->
+<!--        });-->
 
         // Get categories
         $.ajax({

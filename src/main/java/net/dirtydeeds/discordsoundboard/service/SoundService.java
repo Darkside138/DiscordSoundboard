@@ -12,4 +12,6 @@ public interface SoundService {
     boolean existsById(String fileName);
 
     SoundFile save(SoundFile soundFile);
+
+    void delete(SoundFile soundFile);
 }

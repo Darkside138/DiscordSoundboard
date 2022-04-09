@@ -38,8 +38,8 @@ public class BotConfig {
     String commandCharacter;
     @Value("${message_size_limit:1995}")
     Integer messageSizeLimit;
-    @Value("${respond_to_dm:}")
-    String respondToDmsString;
+    @Value("${respond_to_dm:true}")
+    boolean respondToDmsString;
     @Value("${allowedUsers:}")
     String allowedUsersString;
     @Value("${bannedUsers:}")
@@ -50,6 +50,12 @@ public class BotConfig {
     String botOwnerName;
     @Value("${sounds_directory:}")
     String soundFileDir;
+    @Value("${maxFileSizeInBytes:10000000}")
+    int maxFileSizeInBytes;
+    @Value("${spring.application.version:unknown}")
+    String applicationVersion;
+    @Value("${controlByChannel:false}")
+    boolean controlByChannel;
 
     public List<String> getAllowedUsersList() {
         String allowedUsersString = getAllowedUsersString();
