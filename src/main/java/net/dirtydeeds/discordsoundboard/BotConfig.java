@@ -56,6 +56,8 @@ public class BotConfig {
     String applicationVersion;
     @Value("${controlByChannel:false}")
     boolean controlByChannel;
+    @Value("${leaveOnEmptyChannel:false}")
+    boolean leaveOnEmptyChannel;
 
     public List<String> getAllowedUsersList() {
         String allowedUsersString = getAllowedUsersString();

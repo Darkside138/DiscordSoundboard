@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 set -e
-cd /etc/DiscordSoundboard/bin
 
-cp application.properties /etc/DiscordSoundboard/config
 cd /etc/DiscordSoundboard/config
 
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
@@ -23,6 +21,6 @@ sed -i 's/leaveAfterPlayback=_leave/leaveAfterPlayback='leaveAfterPlayback'/g' a
 cd /etc/DiscordSoundboard/bin
 
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
-exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:/etc/DiscordSoundboard/config
+#exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:/etc/DiscordSoundboard/config/
 
-exec "$@"
+#exec "$@"

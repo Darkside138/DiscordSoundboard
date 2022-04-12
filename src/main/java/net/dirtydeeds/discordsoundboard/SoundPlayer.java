@@ -101,7 +101,7 @@ public class SoundPlayer {
         bot.addEventListener(new LeaveSoundBoardListener(this, userService, soundService, botConfig));
         bot.addEventListener(new MovedChannelListener(this, userService, soundService,
                 botConfig.isPlayEntranceOnMove(), botConfig));
-        bot.addEventListener(new BotLeaveListener());
+        bot.addEventListener(new BotLeaveListener(botConfig));
         bot.addEventListener(new FileAttachmentListener(botConfig));
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
