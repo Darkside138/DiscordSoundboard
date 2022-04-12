@@ -1,5 +1,8 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
+import lombok.*;
+import net.dv8tion.jda.api.JDA;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -8,69 +11,29 @@ import javax.persistence.Id;
  *
  * @author dfurrer.
  */
-@SuppressWarnings("unused")
+@Data
 @Entity
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class User {
 
     @Id
+    @NonNull
     private String id;
     private String username;
     private String entranceSound;
     private String leaveSound;
-    private boolean selected;
+    @NonNull
+    private Boolean selected;
+    @NonNull
+    private JDA.Status status;
 
-    public User() {
-    }
-
-    public User(String id, String username) {
-        this.id = id;
-        this.username = username;
-        this.selected = false;
-    }
-    
-    public User(String id, String username, boolean selected) {
+    public User(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status) {
         this.id = id;
         this.username = username;
         this.selected = selected;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEntranceSound() {
-        return entranceSound;
-    }
-
-    public void setEntranceSound(String entranceSound) {
-        this.entranceSound = entranceSound;
-    }
-
-    public String getLeaveSound() {
-        return leaveSound;
-    }
-
-    public void setLeaveSound(String leaveSound) {
-        this.leaveSound = leaveSound;
-    }
-
-    public boolean isSelected() {
-        return selected;
-    }
-
-    public void setSelected(boolean selected) {
-        this.selected = selected;
+        this.status = status;
     }
 }

@@ -1,12 +1,13 @@
 package net.dirtydeeds.discordsoundboard;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springdoc.core.GroupedOpenApi;
+import net.dirtydeeds.discordsoundboard.beans.SoundFile;
+import net.dirtydeeds.discordsoundboard.beans.User;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 /**
  * @author dfurrer.
@@ -15,9 +16,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  */
 @SpringBootApplication
 @EnableAsync
-public class MainController {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
+public class MainController implements RepositoryRestConfigurer {
 
     public MainController() {
     }
@@ -26,11 +25,9 @@ public class MainController {
         SpringApplication.run(MainController.class, args);
     }
 
-    @Bean
-    public GroupedOpenApi publicApi() {
-        return GroupedOpenApi.builder()
-                .group("discord-soundboard")
-                .pathsToMatch("/soundsApi/**")
-                .build();
+    @Override
+    public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
+        config.exposeIdsFor(SoundFile.class);
+        config.exposeIdsFor(User.class);
     }
 }

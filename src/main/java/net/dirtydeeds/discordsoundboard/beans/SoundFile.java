@@ -1,55 +1,35 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
+import lombok.*;
+
+import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.time.ZonedDateTime;
 
 /**
  * Class that represents a sound file.
  *
  * @author dfurrer.
  */
-@SuppressWarnings("unused")
+@Data
 @Entity
+@Setter
+@EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class SoundFile {
     
     @Id
+    @NonNull
     private String soundFileId;
+    @NonNull
     private String soundFileLocation;
+    @NonNull
     private String category;
-    
-    protected SoundFile() {}
-
-    public SoundFile(String soundFileId, String soundFileLocation, String category) {
-        this.soundFileId = soundFileId;
-        this.soundFileLocation = soundFileLocation;
-        this.category = category;
-    }
-
-    public String getSoundFileId() {
-        return soundFileId;
-    }
-
-    public String getSoundFileLocation() {
-        return soundFileLocation;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        SoundFile soundFile = (SoundFile) o;
-
-        return soundFileId.equals(soundFile.soundFileId);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return soundFileId.hashCode();
-    }
+    @Nullable
+    private Integer timesPlayed;
+    @Nullable
+    private ZonedDateTime dateAdded;
 }

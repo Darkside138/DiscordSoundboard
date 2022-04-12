@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 public class ShutdownManager {
 
     @Autowired
+    @SuppressWarnings("unused")
     private ApplicationContext appContext;
 
     /*

@@ -1,6 +1,5 @@
 package net.dirtydeeds.discordsoundboard;
 
-import net.dirtydeeds.discordsoundboard.service.SoundPlayerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -22,7 +21,7 @@ public class MainWatch {
 
     private static final Logger LOG = LoggerFactory.getLogger(MainWatch.class);
 
-    private SoundPlayerImpl soundPlayer;
+    private SoundPlayer soundPlayer;
 
     @Async
     public void watchDirectoryPath(Path path) {
@@ -56,7 +55,7 @@ public class MainWatch {
         }
     }
 
-    public void setSoundPlayer(SoundPlayerImpl soundPlayer) {
+    public void setSoundPlayer(SoundPlayer soundPlayer) {
         this.soundPlayer = soundPlayer;
     }
 }

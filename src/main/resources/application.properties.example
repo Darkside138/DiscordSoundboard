@@ -51,3 +51,4 @@ spring.datasource.driver-class-name=org.h2.Driver
 #spring.jpa.show-sql=true
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.open-in-view=false
+spring.data.rest.basePath=/api

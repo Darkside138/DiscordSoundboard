@@ -13,6 +13,25 @@
             background-color:rgba(25,25,25,0.7);
             border: none;
         }
+        .button {
+            position: relative;
+        }
+        .recentBadge {
+            border-radius: 50%;
+            width: 27px;
+            height: 27px;
+            display: block;
+            position: absolute;
+            background: rgba(31,206,255,1);
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: -15px;
+            right: -5px;
+            transition: all .3s;
+            font-size: 10px;
+        }
         html, body{
           height: 100%;
         }
@@ -89,6 +108,7 @@
                         <div class="form-group">
                             <label for="user">Play sounds for</label>
                             <select id="user" class="custom-select"></select>
+<!--                            <select id="channel" class="custom-select"></select>-->
                         </div>
                         <div class="form-group">
                             <label for="volume">Volume</label>
@@ -115,8 +135,8 @@
         // Determine what categories to show in navigation and what categories to show in the more-dropdown
         function determineShownNavigation(){
             // Get available width for shown categories.
-            // 250px extra for spacing, more-dropdown and buttons
-            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 250;
+            // 275px extra for spacing, more-dropdown and buttons
+            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 275;
             console.log(availableWidth);
             $.each($('#categories li'), function(i, obj){
                 var willFit = availableWidth - $(obj).width() > 0;
@@ -129,8 +149,8 @@
 
         // Filter the list by category and search-term
         function filterSounds(search){
-            $('#sounds button').hide();
-            $('#sounds button').filter(function(){
+            $('#sounds div').hide();
+            $('#sounds div').filter(function(){
                 return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
             }).show();
         }
@@ -145,23 +165,23 @@
         }).on('input', '#search', function(){
             // Search sound by name
             filterSounds($(this).val());
-        }).on('click', '#sounds button', function(){
+        }).on('click', '#sounds div', function(){
             // Play sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/playFile?soundFileId=" + $(this).text() + "&username=" + $('#user').val()
+                url: "/bot/playFile?soundFileId=" + this.id + "&username=" + $('#user').val()
             });
         }).on('click', '#random', function(){
             // Play random sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/playRandom?username=" + $('#user').val()
+                url: "/bot/random?username=" + $('#user').val()
             });
         }).on('click', '#stop', function(){
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/stop"
+                url: "/bot/stop?username=" + $('#user').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -170,13 +190,13 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/soundsApi/volume?volume=" + $(this).val()
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#user').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
-                url: "/soundsApi/volume"
+                url: "/bot/volume?username=" + $('#user').val() + "&voiceChannelId=" + $('#channel').val()
             }).done(function( data ) {
                 $('#volume').val(data);
             });
@@ -188,29 +208,61 @@
         // Get sounds
         $.ajax({
             method: "GET",
-            url: "/soundsApi/sounds"
+            url: "api/soundFiles/findAll"
         }).done(function( data ) {
-            $.each(data, function(i, obj){
-                $('#sounds').append('<button id="' + obj.soundFileId + '" type="button" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + obj.soundFileId + '</button>');
+            var top10ByDate = data.content;
+            top10ByDate.sort(function(a,b){
+              // Turn your strings into dates, and then subtract them
+              // to get a value that is either negative, positive, or zero.
+              return new Date(b.dateAdded) - new Date(a.dateAdded);
+            });
+            top10ByDate = top10ByDate.slice(0,10);
+            var soundObjects = data.content;
+            soundObjects.sort(function(a, b) {
+                var textA = a.soundFileId.toUpperCase();
+                var textB = b.soundFileId.toUpperCase();
+                return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+            });
+            var today = new Date();
+            var lastWeek = Date.parse(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7));
+            $.each(soundObjects, function(i, obj) {
+                var recentClass = '';
+                var recentItem = top10ByDate.filter(e => e.soundFileId === obj.soundFileId);
+                if (recentItem.length > 0) {
+                    if (lastWeek < Date.parse(recentItem[0].dateAdded)) {
+                        recentClass = '<span class="recentBadge">New</span>';
+                    }
+                }
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '"><span class="content">' + obj.soundFileId + '</span>' + recentClass + '</div>');
             });
         });
 
         // Get users
         $.ajax({
             method: "GET",
-            url: "/soundsApi/users"
+            url: "api/users"
         }).done(function( data ) {
-            $.each(data.sort(), function(i, obj){
-                $('#user').append('<option value="' + obj.username + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
+            $.each(data._embedded.users, function(i, obj){
+                $('#user').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
             });
         });
+
+<!--        // Get channels-->
+<!--        $.ajax({-->
+<!--            method: "GET",-->
+<!--            url: "/bot/channels"-->
+<!--        }).done(function( data ) {-->
+<!--            $.each(data.sort(), function(i, obj){-->
+<!--                $('#channel').append('<option value="' + obj.id + '"' + ((obj.defaultChannel) ? 'selected' : '') + '>' + obj.name + '</option>');-->
+<!--            });-->
+<!--        });-->
 
         // Get categories
         $.ajax({
             method: "GET",
-            url: "/soundsApi/soundCategories"
+            url: "api/soundFiles/categories"
         }).done(function( data ) {
-            $.each(data.sort(), function(i, obj){
+            $.each(data.sort(), function(i, obj) {
                 if(obj !== 'sounds') {
                     // Add to main navigation
                     $('#categories').append('<li class="nav-item"><a class="nav-link" href="#" data-category="' + obj + '">' + obj + '</a></li>');
