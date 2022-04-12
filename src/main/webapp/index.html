@@ -242,9 +242,15 @@
         // Get users
         $.ajax({
             method: "GET",
-            url: "api/users"
+            url: "api/users/findAll"
         }).done(function( data ) {
-            $.each(data._embedded.users, function(i, obj){
+            var users = data.content;
+            users.sort(function(a, b) {
+                var textA = a.username.toUpperCase();
+                var textB = b.username.toUpperCase();
+                return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+            });
+            $.each(users, function(i, obj){
                 $('#user').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
             });
         });
