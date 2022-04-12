@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+mkdir -p /etc/DiscordSoundboard/config
+cp /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
+
 cd /etc/DiscordSoundboard/config
 
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties

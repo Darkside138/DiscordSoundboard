@@ -23,9 +23,6 @@ COPY --from=BaseBuilder /etc/DiscordSoundboard .
 
 EXPOSE 8080
 
-RUN mkdir -p /etc/DiscordSoundboard/config
-RUN cp bin/application.properties /etc/DiscordSoundboard/config
-
 COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
