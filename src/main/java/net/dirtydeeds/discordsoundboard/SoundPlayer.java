@@ -386,6 +386,9 @@ public class SoundPlayer {
                             soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now());
                             soundFilesFromPath.add(soundFile);
                             soundService.save(soundFile);
+                        } else {
+                            soundFile = soundService.initializeDateAdded(soundFile);
+                            soundService.save(soundFile);
                         }
                         soundFilesFromPath.add(soundFile);
                     }

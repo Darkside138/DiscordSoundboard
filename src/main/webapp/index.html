@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head profile="http://www.w3.org/2005/10/profile">
+    <link rel="icon"
+          type="image/png"
+          href="https://github.com/Darkside138/DiscordSoundboard/blob/master/distFiles/avatar.jpg?raw=true">
     <!-- Layout by Jona, made for github.com/Darkside138/DiscordSoundboard -->
     <!-- Feel free to use as fit -->
     <title>Discord Soundboard</title>
@@ -18,19 +21,18 @@
         }
         .recentBadge {
             border-radius: 50%;
-            width: 27px;
-            height: 27px;
+            width: 10px;
+            height: 10px;
             display: block;
             position: absolute;
             background: rgba(31,206,255,1);
-            border: 2px solid white;
+            border: 0px solid white;
             display: flex;
             align-items: center;
             justify-content: center;
-            top: -15px;
-            right: -5px;
+            top: -5px;
+            right: -3px;
             transition: all .3s;
-            font-size: 10px;
         }
         html, body{
           height: 100%;
@@ -230,7 +232,7 @@
                 var recentItem = top10ByDate.filter(e => e.soundFileId === obj.soundFileId);
                 if (recentItem.length > 0) {
                     if (lastWeek < Date.parse(recentItem[0].dateAdded)) {
-                        recentClass = '<span class="recentBadge">New</span>';
+                        recentClass = '<span class="recentBadge" title="Recently Added"></span>';
                     }
                 }
                 $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '"><span class="content">' + obj.soundFileId + '</span>' + recentClass + '</div>');

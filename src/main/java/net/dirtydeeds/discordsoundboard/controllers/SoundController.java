@@ -37,13 +37,13 @@ public class SoundController {
     @GetMapping("/findAll")
     public ResponseEntity<Iterable<SoundFile>> getAll() {
         Pageable wholePage = Pageable.unpaged();
-        return new ResponseEntity(soundService.findAll(wholePage), HttpStatus.OK);
+        return new ResponseEntity<>(soundService.findAll(wholePage), HttpStatus.OK);
     }
 
     @GetMapping(value = "/categories")
     public ResponseEntity<Set<String>> getSoundCategories() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        return new ResponseEntity(soundMap.values().stream()
+        return new ResponseEntity<>(soundMap.values().stream()
                 .map(SoundFile::getCategory)
                 .collect(Collectors.toSet()), HttpStatus.OK);
     }
