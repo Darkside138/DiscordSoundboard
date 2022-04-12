@@ -2,6 +2,9 @@
 set -e
 cd /etc/DiscordSoundboard/bin
 
+cp application.properties /etc/DiscordSoundboard/config
+cd /etc/DiscordSoundboard/config
+
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 sed -i 's/respond_to_chat_commands=true/respond_to_chat_commands='$chatcommands'/g' application.properties
@@ -16,7 +19,10 @@ sed -i 's/entranceForAll=/entranceForAll='$entranceForAll'/g' application.proper
 sed -i 's/playEntranceOnMove=_leave/playEntranceOnMove='playEntranceOnMove'/g' application.properties
 sed -i 's/playEntranceOnJoin=_leave/playEntranceOnJoin='playEntranceOnJoin'/g' application.properties
 sed -i 's/leaveAfterPlayback=_leave/leaveAfterPlayback='leaveAfterPlayback'/g' application.properties
+
+cd /etc/DiscordSoundboard/bin
+
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
-exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
+exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:/etc/DiscordSoundboard/config
 
 exec "$@"
