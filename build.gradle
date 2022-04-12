@@ -27,7 +27,6 @@ repositories {
     maven {
         url 'https://jitpack.io'
     }
-    maven { url 'https://jitpack.io' }
 }
 
 processResources {
@@ -69,6 +68,8 @@ dependencies {
 
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.6.5'
     implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.6.5'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-rest', version: '2.6.6'
+
     implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 
     implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'

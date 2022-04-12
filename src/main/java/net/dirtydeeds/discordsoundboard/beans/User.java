@@ -2,7 +2,6 @@ package net.dirtydeeds.discordsoundboard.beans;
 
 import lombok.*;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -12,8 +11,8 @@ import javax.persistence.Id;
  *
  * @author dfurrer.
  */
+@Data
 @Entity
-@Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor

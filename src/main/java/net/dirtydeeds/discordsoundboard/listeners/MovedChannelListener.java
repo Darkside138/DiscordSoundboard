@@ -1,8 +1,10 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
+import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -24,11 +26,13 @@ public class MovedChannelListener extends ListenerAdapter {
     private final UserService userService;
     private final boolean playEntranceOnMove;
     private final BotConfig botConfig;
+    private final SoundService soundService;
 
-    public MovedChannelListener(SoundPlayer bot, UserService userService,
+    public MovedChannelListener(SoundPlayer bot, UserService userService, SoundService soundService,
                                 boolean playEntranceOnMove, BotConfig botConfig) {
         this.bot = bot;
         this.userService = userService;
+        this.soundService = soundService;
         this.playEntranceOnMove = playEntranceOnMove;
         this.botConfig = botConfig;
     }
@@ -38,18 +42,31 @@ public class MovedChannelListener extends ListenerAdapter {
         if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
             String discordUser = event.getMember().getEffectiveName();
             String discordUserId = event.getMember().getId();
-            String entranceFile = bot.getFileForUser(discordUser, true);
-            String disconnectFile = bot.getFileForUser(discordUser, false);
+            String entranceFile = null;
+            String disconnectFile = null;
 
             User user = userService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
             if (user != null) {
                 if (!StringUtils.isNullOrEmpty(user.getEntranceSound())) {
                     entranceFile = user.getEntranceSound();
+
                     LOG.info("Playing move sound {}", entranceFile);
+                } else {
+                    SoundFile entranceSoundFile = soundService.findOneBySoundFileIdIgnoreCase(user.getUsername());
+                    if (entranceSoundFile != null) {
+                        entranceFile = entranceSoundFile.getSoundFileId();
+                    }
                 }
                 if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
                     disconnectFile = user.getLeaveSound();
+
                     LOG.info("Playing leave sound {}", disconnectFile);
+                } else {
+                    SoundFile disconnectSoundFile = soundService.findOneBySoundFileIdIgnoreCase(
+                            user.getUsername() + botConfig.getLeaveSuffix());
+                    if (disconnectSoundFile != null) {
+                        disconnectFile = disconnectSoundFile.getSoundFileId();
+                    }
                 }
             }
             if (!StringUtils.isNullOrEmpty(botConfig.getEntranceForAll())) {
@@ -57,13 +74,13 @@ public class MovedChannelListener extends ListenerAdapter {
                 LOG.info("Playing entrance for all sound {}", entranceFile);
             }
 
-            if (!entranceFile.equals("")) {
+            if (!StringUtils.isNullOrEmpty(entranceFile)) {
                 try {
                     bot.playFileInChannel(entranceFile, event.getChannelJoined());
                 } catch (Exception e) {
                     LOG.error("Could not play file for entrance of {}", user);
                 }
-            } else if (!disconnectFile.equals("")) {
+            } else if (!StringUtils.isNullOrEmpty(disconnectFile)) {
                 try {
                     bot.playFileInChannel(disconnectFile, event.getChannelLeft());
                 } catch (Exception e) {

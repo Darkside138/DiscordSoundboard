@@ -11,7 +11,6 @@ import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -20,19 +19,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.security.auth.login.LoginException;
 import java.io.*;
 import java.nio.file.*;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.util.Map.*;
+import java.util.stream.StreamSupport;
 
 /**
  * @author dfurrer.
@@ -98,10 +96,10 @@ public class SoundPlayer {
         commandListener.addCommand(new VolumeCommand(this));
 
         bot.addEventListener(commandListener);
-        bot.addEventListener(new EntranceSoundBoardListener(this, userService,
+        bot.addEventListener(new EntranceSoundBoardListener(this, userService, soundService,
                 botConfig.isPlayEntranceOnJoin(), botConfig));
-        bot.addEventListener(new LeaveSoundBoardListener(this, userService));
-        bot.addEventListener(new MovedChannelListener(this, userService,
+        bot.addEventListener(new LeaveSoundBoardListener(this, userService, soundService, botConfig));
+        bot.addEventListener(new MovedChannelListener(this, userService, soundService,
                 botConfig.isPlayEntranceOnMove(), botConfig));
         bot.addEventListener(new BotLeaveListener());
         bot.addEventListener(new FileAttachmentListener(botConfig));
@@ -110,85 +108,6 @@ public class SoundPlayer {
 
         mainWatch.watchDirectoryPath(Paths.get(botConfig.getSoundFileDir()));
     }
-
-    /**
-     * Logs the discord bot in and adds the ChatSoundBoardListener if the user configured it to be used
-     */
-//    private void initializeDiscordBot() {
-//        try {
-//            if (bot != null) {
-//                bot.shutdown();
-//            }
-//
-//            String botToken = appProperties.getProperty("bot_token");
-//            if (botToken == null) {
-//                LOG.error("No Discord Token found. Please confirm you have an application.properties file and you have the property bot_token filled with a valid token from https://discord.com/developers/applications");
-//                return;
-//            }
-//
-//            bot = JDABuilder.createDefault(botToken)
-//                    .setAutoReconnect(true)
-//                    .build();
-//            bot.awaitReady();
-//
-//            if (Boolean.parseBoolean(appProperties.getProperty("respond_to_chat_commands"))) {
-//                String commandCharacter = appProperties.getProperty("command_character");
-//                String messageSizeLimit = appProperties.getProperty("message_size_limit");
-//                leaveSuffix = appProperties.getProperty("leave_suffix");
-//                String respondToDmsString = appProperties.getProperty("respond_to_dm");
-//                boolean respondToDms = true;
-//                if (respondToDmsString != null) {
-//                    respondToDms = Boolean.parseBoolean(respondToDmsString);
-//                }
-//                ChatSoundBoardListener chatListener = new ChatSoundBoardListener(this, commandCharacter,
-//                        messageSizeLimit, respondToDms, userRepository, soundFileRepository);
-//                this.addBotListener(chatListener);
-//                EntranceSoundBoardListener entranceSoundBoardListener = new EntranceSoundBoardListener(this,
-//                        userRepository, playEntranceOnJoin);
-//                LeaveSoundBoardListener leaveSoundBoardListener = new LeaveSoundBoardListener(this, userRepository);
-//                MovedChannelListener movedChannelListener = new MovedChannelListener(this, userRepository,
-//                        playEntranceOnMove);
-//                this.addBotListener(entranceSoundBoardListener);
-//                this.addBotListener(leaveSoundBoardListener);
-//                this.addBotListener(movedChannelListener);
-//            }
-//
-//            String allowedUsersString = appProperties.getProperty("allowedUsers");
-//            if (allowedUsersString != null) {
-//                if (!allowedUsersString.isEmpty()) {
-//                    String[] allowedUsersArray = allowedUsersString.trim().split(",");
-//                    if (allowedUsersArray.length > 0) {
-//                        allowedUsers = Arrays.asList(allowedUsersArray);
-//                    }
-//                }
-//            }
-//
-//            String bannedUsersString = appProperties.getProperty("bannedUsers");
-//            if (bannedUsersString != null) {
-//                if (!bannedUsersString.isEmpty()) {
-//                    String[] bannedUsersArray = bannedUsersString.split(",");
-//                    if (bannedUsersArray.length > 0) {
-//                        bannedUsers = Arrays.asList(bannedUsersArray);
-//                    }
-//                }
-//            }
-//
-//            String activityString = appProperties.getProperty("activityString");
-//            if (ObjectUtils.isEmpty(activityString)) {
-//                bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT,
-//                        "Type " + appProperties.getProperty("command_character") + "help for a list of commands."));
-//            } else {
-//                bot.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, activityString));
-//            }
-//
-//        } catch (IllegalArgumentException e) {
-//            LOG.warn("The config was not populated. Please enter an email and password.");
-//        } catch (LoginException e) {
-//            LOG.warn("The provided bot token was incorrect. Please provide valid details.");
-//        } catch (InterruptedException e) {
-//            LOG.fatal("Login Interrupted.");
-//        }
-//    }
 
     public ServletWebServerApplicationContext getApplicationContext() {
         return webServerAppCtxt;
@@ -201,7 +120,7 @@ public class SoundPlayer {
      */
     public Map<String, SoundFile> getAvailableSoundFiles() {
         Map<String, SoundFile> returnFiles = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        for (SoundFile soundFile : soundService.findAll()) {
+        for (SoundFile soundFile : soundService.findAll(Pageable.unpaged())) {
             returnFiles.put(soundFile.getSoundFileId(), soundFile);
         }
         return returnFiles;
@@ -345,38 +264,19 @@ public class SoundPlayer {
      */
     private void playFile(String fileName, Guild guild, Integer repeatTimes) {
         SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
+
         if (fileToPlay != null) {
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
+                fileToPlay = soundService.updateSoundPlayed(fileToPlay);
+                soundService.save(fileToPlay);
                 jdaBot.getPlayerManager().loadItem(soundFile.getAbsolutePath(), new FileLoadResultHandler(guild, repeatTimes));
             }
         } else {
             jdaBot.getPlayerManager().loadItem(fileName, new FileLoadResultHandler(guild, repeatTimes));
         }
-    }
-
-    public String getFileForUser(String userName, boolean entrance) {
-        Set<Map.Entry<String, SoundFile>> entrySet = getAvailableSoundFiles().entrySet();
-        String fileToPlay = "";
-        if (entrySet.size() > 0) {
-            for (Entry entry : entrySet) {
-                String fileEntry = (String) entry.getKey();
-                if (entrance) {
-                    if (userName.toLowerCase().startsWith(fileEntry.toLowerCase())
-                            && fileEntry.length() > fileToPlay.length())
-                        fileToPlay = fileEntry;
-                } else {
-                    if (fileEntry.toLowerCase().startsWith(userName.toLowerCase()) &&
-                            fileEntry.toLowerCase().endsWith(botConfig.getLeaveSuffix())
-                            && fileEntry.length() > fileToPlay.length()) {
-                        fileToPlay = fileEntry;
-                    }
-                }
-            }
-        }
-        return fileToPlay;
     }
 
     /**
@@ -469,8 +369,7 @@ public class SoundPlayer {
                 }
             }
 
-            soundService.deleteAll();
-
+            List<SoundFile> soundFilesFromPath = new ArrayList<>();
             Files.walk(soundFilePath).forEach(filePath -> {
                 if (Files.isRegularFile(filePath)) {
                     String fileName = filePath.getFileName().toString();
@@ -481,13 +380,27 @@ public class SoundPlayer {
                         LOG.info(fileName);
                         File file = filePath.toFile();
                         String parent = file.getParentFile().getName();
-                        if (!soundService.existsById(fileName)) {
-                            SoundFile soundFile = new SoundFile(fileName, filePath.toString(), parent);
+
+                        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(fileName);
+                        if (soundFile == null) {
+                            soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now());
+                            soundFilesFromPath.add(soundFile);
                             soundService.save(soundFile);
                         }
+                        soundFilesFromPath.add(soundFile);
                     }
                 }
             });
+
+            Iterable<SoundFile> soundFilesFromDB = soundService.findAll(Pageable.unpaged());
+
+            List<SoundFile> difference = StreamSupport
+                    .stream(soundFilesFromDB.spliterator(), false)
+                    .filter(s -> soundFilesFromPath.stream()
+                                .noneMatch(path -> path.getSoundFileId().equals(s.getSoundFileId())))
+                    .collect(Collectors.toList());
+
+            difference.forEach(soundService::delete);
         } catch (IOException e) {
             LOG.error(e.toString());
             e.printStackTrace();
@@ -502,18 +415,20 @@ public class SoundPlayer {
      * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
      */
     private Guild getGuildForUserOrChannelId(String userName, String voiceChannelId) {
-        if (!botConfig.isControlByChannel() || StringUtils.isBlank(voiceChannelId)) {
+        if (!botConfig.isControlByChannel() || StringUtils.isBlank(voiceChannelId)
+                || voiceChannelId.equals("undefined")) {
             for (Guild guild : bot.getGuilds()) {
                 for (VoiceChannel channel : guild.getVoiceChannels()) {
                     for (Member user : channel.getMembers()) {
                         if (user.getEffectiveName().equalsIgnoreCase(userName)
-                                || user.getUser().getName().equalsIgnoreCase(userName)) {
+                                || user.getUser().getName().equalsIgnoreCase(userName)
+                                || user.getId().equals(userName)) {
                             return guild;
                         }
                     }
                 }
             }
-        } else {
+        } else if (!StringUtils.isBlank(voiceChannelId)) {
             return Objects.requireNonNull(bot.getVoiceChannelById(voiceChannelId)).getGuild();
         }
 
@@ -542,13 +457,14 @@ public class SoundPlayer {
      */
     private void joinUsersCurrentChannel(String userName, String voiceChannelId) {
         if (botConfig.isControlByChannel() && !StringUtils.isBlank(voiceChannelId)) {
-            moveToChannel(bot.getVoiceChannelById(voiceChannelId), bot.getVoiceChannelById(voiceChannelId).getGuild());
+            moveToChannel(bot.getVoiceChannelById(voiceChannelId), Objects.requireNonNull(bot.getVoiceChannelById(voiceChannelId)).getGuild());
         } else {
             for (Guild guild : bot.getGuilds()) {
                 for (VoiceChannel channel : guild.getVoiceChannels()) {
                     for (Member user : channel.getMembers()) {
                         if (user.getEffectiveName().equalsIgnoreCase(userName)
-                                || user.getUser().getName().equalsIgnoreCase(userName)) {
+                                || user.getUser().getName().equalsIgnoreCase(userName)
+                                || user.getId().equals(userName)) {
                             moveToChannel(channel, guild);
                         }
                     }

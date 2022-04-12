@@ -2,14 +2,15 @@ package net.dirtydeeds.discordsoundboard.controllers;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
-import net.dirtydeeds.discordsoundboard.util.SortIgnoreCase;
+import net.dirtydeeds.discordsoundboard.service.SoundService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,26 +21,30 @@ import java.util.stream.Collectors;
  * @author dfurrer.
  */
 @RestController
-@RequestMapping("/sounds")
+@RequestMapping("/api/soundFiles")
 @SuppressWarnings("unused")
 public class SoundController {
 
     private final SoundPlayer soundPlayer;
+    private final SoundService soundService;
 
     @Inject
-    public SoundController (SoundPlayer soundPlayer) {
+    public SoundController (SoundPlayer soundPlayer, SoundService soundService) {
         this.soundPlayer = soundPlayer;
+        this.soundService = soundService;
     }
 
-    @GetMapping()
-    public List<SoundFile> getSoundFileList() {
-        Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        return soundMap.values().stream().sorted(new SortIgnoreCase()).collect(Collectors.toCollection(LinkedList::new));
+    @GetMapping("/findAll")
+    public ResponseEntity<Iterable<SoundFile>> getAll() {
+        Pageable wholePage = Pageable.unpaged();
+        return new ResponseEntity(soundService.findAll(wholePage), HttpStatus.OK);
     }
 
     @GetMapping(value = "/categories")
-    public Set<String> getSoundCategories() {
+    public ResponseEntity<Set<String>> getSoundCategories() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        return soundMap.values().stream().map(SoundFile::getCategory).collect(Collectors.toSet());
+        return new ResponseEntity(soundMap.values().stream()
+                .map(SoundFile::getCategory)
+                .collect(Collectors.toSet()), HttpStatus.OK);
     }
 }
