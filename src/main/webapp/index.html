@@ -138,13 +138,19 @@
         function determineShownNavigation(){
             // Get available width for shown categories.
             // 275px extra for spacing, more-dropdown and buttons
-            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 275;
+            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 230;
             console.log(availableWidth);
+            var shouldSkip = false;
             $.each($('#categories li'), function(i, obj){
                 var willFit = availableWidth - $(obj).width() > 0;
+                if (shouldSkip) willFit=false;
                 $(obj).toggle(willFit);
                 $('#more a[data-category="' + $(obj).find('a').data('category') + '"]').toggle(!willFit);
-                if(willFit) availableWidth -= $(obj).width();
+                if (willFit) {
+                    availableWidth -= $(obj).width();
+                } else {
+                    shouldSkip = true;
+                }
             });
             $('#more').toggle($('#categories li:hidden').length > 0);
         }

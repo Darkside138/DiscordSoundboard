@@ -1,17 +1,24 @@
 #!/bin/sh
 set -e
 
+#Make config directory if it doesn't already exist
 mkdir -p /etc/DiscordSoundboard/config
-[ -f /etc/DiscordSoundboard/bin/application.properties ] && mv /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
+#If the file is still in /bin move it to ../config so that we can expose that as a persistent directory
+# on something like unraid. Only moves the file if it's not already there.
+[ -f /etc/DiscordSoundboard/bin/application.properties ] && mv -n /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
 
 cd /etc/DiscordSoundboard/config
 
+#Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 
 cd /etc/DiscordSoundboard/bin
 
+#Copy the jar file into the bin dir. This wouldn't be necessary if we setup the class path to look in the lib dir. Should probably update this later
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
+
+#Run the bot. Pass the /config/application.properties as part of the classpath, other wise the bot will not work
 exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties
 
 exec "$@"

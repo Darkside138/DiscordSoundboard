@@ -32,7 +32,7 @@ class CommandEventTest {
 
         CommandEvent commandEvent = new CommandEvent(event);
 
-        assertEquals("botcommand", commandEvent.getCommandString());
+        assertEquals("botCommand", commandEvent.getCommandString());
     }
 
     @Test

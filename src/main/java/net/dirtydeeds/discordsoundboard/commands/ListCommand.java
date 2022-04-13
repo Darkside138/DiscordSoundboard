@@ -55,7 +55,7 @@ public class ListCommand extends Command {
     }
 
     private List<String> getCommandList(StringBuilder commandString) {
-        final int maxLineLength = botConfig.getMessageSizeLimit();
+        final int maxLineLength = botConfig.getMessageSizeLimit() - 10;
         List<String> soundFiles = new ArrayList<>();
 
         //if text has \n, \r or \t symbols it's better to split by \s+
@@ -68,7 +68,7 @@ public class ListCommand extends Command {
         for (int i = 0; i < tokens.length; i++) {
             String word = tokens[i];
 
-            if (lineLen + (word).length() > maxLineLength) {
+            if (lineLen + (word).length() > maxLineLength + 2) {
                 if (i > 0) {
                     output.append("```\n");
                     soundFiles.add(output.toString());
