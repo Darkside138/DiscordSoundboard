@@ -13,5 +13,5 @@ spring:
     hibernate:
       ddl-auto: update
   datasource:
-    url: jdbc:h2:file:/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+    url: jdbc:h2:file:/discordDB/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
     driver-class-name: org.h2.Driver
