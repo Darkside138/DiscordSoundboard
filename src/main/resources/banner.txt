@@ -6,3 +6,4 @@ ______ _____ _____ _____ _________________   _____  _____ _   _ _   ____________
 |___/  \___/\____/ \____/\___/\_| \_|___/   \____/  \___/ \___/\_| \_/___/ \____/  \___/\_| |_/\_| \_|___/
 
 Discord Soundboard                                                                          ${application.formatted-version}
+GitHub: https://github.com/Darkside138/DiscordSoundboard

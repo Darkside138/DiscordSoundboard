@@ -2,13 +2,8 @@ package net.dirtydeeds.discordsoundboard.commands;
 
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.util.BotUtils;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.exceptions.PermissionException;
-import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

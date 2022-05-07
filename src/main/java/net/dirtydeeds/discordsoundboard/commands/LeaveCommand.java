@@ -67,7 +67,7 @@ public class LeaveCommand extends Command {
                 }
             } else {
                 event.replyByPrivateMessage("Entrance command incorrect. Required input is " +
-                        event.getPrefix() + "entrance <userid/username> <soundfile>");
+                        event.getPrefix() + "entrance <userid/username> <soundFile>");
             }
         }
     }

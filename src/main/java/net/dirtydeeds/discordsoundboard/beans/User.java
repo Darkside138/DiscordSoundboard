@@ -11,8 +11,8 @@ import javax.persistence.Id;
  *
  * @author dfurrer.
  */
-@Data
 @Entity
+@Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor

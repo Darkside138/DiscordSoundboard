@@ -1,4 +1,17 @@
+# This file should be used for all internal application configurations. Any configs that the end user should be able
+# to update based on their preference should be put in the application.properties file
 spring:
   application:
     name: DiscordSoundboard
     version: ${projectVersion}
+  data:
+    rest:
+      basePath: /api
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:h2:file:/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+    driver-class-name: org.h2.Driver

@@ -28,7 +28,7 @@ public class RemoveCommand extends Command {
         this.botConfig = botConfig;
         this.soundService = soundService;
         this.name = "remove";
-        this.help = "Removes requested sound file from disk. Must be amdin";
+        this.help = "Removes requested sound file from disk. Must be admin";
     }
 
     @Override

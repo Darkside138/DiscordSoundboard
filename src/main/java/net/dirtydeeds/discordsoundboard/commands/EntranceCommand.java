@@ -68,7 +68,7 @@ public class EntranceCommand extends Command {
             } else {
                 //TODO give a better message. It's likely they don't have permission in this case
                 event.replyByPrivateMessage("Entrance command incorrect. Required input is " +
-                        event.getPrefix() + "entrance <userid/username> <soundfile>");
+                        event.getPrefix() + "entrance <userid/username> <soundFile>");
             }
         }
     }

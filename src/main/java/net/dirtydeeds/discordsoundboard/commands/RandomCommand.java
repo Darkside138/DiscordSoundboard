@@ -2,8 +2,6 @@ package net.dirtydeeds.discordsoundboard.commands;
 
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Dave Furrer
@@ -11,7 +9,6 @@ import org.slf4j.LoggerFactory;
  * Command to play a random sound file from the list of sounds
  */
 public class RandomCommand extends Command {
-    private static final Logger LOG = LoggerFactory.getLogger(RandomCommand.class);
 
     private final SoundPlayer soundPlayer;
 

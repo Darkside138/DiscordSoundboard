@@ -17,7 +17,6 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -47,9 +46,7 @@ public class SoundPlayer {
     private final SoundService soundService;
     private final UserService userService;
     private final MainWatch mainWatch;
-    @SuppressWarnings("unused")
-    @Autowired
-    private ServletWebServerApplicationContext webServerAppCtxt;
+    private final ServletWebServerApplicationContext webServerApplicationContext;
     private final ShutdownManager shutdownManager;
     private final BotConfig botConfig;
     private JDA bot;
@@ -57,13 +54,15 @@ public class SoundPlayer {
 
     @Inject
     public SoundPlayer(MainWatch mainWatch, SoundService soundService,
-                       UserService userService, ShutdownManager shutdownManager, BotConfig botConfig) {
+                       UserService userService, ShutdownManager shutdownManager, BotConfig botConfig,
+                       ServletWebServerApplicationContext webServerApplicationContext) {
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
         this.soundService = soundService;
         this.userService = userService;
         this.shutdownManager = shutdownManager;
         this.botConfig = botConfig;
+        this.webServerApplicationContext = webServerApplicationContext;
 
         init();
     }
@@ -77,7 +76,7 @@ public class SoundPlayer {
         }
 
         updateFileList();
-        getUsers();
+        updateUsersInDb();
 
         CommandListener commandListener = new CommandListener(botConfig);
         commandListener.addCommand(new DisconnectCommand(this));
@@ -86,6 +85,7 @@ public class SoundPlayer {
         commandListener.addCommand(new InfoCommand(this, botConfig));
         commandListener.addCommand(new LeaveCommand(this, userService, soundService));
         commandListener.addCommand(new ListCommand(this, botConfig));
+        commandListener.addCommand(new PingCommand());
         commandListener.addCommand(new PlayCommand(this));
         commandListener.addCommand(new RandomCommand(this));
         commandListener.addCommand(new ReloadCommand(this));
@@ -110,7 +110,7 @@ public class SoundPlayer {
     }
 
     public ServletWebServerApplicationContext getApplicationContext() {
-        return webServerAppCtxt;
+        return webServerApplicationContext;
     }
 
     /**
@@ -300,9 +300,8 @@ public class SoundPlayer {
     /**
      * Get a list of users
      *
-     * @return List of soundboard users.
      */
-    public List<net.dirtydeeds.discordsoundboard.beans.User> getUsers() {
+    public void updateUsersInDb() {
         String userNameToSelect = botConfig.getBotOwnerName();
         List<User> users = new ArrayList<>();
         for (net.dv8tion.jda.api.entities.User discordUser : bot.getUsers()) {
@@ -322,7 +321,6 @@ public class SoundPlayer {
         }
         users.sort(Comparator.comparing(User::getUsername));
         userService.saveAll(users);
-        return users;
     }
 
     public net.dv8tion.jda.api.entities.User retrieveUserById(String id) {
@@ -385,11 +383,10 @@ public class SoundPlayer {
                         if (soundFile == null) {
                             soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now());
                             soundFilesFromPath.add(soundFile);
-                            soundService.save(soundFile);
                         } else {
                             soundFile = soundService.initializeDateAdded(soundFile);
-                            soundService.save(soundFile);
                         }
+                        soundFile = soundService.save(soundFile);
                         soundFilesFromPath.add(soundFile);
                     }
                 }
@@ -511,17 +508,17 @@ public class SoundPlayer {
      *
      * @param event - The event that triggered this search. This is used to get th events author.
      * @param guild - The guild (discord server) to look in for the author.
-     * @return The VoiceChannel if one is found. Otherwise return null.
+     * @return The VoiceChannel if one is found. Otherwise, return null.
      */
     private VoiceChannel findUsersChannel(MessageReceivedEvent event, Guild guild) {
         VoiceChannel channel = null;
 
-        outerloop:
+        outerLoop:
         for (VoiceChannel channel1 : guild.getVoiceChannels()) {
             for (Member user : channel1.getMembers()) {
                 if (user.getId().equals(event.getAuthor().getId())) {
                     channel = channel1;
-                    break outerloop;
+                    break outerLoop;
                 }
             }
         }

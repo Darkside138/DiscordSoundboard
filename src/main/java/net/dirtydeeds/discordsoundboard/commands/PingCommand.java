@@ -14,6 +14,6 @@ public class PingCommand extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-//        event.replyByPrivateMessage("Websocket: " + event.getJda.getGatewayPing() + "ms");
+        event.replyByPrivateMessage("Web Socket: " + event.getMessageReceivedEvent().getJDA().getGatewayPing() + "ms");
     }
 }
