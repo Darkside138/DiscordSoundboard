@@ -6,7 +6,7 @@ import net.dirtydeeds.discordsoundboard.beans.User;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.h2.util.StringUtils;
 import org.slf4j.Logger;
@@ -35,25 +35,27 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
     }
 
     @Override
-    public void onGuildVoiceLeave(GuildVoiceLeaveEvent event) {
-        String userDisconnected = event.getMember().getEffectiveName();
-        String userDisconnectedId = event.getMember().getId();
-        User user = userService.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
-        if (user != null) {
-            if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
-                bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
-            } else {
-                //If DB doesn't have a leave sound check for a file named with the userName + leave suffix
-                SoundFile leaveFile = soundService.findOneBySoundFileIdIgnoreCase(
-                        user.getUsername() + botConfig.getLeaveSuffix());
-                if (leaveFile != null) {
-                    try {
-                        bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());
-                    } catch (Exception e) {
-                        LOG.error("Could not play file for disconnection of {}", userDisconnected);
-                    }
+    public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
+        if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
+            String userDisconnected = event.getMember().getEffectiveName();
+            String userDisconnectedId = event.getMember().getId();
+            User user = userService.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
+            if (user != null) {
+                if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
+                    bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
                 } else {
-                    LOG.debug("Could not find disconnection sound for {}, so ignoring disconnection event.", userDisconnected);
+                    //If DB doesn't have a leave sound check for a file named with the userName + leave suffix
+                    SoundFile leaveFile = soundService.findOneBySoundFileIdIgnoreCase(
+                            user.getUsername() + botConfig.getLeaveSuffix());
+                    if (leaveFile != null) {
+                        try {
+                            bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());
+                        } catch (Exception e) {
+                            LOG.error("Could not play file for disconnection of {}", userDisconnected);
+                        }
+                    } else {
+                        LOG.debug("Could not find disconnection sound for {}, so ignoring disconnection event.", userDisconnected);
+                    }
                 }
             }
         }

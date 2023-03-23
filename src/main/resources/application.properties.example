@@ -30,34 +30,34 @@ activityString=
 #If the bot should respond to chat commands (true|false) defaults to true.
 respond_to_chat_commands=true
 
-#If the bot should respond to private messages from users
+#If the bot should respond to private messages from users (true|false)
 respond_to_dm=true
 
 #The suffix for leave sounds. The bot will look for sounds where the file name is the discord username + leave_suffix.
 #If a sound is found it will play when the user leaves a channel
 leave_suffix=_leave
 
-#Sets a sound that will play when any user joins a channel the bot has been invited to
+#Sets a sound that will play when any user joins a channel the bot has been invited to. Put the name of the sound file minus the extension.
 entranceForAll=
 
 #If "entrance" sounds should be played on move event. If set to true entrance sounds will play when a user moves from
-#one voice channel to another.
+#one voice channel to another (true|false).
 playEntranceOnMove=true
 
-#If "entrance" sounds should be played the first time a user joins a voice channel after being disconnected from discord
+#If "entrance" sounds should be played the first time a user joins a voice channel after being disconnected from discord (true|false)
 playEntranceOnJoin=true
 
-#If the bot should leave the channel after playback of each sound.
+#If the bot should leave the channel after playback of each sound (true|false).
 leaveAfterPlayback=false
 
 #Do not set this higher than 2000. This is a limit imposed by Discord and messages will fail if larger than 2000 characters
 message_size_limit=2000
 
-#List of users to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
+#List of users or discord ids to respond to chat commands from. The list should be comma separated. If the list is empty the bot will
 #repsond to all users. If any users are listed it will only respond to those users.
 allowedUsers=
 
-#List of banned users. Also, comma separated. If a user is listed here they will no be able to issue commands to the
+#List of banned users names or discord ids. Also, comma separated. If a user is listed here they will no be able to issue commands to the
 #bot through chat.
 bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 
