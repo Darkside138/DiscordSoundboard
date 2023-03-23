@@ -77,6 +77,8 @@ public class SoundPlayer {
             return;
         }
 
+        bot.getGuilds().forEach(Guild::loadMembers);
+
         updateFileList();
         updateUsersInDb();
 
@@ -325,8 +327,12 @@ public class SoundPlayer {
         userService.saveAll(users);
     }
 
-    public net.dv8tion.jda.api.entities.User retrieveUserById(String id) {
-        return bot.retrieveUserById(id).complete();
+    public net.dv8tion.jda.api.entities.User retrieveUserById(String idOrName) {
+        try {
+            return bot.retrieveUserById(idOrName).complete();
+        } catch (Exception e) {
+            return bot.getUsersByName(idOrName, true).get(0);
+        }
     }
 
     public boolean isUserAllowed(String username) {

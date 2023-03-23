@@ -36,7 +36,7 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
-        if (event.getChannelJoined() != null) {
+        if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
             String userDisconnected = event.getMember().getEffectiveName();
             String userDisconnectedId = event.getMember().getId();
             User user = userService.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);

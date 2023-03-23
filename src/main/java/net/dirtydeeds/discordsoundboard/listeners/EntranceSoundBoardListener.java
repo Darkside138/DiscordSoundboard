@@ -41,7 +41,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
-        if (event.getChannelLeft() != null) {
+        if (event.getChannelLeft() == null && event.getChannelJoined() != null) {
             if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
                 String userJoined = event.getMember().getEffectiveName();
                 String userId = event.getMember().getId();
