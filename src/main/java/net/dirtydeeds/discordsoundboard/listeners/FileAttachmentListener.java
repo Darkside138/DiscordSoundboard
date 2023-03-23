@@ -2,8 +2,8 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.util.BotUtils;
-import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +48,7 @@ public class FileAttachmentListener extends ListenerAdapter {
                     if (attachment.getSize() < botConfig.getMaxFileSizeInBytes()) {
                         if (!Files.exists(Paths.get(botConfig.getSoundFileDir() + "/" + fileName))) {
                             File newSoundFile = new File(botConfig.getSoundFileDir(), fileName);
-                            attachment.downloadToFile(newSoundFile).getNow(null);
+                            attachment.getProxy().downloadToFile(newSoundFile).getNow(null);
                             event.getChannel().sendMessage("Downloaded file `" + fileName + "` and added to list of sounds " + event.getAuthor().getAsMention() + ".").queue();
                         } else {
                             if (event.getMember() != null) {

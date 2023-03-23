@@ -12,6 +12,8 @@ import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
@@ -221,7 +223,7 @@ public class SoundPlayer {
      * @param fileName - The name of the file to play.
      * @param channel  -  The channel to play the file in
      */
-    public void playFileInChannel(String fileName, VoiceChannel channel) {
+    public void playFileInChannel(String fileName, AudioChannel channel) {
         if (channel == null) return;
         moveToChannel(channel, channel.getGuild());
         LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
@@ -418,7 +420,7 @@ public class SoundPlayer {
         if (!botConfig.isControlByChannel() || StringUtils.isBlank(voiceChannelId)
                 || voiceChannelId.equals("undefined")) {
             for (Guild guild : bot.getGuilds()) {
-                for (VoiceChannel channel : guild.getVoiceChannels()) {
+                for (AudioChannel channel : guild.getVoiceChannels()) {
                     for (Member user : channel.getMembers()) {
                         if (user.getEffectiveName().equalsIgnoreCase(userName)
                                 || user.getUser().getName().equalsIgnoreCase(userName)
@@ -441,7 +443,7 @@ public class SoundPlayer {
      * @param event - The event
      */
     private void moveToUserIdsChannel(MessageReceivedEvent event, Guild guild) {
-        VoiceChannel channel = findUsersChannel(event, guild);
+        AudioChannel channel = findUsersChannel(event, guild);
 
         if (channel == null) {
             event.getAuthor().openPrivateChannel().complete()
@@ -460,7 +462,7 @@ public class SoundPlayer {
             moveToChannel(bot.getVoiceChannelById(voiceChannelId), Objects.requireNonNull(bot.getVoiceChannelById(voiceChannelId)).getGuild());
         } else {
             for (Guild guild : bot.getGuilds()) {
-                for (VoiceChannel channel : guild.getVoiceChannels()) {
+                for (AudioChannel channel : guild.getVoiceChannels()) {
                     for (Member user : channel.getMembers()) {
                         if (user.getEffectiveName().equalsIgnoreCase(userName)
                                 || user.getUser().getName().equalsIgnoreCase(userName)
@@ -478,7 +480,7 @@ public class SoundPlayer {
      *
      * @param channel - The channel specified.
      */
-    private void moveToChannel(VoiceChannel channel, Guild guild) {
+    private void moveToChannel(AudioChannel channel, Guild guild) {
         AudioManager audioManager = guild.getAudioManager();
 
         audioManager.openAudioConnection(channel);
@@ -510,11 +512,11 @@ public class SoundPlayer {
      * @param guild - The guild (discord server) to look in for the author.
      * @return The VoiceChannel if one is found. Otherwise, return null.
      */
-    private VoiceChannel findUsersChannel(MessageReceivedEvent event, Guild guild) {
-        VoiceChannel channel = null;
+    private AudioChannel findUsersChannel(MessageReceivedEvent event, Guild guild) {
+        AudioChannel channel = null;
 
         outerLoop:
-        for (VoiceChannel channel1 : guild.getVoiceChannels()) {
+        for (AudioChannel channel1 : guild.getVoiceChannels()) {
             for (Member user : channel1.getMembers()) {
                 if (user.getId().equals(event.getAuthor().getId())) {
                     channel = channel1;
