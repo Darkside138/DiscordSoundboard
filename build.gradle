@@ -58,8 +58,7 @@ tasks.named("bootJar") {
 }
 
 dependencies {
-//    implementation 'net.dv8tion:JDA:4.4.0_350'
-    implementation 'net.dv8tion:JDA:5.0.0-beta.6'
+    implementation 'net.dv8tion:JDA:4.4.1_353'
     implementation 'com.github.walkyst:lavaplayer-fork:1.3.97'
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation 'pw.chew:jda-chewtils:1.24.1'
