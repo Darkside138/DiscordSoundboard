@@ -66,8 +66,7 @@ public class EntranceCommand extends Command {
                     event.replyByPrivateMessage("Could not find user with id or name: " + userNameOrId);
                 }
             } else {
-                //TODO give a better message. It's likely they don't have permission in this case
-                event.replyByPrivateMessage("Entrance command incorrect. Required input is " +
+                event.replyByPrivateMessage("You must have admin on the server to edit entrance for other users " +
                         event.getPrefix() + "entrance <userid/username> <soundFile>");
             }
         }

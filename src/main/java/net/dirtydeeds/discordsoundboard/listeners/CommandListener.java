@@ -3,7 +3,7 @@ package net.dirtydeeds.discordsoundboard.listeners;
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.commands.Command;
 import net.dirtydeeds.discordsoundboard.commands.CommandEvent;
-import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;

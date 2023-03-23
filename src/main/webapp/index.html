@@ -241,7 +241,7 @@
                         recentClass = '<span class="recentBadge" title="Recently Added"></span>';
                     }
                 }
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '"><span class="content">' + obj.soundFileId + '</span>' + recentClass + '</div>');
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '"><span class="content" title="Times Played: ' + obj.timesPlayed + '">' + obj.soundFileId + '</span>' + recentClass + '</div>');
             });
         });
 
