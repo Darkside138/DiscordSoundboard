@@ -101,6 +101,7 @@ bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
         from ('src/main/resources/application.properties.example')
+        from ("$buildDir/resources/main/application.yml")
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')

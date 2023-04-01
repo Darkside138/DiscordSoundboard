@@ -6,6 +6,7 @@ mkdir -p /etc/DiscordSoundboard/config
 #If the file is still in /bin move it to ../config so that we can expose that as a persistent directory
 # on something like unraid. Only moves the file if it's not already there.
 [ -f /etc/DiscordSoundboard/bin/application.properties ] && mv -n /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
+[ -f /etc/DiscordSoundboard/bin/application.yml ] && mv -n /etc/DiscordSoundboard/bin/application.yml /etc/DiscordSoundboard/config/application.yml
 
 cd /etc/DiscordSoundboard/config
 
@@ -19,6 +20,6 @@ cd /etc/DiscordSoundboard/bin
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
 
 #Run the bot. Pass the /config/application.properties as part of the classpath, other wise the bot will not work
-exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties
+java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties,file:///etc/DiscordSoundboard/config/application.yml
 
 exec "$@"
