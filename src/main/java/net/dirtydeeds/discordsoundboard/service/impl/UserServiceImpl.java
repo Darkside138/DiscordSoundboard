@@ -28,8 +28,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User findOneByIdOrUsernameIgnoreCase(String userNameOrId, String userNameOrId1) {
-        return userRepository.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId1);
+    public User findOneByIdOrUsernameIgnoreCase(String userId, String userName) {
+        return userRepository.findOneByIdOrUsernameIgnoreCase(userId, userName);
     }
 
     @Override

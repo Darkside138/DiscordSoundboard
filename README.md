@@ -46,6 +46,8 @@ This will walk you through the process of getting your bot up and running.
 To fix the issue of being stuck on "Connecting to websocket":
 Login to your Discord Developer Portal and enable Privileged Intents for your bot. Go to https://discord.com/developers/applications select your bot, click Bot on the left, and then enable both of the sliders under Privileged Gateway Intents.
 
+You will also need to configure "Intents". Follow this [link](https://jda.wiki/using-jda/troubleshooting/#im-getting-closecode4014-disallowed-intents) for instuctions on enabling Intents for your bot. Make sure Presence Intent, Server Members Intent, and Message Content Intent are all enabled.
+
 ## Donations
 If you'd like to buy me a beer for my efforts, it's always appreciated. You can do so [here](https://www.paypal.me/DFurrer)
 

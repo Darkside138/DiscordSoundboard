@@ -37,9 +37,9 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
         if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
-            String userDisconnected = event.getMember().getEffectiveName();
-            String userDisconnectedId = event.getMember().getId();
-            User user = userService.findOneByIdOrUsernameIgnoreCase(userDisconnectedId, userDisconnected);
+            String userNameDisconnected = event.getMember().getEffectiveName();
+            String userIdDisconnected = event.getMember().getId();
+            User user = userService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
             if (user != null) {
                 if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
                     bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
@@ -51,10 +51,10 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
                         try {
                             bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());
                         } catch (Exception e) {
-                            LOG.error("Could not play file for disconnection of {}", userDisconnected);
+                            LOG.error("Could not play file for disconnection of {}", userNameDisconnected);
                         }
                     } else {
-                        LOG.debug("Could not find disconnection sound for {}, so ignoring disconnection event.", userDisconnected);
+                        LOG.debug("Could not find disconnection sound for {}, so ignoring disconnection event.", userNameDisconnected);
                     }
                 }
             }

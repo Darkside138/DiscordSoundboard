@@ -12,7 +12,7 @@ public interface UserService {
 
     Iterable<User> saveAll(List<User> users);
 
-    User findOneByIdOrUsernameIgnoreCase(String userNameOrId, String userNameOrId1);
+    User findOneByIdOrUsernameIgnoreCase(String userNamId, String userName);
 
     User save(User user);
 
