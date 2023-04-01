@@ -69,7 +69,7 @@ public class InfoCommand extends Command {
             version = getClass().getPackage().getImplementationVersion();
         }
         if (version == null) {
-            version = "DEVELOPMENT";
+            version = botConfig.getApplicationVersion();
         }
 
         long uptimeDays = TimeUnit.DAYS.convert(upTime, TimeUnit.MILLISECONDS);
@@ -85,7 +85,6 @@ public class InfoCommand extends Command {
                 "\nSoundFiles: " + soundPlayer.getAvailableSoundFiles().size() +
                 "\nCommand Prefix: " + botConfig.getCommandCharacter() +
                 "\nSound File Path: " + botConfig.getSoundFileDir() +
-                "\nSoundboard Version: " + botConfig.getApplicationVersion() +
                 "\nWeb UI URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() +
                 "\nSwagger URL: localhost:" + soundPlayer.getApplicationContext().getWebServer().getPort() + "/swagger-ui/index.html" +
                 "```");

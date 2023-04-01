@@ -8,10 +8,10 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ObjectUtils;
-import javax.security.auth.login.LoginException;
 
 @Getter
 public class JDABot {
@@ -38,6 +38,7 @@ public class JDABot {
             jda = JDABuilder.createDefault(botToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                             GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES,
                             GatewayIntent.GUILD_VOICE_STATES)
+                    .disableCache(CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
                     .setMemberCachePolicy(MemberCachePolicy.ALL)
                     .setAutoReconnect(true)
                     .addEventListeners(new OnReadyListener(this))
@@ -54,9 +55,6 @@ public class JDABot {
 
         } catch (IllegalArgumentException e) {
             LOG.warn("The config was not populated. Please enter an email and password.");
-//        } catch (
-//                LoginException e) {
-//            LOG.warn("The provided bot token was incorrect. Please provide valid details.");
         } catch (InterruptedException e) {
             LOG.error("Login Interrupted.");
         }
