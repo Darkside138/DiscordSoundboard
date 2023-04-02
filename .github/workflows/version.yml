@@ -52,7 +52,7 @@ jobs:
           webhook_token: ${{ secrets.BUILD_WEBHOOK_TOKEN }}
           title: "Docker Image ${{ steps.get_version.outputs.VERSION }} build: **Success**"
           url: https://github.com/Darkside138/DiscordSoundboard/actions/runs/${{ github.run_id }}
-          username: Discord Soundboard Docker Release
+          username: Docker Release Notifier
           avatar_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
           author: Docker
           author_icon_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/.github/docker.png
@@ -65,7 +65,7 @@ jobs:
           webhook_token: ${{ secrets.BUILD_WEBHOOK_TOKEN }}
           title: "Discord Soundboard ${{ steps.get_version.outputs.VERSION }} Released"
           url: https://github.com/Darkside138/DiscordSoundboard/releases/tag/${{ steps.get_version.outputs.VERSION }}
-          username: Discord Soundboard Release Notifier
+          username: Release Notifier
           avatar_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
           author: Discord Soundboard
           author_icon_url: https://raw.githubusercontent.com/Darkside138/DiscordSoundboard/master/distFiles/avatar.jpg
