@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.commands;
 
+import kotlin.text.Regex;
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.util.BotUtils;
 import net.dv8tion.jda.api.entities.User;
@@ -9,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Getter
 public class CommandEvent {
@@ -26,14 +29,13 @@ public class CommandEvent {
         if (!input.isEmpty()) {
             this.prefix = input.substring(0, 1);
             String theRest = input.substring(1);
-            LinkedList<String> messageSplit = new LinkedList<>(Arrays.asList(theRest.split(" ")));
-            if (messageSplit.size() == 1) {
-                this.commandString = theRest;
-                this.arguments = new LinkedList<>();
-            } else if (messageSplit.size() > 1) {
-                this.commandString = messageSplit.getFirst();
-                messageSplit.remove(0);
-                this.arguments = messageSplit;
+            Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(theRest);
+            while (m.find()) {
+                this.arguments.add(m.group(1).replace("\"", "")); // Add .replace("\"", "") to remove surrounding quotes.
+            }
+            if (this.arguments.size() > 0) {
+                commandString = this.arguments.get(0);
+                this.arguments.remove(0);
             }
         }
     }

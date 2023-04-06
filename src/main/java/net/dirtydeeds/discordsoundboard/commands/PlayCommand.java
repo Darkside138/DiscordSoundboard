@@ -25,16 +25,17 @@ public class PlayCommand extends Command {
         try {
             int repeatNumber = 1;
             String fileNameRequested = event.getCommandString();
-            if (event.getCommandString().equals(this.name)) {
+            if (event.getCommandString().equalsIgnoreCase(this.name)) {
                 fileNameRequested = event.getArguments().getFirst();
             }
 
             // If there is the repeat character (~) then cut up the message string.
             int repeatIndex = fileNameRequested.indexOf('~');
             if (repeatIndex > -1) {
-                fileNameRequested = fileNameRequested.substring(1, repeatIndex).trim();
+                String original = fileNameRequested;
+                fileNameRequested = fileNameRequested.substring(0, repeatIndex).trim();
                 if (repeatIndex + 1 != fileNameRequested.length()) { // If there is something after the ~ then repeat for that value
-                    repeatNumber = Integer.parseInt(fileNameRequested.substring(repeatIndex + 1).trim()); // +1 to ignore the ~ character
+                    repeatNumber = Integer.parseInt(original.substring(repeatIndex + 1).trim()); // +1 to ignore the ~ character
                 }
             }
             LOG.info("Attempting to play file: {} {} times. Requested by {}.", fileNameRequested, repeatNumber, event.getRequestingUser());
