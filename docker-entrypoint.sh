@@ -13,6 +13,7 @@ cd /etc/DiscordSoundboard/config
 #Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
+sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
 
 cd /etc/DiscordSoundboard/bin
 
