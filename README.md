@@ -63,7 +63,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - <full/path/to/sounds/directory>:/etc/DiscordSoundboard/bin/sounds
+      - /path/to/sounds/directory:/etc/DiscordSoundboard/bin/sounds
     restart: unless-stopped
 ```
 
