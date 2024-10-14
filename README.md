@@ -42,6 +42,31 @@ https://github.com/Darkside138/DiscordSoundboard/wiki
 Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
 This will walk you through the process of getting your bot up and running.
 
+### Docker Setup
+Dockerhub image source: https://hub.docker.com/r/davefurrer/discordsoundboard
+
+Using docker compose:
+```
+---
+services:
+  discordsoundbot:
+    image: davefurrer/discordsoundboard:latest
+    container_name: DiscordSoundbot
+    environment:
+      - bottoken=<Insert bot token here>
+      - username=<Insert Discord username here>
+      - chatcommands=true
+      - dm=true
+      - commandcharacter=?
+      - sizelimit=2000
+      - leavesuffix=_leave
+    ports:
+      - 8080:8080
+    volumes:
+      - <full/path/to/sounds/directory>:/etc/DiscordSoundboard/bin/sounds
+    restart: unless-stopped
+```
+
 ## Setting correct permissions on your discord bot
 To fix the issue of being stuck on "Connecting to websocket":
 Login to your Discord Developer Portal and enable Privileged Intents for your bot. Go to https://discord.com/developers/applications select your bot, click Bot on the left, and then enable both of the sliders under Privileged Gateway Intents.
