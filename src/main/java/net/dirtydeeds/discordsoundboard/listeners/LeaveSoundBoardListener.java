@@ -2,15 +2,15 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.Users;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.h2.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 /**
  * author: Dave Furrer
@@ -39,14 +39,14 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
         if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
             String userNameDisconnected = event.getMember().getEffectiveName();
             String userIdDisconnected = event.getMember().getId();
-            User user = userService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
-            if (user != null) {
-                if (!StringUtils.isNullOrEmpty(user.getLeaveSound())) {
-                    bot.playFileInChannel(user.getLeaveSound(), event.getChannelLeft());
+            Users users = userService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
+            if (users != null) {
+                if (StringUtils.hasText(users.getLeaveSound())) {
+                    bot.playFileInChannel(users.getLeaveSound(), event.getChannelLeft());
                 } else {
                     //If DB doesn't have a leave sound check for a file named with the userName + leave suffix
                     SoundFile leaveFile = soundService.findOneBySoundFileIdIgnoreCase(
-                            user.getUsername() + botConfig.getLeaveSuffix());
+                            users.getUsername() + botConfig.getLeaveSuffix());
                     if (leaveFile != null) {
                         try {
                             bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());

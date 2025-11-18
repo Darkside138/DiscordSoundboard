@@ -35,7 +35,7 @@ public class FileAttachmentListener extends ListenerAdapter {
 
     private void addAttachment(@NotNull MessageReceivedEvent event) {
         List<Message.Attachment> attachments = event.getMessage().getAttachments();
-        if (attachments.size() > 0 && event.isFromType(ChannelType.PRIVATE)) {
+        if (!attachments.isEmpty() && event.isFromType(ChannelType.PRIVATE)) {
             for (Message.Attachment attachment : attachments) {
                 String message = event.getMessage().getContentRaw().trim();
                 String attachmentFileName = attachment.getFileName();
@@ -58,7 +58,7 @@ public class FileAttachmentListener extends ListenerAdapter {
                                     try {
                                         Files.deleteIfExists(Paths.get(botConfig.getSoundFileDir() + "/" + fileName));
                                         File newSoundFile = new File(botConfig.getSoundFileDir(), fileName);
-                                        attachment.downloadToFile().getNow(newSoundFile);
+                                        attachment.getProxy().downloadToFile(newSoundFile).complete(newSoundFile);
                                         event.getChannel().sendMessage("Downloaded file `" + fileName + "` and updated list of sounds " + event.getAuthor().getAsMention() + ".").queue();
                                     } catch (IOException e1) {
                                         LOG.error("Problem deleting and re-adding sound file: {}", fileName);

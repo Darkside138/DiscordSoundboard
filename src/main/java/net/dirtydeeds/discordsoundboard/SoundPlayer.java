@@ -1,8 +1,12 @@
 package net.dirtydeeds.discordsoundboard;
 
 import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader;
+import io.micrometer.common.util.StringUtils;
+import jakarta.annotation.PreDestroy;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.Users;
 import net.dirtydeeds.discordsoundboard.commands.*;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.listeners.*;
@@ -16,16 +20,12 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.*;
 import java.nio.file.*;
 import java.time.ZonedDateTime;
@@ -307,23 +307,33 @@ public class SoundPlayer {
      */
     public void updateUsersInDb() {
         String userNameToSelect = botConfig.getBotOwnerName();
-        List<User> users = new ArrayList<>();
-        for (net.dv8tion.jda.api.entities.User discordUser : bot.getUsers()) {
-            boolean selected = false;
-            String username = discordUser.getName();
-            if (userNameToSelect != null && userNameToSelect.equals(username)) {
-                selected = true;
-            }
-            Optional<User> optionalUser = userService.findById(discordUser.getId());
-            if (optionalUser.isPresent()) {
-                User user = optionalUser.get();
-                user.setSelected(selected);
-                users.add(user);
-            } else {
-                users.add(new net.dirtydeeds.discordsoundboard.beans.User(discordUser.getId(), username, selected, discordUser.getJDA().getStatus()));
-            }
-        }
-        users.sort(Comparator.comparing(User::getUsername));
+        List<Users> users = new ArrayList<>();
+        bot.getGuilds().forEach( guild -> {
+            List<Member> members = guild.getMembers();
+            members.forEach( member -> {
+                boolean selected = false;
+                String username = member.getEffectiveName();
+                if (userNameToSelect != null && userNameToSelect.equals(username)) {
+                    selected = true;
+                }
+                Optional<Users> optionalUser = userService.findById(member.getId());
+                if (optionalUser.isPresent()) {
+                    if (member.getUser().isBot() || member.getUser().isSystem()) {
+                        userService.delete(optionalUser.get());
+                    } else {
+                        Users user = optionalUser.get();
+                        user.setUsername(username);
+                        user.setSelected(selected);
+                        user.setOnlineStatus(member.getOnlineStatus());
+                        users.add(user);
+                    }
+                } else {
+                    users.add(
+                            new Users(member.getId(), username, selected,
+                                    member.getJDA().getStatus(), member.getOnlineStatus()));
+                }
+            });
+        });
         userService.saveAll(users);
     }
 
@@ -406,7 +416,7 @@ public class SoundPlayer {
                     .stream(soundFilesFromDB.spliterator(), false)
                     .filter(s -> soundFilesFromPath.stream()
                                 .noneMatch(path -> path.getSoundFileId().equals(s.getSoundFileId())))
-                    .collect(Collectors.toList());
+                    .toList();
 
             difference.forEach(soundService::delete);
         } catch (IOException e) {

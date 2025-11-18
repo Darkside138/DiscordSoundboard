@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
+import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -1,6 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service;
 
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.Users;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -8,13 +8,15 @@ import java.util.Optional;
 
 public interface UserService {
 
-    Optional<User> findById(String id);
+    Optional<Users> findById(String id);
 
-    Iterable<User> saveAll(List<User> users);
+    Iterable<Users> saveAll(List<Users> users);
 
-    User findOneByIdOrUsernameIgnoreCase(String userNamId, String userName);
+    Users findOneByIdOrUsernameIgnoreCase(String userNamId, String userName);
 
-    User save(User user);
+    Users save(Users users);
 
-    Iterable<User> findAll(Pageable pageable);
+    Iterable<Users> findAll(Pageable pageable);
+
+    void delete(Users users);
 }

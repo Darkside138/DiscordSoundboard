@@ -1,7 +1,7 @@
 package net.dirtydeeds.discordsoundboard;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.Users;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
@@ -28,6 +28,6 @@ public class MainController implements RepositoryRestConfigurer {
     @Override
     public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
         config.exposeIdsFor(SoundFile.class);
-        config.exposeIdsFor(User.class);
+        config.exposeIdsFor(Users.class);
     }
 }

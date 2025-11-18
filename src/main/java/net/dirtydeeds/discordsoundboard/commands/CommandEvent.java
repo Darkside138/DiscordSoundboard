@@ -1,6 +1,5 @@
 package net.dirtydeeds.discordsoundboard.commands;
 
-import kotlin.text.Regex;
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.util.BotUtils;
 import net.dv8tion.jda.api.entities.User;
@@ -8,7 +7,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

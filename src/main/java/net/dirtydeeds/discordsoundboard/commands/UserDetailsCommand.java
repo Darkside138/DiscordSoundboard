@@ -1,7 +1,7 @@
 package net.dirtydeeds.discordsoundboard.commands;
 
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.Users;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 
 /**
@@ -25,25 +25,25 @@ public class UserDetailsCommand extends Command {
     protected void execute(CommandEvent event) {
         if (!event.getArguments().isEmpty()) {
             String userNameOrId = event.getArguments().getFirst();
-            User user = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
-            if (user == null) {
+            Users users = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+            if (users == null) {
                 net.dv8tion.jda.api.entities.User jdaUser = soundPlayer.retrieveUserById(userNameOrId);
                 if (jdaUser != null) {
-                    user = new User(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus());
+                    users = new Users(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
                 }
             }
-            if (user != null) {
+            if (users != null) {
                 StringBuilder response = new StringBuilder();
                 response.append("User details for ").append(userNameOrId).append("```")
-                        .append("\nDiscord Id: ").append(user.getId())
-                        .append("\nUsername: ").append(user.getUsername())
+                        .append("\nDiscord Id: ").append(users.getId())
+                        .append("\nUsername: ").append(users.getUsername())
                         .append("\nEntrance Sound: ");
-                if (user.getEntranceSound() != null) {
-                    response.append(user.getEntranceSound());
+                if (users.getEntranceSound() != null) {
+                    response.append(users.getEntranceSound());
                 }
                 response.append("\nLeave Sound: ");
-                if (user.getLeaveSound() != null) {
-                    response.append(user.getLeaveSound());
+                if (users.getLeaveSound() != null) {
+                    response.append(users.getLeaveSound());
                 }
                 response.append("```");
                 event.replyByPrivateMessage(response.toString());
