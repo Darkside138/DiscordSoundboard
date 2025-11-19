@@ -404,6 +404,7 @@ public class SoundPlayer {
                         } else {
                             soundFile = soundService.initializeDateAdded(soundFile);
                         }
+                        soundFile.setCategory(parent);
                         soundFile = soundService.save(soundFile);
                         soundFilesFromPath.add(soundFile);
                     }
