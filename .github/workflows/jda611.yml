@@ -4,7 +4,6 @@ on:
   push:
     branches: [ jda611 ]
 
-
 jobs:
   publish-docker-image:
     runs-on: ubuntu-latest
