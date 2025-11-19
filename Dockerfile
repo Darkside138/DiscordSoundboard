@@ -20,6 +20,8 @@ WORKDIR /opt/DiscordSoundboard
 # Copy distribution built in the builder stage
 COPY --from=builder /app/build/distributions/DiscordSoundboard* ./
 
+RUN apt-get update && apt-get install -y unzip
+
 # Extract the zip
 RUN unzip DiscordSoundboard*.zip && \
     rm DiscordSoundboard*.zip
