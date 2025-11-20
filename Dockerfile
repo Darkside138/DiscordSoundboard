@@ -24,8 +24,6 @@ RUN rm DiscordSoundboard.zip
 # ---- Runtime Stage ----
 FROM bellsoft/liberica-openjdk-alpine:17.0.2-9
 
-RUN apt-get update
-
 WORKDIR /etc/DiscordSoundboard
 
 COPY --from=builder /etc/DiscordSoundboard .
