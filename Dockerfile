@@ -13,7 +13,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew assembleBootDist --no-daemon
 
 # ---- Runtime Stage ----
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:17-jdk
 
 WORKDIR /opt/DiscordSoundboard
 
