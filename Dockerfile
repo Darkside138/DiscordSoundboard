@@ -53,7 +53,7 @@ FROM eclipse-temurin:21-jdk AS base
 
 WORKDIR /etc/DiscordSoundboard
 
-COPY --from=BaseBuilder /etc/DiscordSoundboard .
+COPY --from=builder /etc/DiscordSoundboard .
 
 # Extract JAR files
 RUN ls -la *.jar.gz && gunzip *.jar.gz

@@ -24,17 +24,32 @@
         }
         .recentBadge {
             border-radius: 50%;
-            width: 10px;
-            height: 10px;
+            width: 7px;
+            height: 7px;
             display: block;
             position: absolute;
-            background: rgba(31,206,255,1);
+            background: rgba(31,206,255,.75);
             border: 0px solid white;
             display: flex;
             align-items: center;
             justify-content: center;
-            top: -5px;
-            right: -3px;
+            top: -1px;
+            right: -1px;
+            transition: all .3s;
+        }
+        .popularBadge {
+            border-radius: 50%;
+            width: 7px;
+            height: 7px;
+            display: block;
+            position: absolute;
+            background: rgba(255,0,22,.75);
+            border: 0px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            bottom: -1px;
+            right: -1px;
             transition: all .3s;
         }
         html, body{
@@ -138,6 +153,32 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.bundle.min.js" integrity="sha256-OUFW7hFO0/r5aEGTQOz9F/aXQOt+TwqI1Z4fbVvww04=" crossorigin="anonymous"></script>
 <script type="text/javascript">
     $(function() {
+        const searchBar = document.getElementById('search');
+
+        // Listen for any key press on the page
+        document.addEventListener('keydown', function(event) {
+            // Ignore if user is already typing in an input/textarea or using modifier keys
+            const activeTag = document.activeElement.tagName.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea' || event.ctrlKey || event.metaKey || event.altKey) {
+                return;
+            }
+
+            // Optional: If you only want a specific key (e.g., '/'), uncomment:
+            // if (event.key !== '/') return;
+
+            // Focus the search bar
+            searchBar.focus();
+
+            // If you want the pressed key to appear in the search bar immediately:
+            if (event.key.length === 1) { // Only printable characters
+                searchBar.value = event.key;
+                // Move cursor to end
+                searchBar.setSelectionRange(searchBar.value.length, searchBar.value.length);
+            }
+
+            // Prevent default browser actions for that key if needed
+            event.preventDefault();
+        });
         var category = 'All';
 
         // Determine what categories to show in navigation and what categories to show in the more-dropdown
@@ -256,14 +297,19 @@
             method: "GET",
             url: "api/soundFiles/findAll"
         }).done(function( data ) {
-            var top10ByDate = data.content;
-            top10ByDate.sort(function(a,b){
+            var soundObjects = data.content;
+            soundObjects.sort(function(a,b){
               // Turn your strings into dates, and then subtract them
               // to get a value that is either negative, positive, or zero.
               return new Date(b.dateAdded) - new Date(a.dateAdded);
             });
-            top10ByDate = top10ByDate.slice(0,10);
-            var soundObjects = data.content;
+            var top10ByDate = soundObjects.slice(0,10);
+
+            soundObjects.sort(function(a,b) {
+                return b.timesPlayed - a.timesPlayed;
+            });
+            var top10Popular = soundObjects.slice(0,10);
+
             soundObjects.sort(function(a, b) {
                 var textA = a.soundFileId.toUpperCase();
                 var textB = b.soundFileId.toUpperCase();
@@ -273,13 +319,16 @@
             var lastWeek = Date.parse(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7));
             $.each(soundObjects, function(i, obj) {
                 var recentClass = '';
+                var popularItemClass = '';
                 var recentItem = top10ByDate.filter(e => e.soundFileId === obj.soundFileId);
+                var popularItem = top10Popular.filter(e => e.soundFileId === obj.soundFileId);
                 if (recentItem.length > 0) {
-                    if (lastWeek < Date.parse(recentItem[0].dateAdded)) {
-                        recentClass = '<span class="recentBadge" title="Recently Added"></span>';
-                    }
+                    recentClass = '<span class="recentBadge" title="Recently Added"></span>';
                 }
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '"><span class="content" title="Times Played: ' + obj.timesPlayed + '">' + obj.soundFileId + '</span>' + recentClass + '</div>');
+                if (popularItem.length > 0) {
+                    popularItemClass = '<span class="popularBadge" title="Recently Added"></span>';
+                }
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + popularItemClass + '<span class="content" title="Times Played: ' + obj.timesPlayed + '">' + obj.soundFileId + '</span>' + recentClass + '</div>');
             });
         });
 
