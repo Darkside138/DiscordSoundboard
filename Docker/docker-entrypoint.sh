@@ -12,7 +12,6 @@ sed -i 's/leave_suffix=_leave/leave_suffix='$leavesuffix'/g' application.propert
 sed -i 's/player=JDAPlayer/player='$player'/g' application.properties
 sed -i 's/allowedUserIds=/allowedUserIds='$allowedusers'/g' application.properties
 sed -i 's/bannedUserIds=/bannedUserIds='$bannedusers'/g' application.properties
-cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
 exec java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
 
 exec "$@"

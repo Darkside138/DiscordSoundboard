@@ -111,6 +111,9 @@ bootDistZip {
     into("DiscordSoundboard/bin/sounds") {
         from('sounds')
     }
+    into("DiscordSoundboard/bin/") {
+        from("$buildDir/libs/DiscordSoundboard.jar")
+    }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
 }

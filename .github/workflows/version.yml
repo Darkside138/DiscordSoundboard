@@ -44,6 +44,14 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/discordsoundboard:${{ steps.get_version.outputs.VERSION }}
 
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.BUILD_WEBHOOK_TOKEN }}
+        uses: Ilshidur/action-discord@master
+        if: success()
+        with:
+          args: 'Discord Soundboard: {{ EVENT_PAYLOAD.repository.full_name }} has been deployed.'
+
       # - name: Discord Soundboard Notification
       #   uses: meisnate12/discord-notifications@master
       #   if: success()
