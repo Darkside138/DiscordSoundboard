@@ -21,6 +21,18 @@ cd /etc/DiscordSoundboard/bin
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
 
 #Run the bot. Pass the /config/application.properties as part of the classpath, other wise the bot will not work
-java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties,file:///etc/DiscordSoundboard/config/application.yml
+#java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties,file:///etc/DiscordSoundboard/config/application.yml
+
+# ==== CONFIG ====
+APP_NAME="discordsoundboard"
+JAR_PATH="/etc/DiscordSoundboard/bin/DiscordSoundboard.jar"
+PROFILE="prod"
+
+# ==== START ====
+echo "Starting $APP_NAME with profile: $PROFILE..."
+nohup java -jar -Dspring.profiles.active=$PROFILE "$JAR_PATH" &
+
+PID=$!
+echo "$APP_NAME started with PID $PID"
 
 exec "$@"
