@@ -3,7 +3,7 @@ FROM gradle:9.2.1-jdk25-alpine as BaseBuilder
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
 WORKDIR "/tmp"
-RUN git clone https://github.com/Darkside138/DiscordSoundboard.git
+RUN git clone https://github.com/Darkside138/DiscordSoundboard.git#jda611
 
 WORKDIR DiscordSoundboard
 RUN gradle assembleBootDist
