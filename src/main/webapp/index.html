@@ -159,7 +159,19 @@
         document.addEventListener('keydown', function(event) {
             // Ignore if user is already typing in an input/textarea or using modifier keys
             const activeTag = document.activeElement.tagName.toLowerCase();
-            if (activeTag === 'input' || activeTag === 'textarea' || event.ctrlKey || event.metaKey || event.altKey) {
+            if (activeTag === 'input' || activeTag === 'textarea' || event.ctrlKey
+                    || event.metaKey || event.altKey || event.keyCode === 27 || event.key === 'Enter') {
+                if (event.keyCode === 27) {
+                    searchBar.value = '';
+                    $('#sounds div').show();
+                }
+                if (event.key === 'Enter') {
+                    var visibleDivs = getVisibleDivs();
+                    if (visibleDivs.length === 1) {
+                        console.log('clicking div');
+                        visibleDivs[0].click();
+                    }
+                }
                 return;
             }
 
@@ -179,6 +191,18 @@
             // Prevent default browser actions for that key if needed
             event.preventDefault();
         });
+
+        function getVisibleDivs() {
+            const allDivs = document.getElementById('sounds').children;
+            return Array.from(allDivs).filter(div => {
+                const style = window.getComputedStyle(div);
+                return (
+                    style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    !div.hasAttribute('hidden')
+                );
+            });
+        }
         var category = 'All';
 
         // Determine what categories to show in navigation and what categories to show in the more-dropdown
