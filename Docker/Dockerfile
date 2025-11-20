@@ -1,3 +1,4 @@
+#This Dockerfile is for general use (Unraid dockerfiles are in the root of the project
 FROM ubuntu:22.04
 
 #Install required packages

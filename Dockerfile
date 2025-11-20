@@ -1,34 +1,29 @@
-# ---- Build Stage ----
-FROM eclipse-temurin:17-jdk AS builder
+FROM gradle:9.2.1-jdk25-alpine as BaseBuilder
 
-WORKDIR /app
+LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
-# Copy repo from GitHub actions checkout
-COPY . .
+WORKDIR "/tmp"
+RUN git clone https://github.com/Darkside138/DiscordSoundboard.git
 
-# Ensure gradlew is executable
-RUN chmod +x ./gradlew
+WORKDIR DiscordSoundboard
+RUN gradle assembleBootDist
 
-# Build your bootDist
-RUN ./gradlew assembleBootDist --no-daemon
+WORKDIR build/distributions
+RUN cp DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
 
-# ---- Runtime Stage ----
-FROM eclipse-temurin:21-jdk
+WORKDIR /etc
+RUN unzip DiscordSoundboard.zip
+RUN rm DiscordSoundboard.zip
 
-WORKDIR /opt/DiscordSoundboard
+FROM bellsoft/liberica-openjdk-alpine:17.0.2-9
 
-# Copy distribution built in the builder stage
-COPY --from=builder /app/build/distributions/DiscordSoundboard* ./
+WORKDIR /etc/DiscordSoundboard
 
-RUN apt-get update && apt-get install -y unzip
-
-# Extract the zip
-RUN unzip DiscordSoundboard*.zip && \
-    rm DiscordSoundboard*.zip
+COPY --from=BaseBuilder /etc/DiscordSoundboard .
 
 EXPOSE 8080
 
 COPY docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
