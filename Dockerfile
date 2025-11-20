@@ -22,7 +22,7 @@ RUN unzip DiscordSoundboard.zip
 RUN rm DiscordSoundboard.zip
 
 # ---- Runtime Stage ----
-FROM eclipse-temurin:17-jdk
+FROM bellsoft/liberica-openjdk-alpine:17.0.2-9
 
 RUN apt-get update
 

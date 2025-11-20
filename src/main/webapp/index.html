@@ -157,6 +157,9 @@
 
         // Listen for any key press on the page
         document.addEventListener('keydown', function(event) {
+
+            if (event.key === 'F5') return;
+
             // Ignore if user is already typing in an input/textarea or using modifier keys
             const activeTag = document.activeElement.tagName.toLowerCase();
             if (activeTag === 'input' || activeTag === 'textarea' || event.ctrlKey
