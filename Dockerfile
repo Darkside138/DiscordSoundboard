@@ -1,6 +1,8 @@
 # ---- Build Stage ----
 FROM eclipse-temurin:17-jdk AS builder
 
+RUN apt-get update && apt-get install -y unzip
+
 WORKDIR /app
 
 # Copy repo from GitHub actions checkout
@@ -22,7 +24,7 @@ RUN rm DiscordSoundboard.zip
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jdk
 
-RUN apt-get update && apt-get install -y unzip
+RUN apt-get update
 
 WORKDIR /etc/DiscordSoundboard
 
