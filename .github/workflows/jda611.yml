@@ -2,7 +2,7 @@ name: JDA611 Branch Publish
 
 on:
   push:
-    branches: [ jda611 ]
+    branches: [ jda611b ]
 
 jobs:
   publish-docker-image:
