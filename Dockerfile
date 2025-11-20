@@ -26,6 +26,8 @@ RUN apt-get update && apt-get install -y unzip
 RUN unzip DiscordSoundboard*.zip && \
     rm DiscordSoundboard*.zip
 
+RUN chmod +x /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
+
 EXPOSE 8080
 
 COPY docker-entrypoint.sh /
