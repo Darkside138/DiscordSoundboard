@@ -17,9 +17,6 @@ sed -i 's/command_character=?/command_character='$commandcharacter'/g' applicati
 
 cd /etc/DiscordSoundboard/bin
 
-#Copy the jar file into the bin dir. This wouldn't be necessary if we setup the class path to look in the lib dir. Should probably update this later
-cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
-
 #Run the bot. Pass the /config/application.properties as part of the classpath, other wise the bot will not work
 java -Dserver.port=8080 -jar /etc/DiscordSoundboard/bin/DiscordSoundboard.jar --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties,file:///etc/DiscordSoundboard/config/application.yml
 
