@@ -32,8 +32,9 @@ FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copy all source files
-COPY . .
+RUN git clone https://github.com/Darkside138/DiscordSoundboard.git#jda611
+
+WORKDIR DiscordSoundboard
 
 # Make gradlew executable
 RUN chmod +x ./gradlew
@@ -41,24 +42,25 @@ RUN chmod +x ./gradlew
 # Build the project including dependencies
 RUN ./gradlew assembleBootDist --no-daemon --offline
 
-# Ensure the build artifacts are accessible
-RUN ls -la /app/build/distributions/
+WORKDIR build/distributions
+RUN cp DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
 
-# Compress JARs to reduce image size
-RUN cd build/distributions/ && gzip DiscordSoundboard*.jar
+WORKDIR /etc
+RUN unzip DiscordSoundboard.zip
+RUN rm DiscordSoundboard.zip
 
-# Copy only necessary JAR files from the distributions directory
-COPY --from=builder /app/build/distributions/*.jar ./
+FROM eclipse-temurin:21-jdk AS base
+
+WORKDIR /etc/DiscordSoundboard
+
+COPY --from=BaseBuilder /etc/DiscordSoundboard .
 
 # Extract JAR files
 RUN ls -la *.jar.gz && gunzip *.jar.gz
 
-# Create a non-root user and switch to it for security
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-# Set the working directory
-WORKDIR /opt/DiscordSoundboard
+## Create a non-root user and switch to it for security
+#RUN useradd -m appuser && chown -R appuser:appuser /app
+#USER appuser
 
 # Expose the application port
 EXPOSE 8080
