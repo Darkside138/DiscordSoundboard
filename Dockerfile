@@ -15,7 +15,7 @@ RUN ./gradlew assembleBootDist --no-daemon
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jdk
 
-WORKDIR /opt/DiscordSoundboard
+WORKDIR /etc/DiscordSoundboard
 
 # Copy distribution built in the builder stage
 COPY --from=builder /app/build/distributions/DiscordSoundboard* ./
