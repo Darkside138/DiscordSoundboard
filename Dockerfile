@@ -32,7 +32,7 @@ FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-RUN git clone https://github.com/Darkside138/DiscordSoundboard.git#jda611
+RUN git clone https://github.com/Darkside138/DiscordSoundboard.git#jda611b
 
 WORKDIR DiscordSoundboard
 
