@@ -12,21 +12,21 @@ RUN chmod +x ./gradlew
 # Build your bootDist
 RUN ./gradlew assembleBootDist --no-daemon
 
+WORKDIR build/distributions
+RUN cp DiscordSoundboard*.zip /etc/DiscordSoundboard.zip
+
+WORKDIR /etc
+RUN unzip DiscordSoundboard.zip
+RUN rm DiscordSoundboard.zip
+
 # ---- Runtime Stage ----
 FROM eclipse-temurin:17-jdk
 
-WORKDIR /etc/DiscordSoundboard
-
-# Copy distribution built in the builder stage
-COPY --from=builder /app/build/distributions/DiscordSoundboard* ./
-
 RUN apt-get update && apt-get install -y unzip
 
-# Extract the zip
-RUN unzip DiscordSoundboard*.zip && \
-    rm DiscordSoundboard*.zip
+WORKDIR /etc/DiscordSoundboard
 
-RUN chmod +x /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
+COPY --from=builder /etc/DiscordSoundboard .
 
 EXPOSE 8080
 
