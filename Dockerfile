@@ -1,7 +1,7 @@
 # ---- Build Stage ----
-FROM eclipse-temurin:17-jdk AS builder
+FROM gradle:7.4.2-jdk17-alpine AS builder
 
-RUN apt-get update && apt-get install -y unzip
+LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
 WORKDIR /app
 

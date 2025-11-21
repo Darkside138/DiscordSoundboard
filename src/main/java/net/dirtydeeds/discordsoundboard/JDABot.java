@@ -34,6 +34,7 @@ public class JDABot {
                 LOG.error("No Discord Token found. Please confirm you have an application.properties file and you have the property bot_token filled with a valid token from https://discord.com/developers/applications");
                 return;
             }
+            LOG.warn("Bot Token: " + botToken);
             jda = JDABuilder.createDefault(botToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                             GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES,
                             GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES)
