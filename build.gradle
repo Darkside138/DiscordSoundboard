@@ -44,8 +44,6 @@ test {
     useJUnitPlatform()
 }
 
-//mainClassName = 'net.dirtydeeds.discordsoundboard.MainController'
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -66,7 +64,6 @@ dependencies {
     implementation 'pw.chew:jda-chewtils:1.24.1'
 
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
-    //implementation 'ch.qos.logback:logback-classic:1.2.11'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -94,15 +91,11 @@ processResources {
     exclude 'app.properties'
 }
 
-bootJar {
-    exclude ("application.properties")
-}
-
 //Run tasks -> distributions -> assembleBootDist to create a release zip
 bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
-        from ('src/main/resources/application.properties.example')
+        from ('src/main/resources/application.properties')
         from ("$buildDir/resources/main/application.yml")
     }
     into("DiscordSoundboard/bin/static") {
@@ -115,7 +108,7 @@ bootDistZip {
         fileName.replace('application.properties.example', 'application.properties') }
 }
 
-task renameDist {
+tasks.register("renameDist") {
     doLast {
     new File("$buildDir/distributions/DiscordSoundboard.zip")
             .renameTo("$buildDir/distributions/DiscordSoundboard-"+projectVersion+".zip")
