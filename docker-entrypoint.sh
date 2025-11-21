@@ -8,6 +8,7 @@ mkdir -p /etc/DiscordSoundboard/config
 [ -f /etc/DiscordSoundboard/bin/application.properties ] && mv -n /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
 [ -f /etc/DiscordSoundboard/bin/application.yml ] && mv -n /etc/DiscordSoundboard/bin/application.yml /etc/DiscordSoundboard/config/application.yml
 
+echo "changing to config directory to update application.properties file"
 cd /etc/DiscordSoundboard/config
 
 #Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
@@ -15,8 +16,11 @@ sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' app
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
 
+echo "changing working directory to /etc/DiscordSoundboard/bin"
+
 cd /etc/DiscordSoundboard/bin
 
+echo "copying jar file from lib to bin folder"
 #Copy the jar file into the bin dir. This wouldn't be necessary if we setup the class path to look in the lib dir. Should probably update this later
 cp /etc/DiscordSoundboard/lib/DiscordSoundboard* /etc/DiscordSoundboard/bin/DiscordSoundboard.jar
 
@@ -35,4 +39,4 @@ nohup java -jar -Dspring.profiles.active=$PROFILE "$JAR_PATH" &
 PID=$!
 echo "$APP_NAME started with PID $PID"
 
-exec "$@"
+tail -f /dev/null
