@@ -64,3 +64,5 @@ bannedUsers=SomeGuy,SomeotherGuy,ThirdGuy123
 #Database setting stuff. Should probably change the user/pass for this.
 spring.datasource.username=admin
 spring.datasource.password=password
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.datasource.driverClassName=org.h2.Driver
