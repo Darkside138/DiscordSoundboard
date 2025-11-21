@@ -14,6 +14,7 @@
     <style>
         .searchDiv {
             margin-bottom: 0px;
+            min-width: 150px;
         }
         .bg-darker,.btn-secondary {
             background-color:rgba(25,25,25,0.7);
@@ -212,7 +213,7 @@
         function determineShownNavigation(){
             // Get available width for shown categories.
             // 275px extra for spacing, more-dropdown and buttons
-            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 230;
+            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 380;
 <!--            console.log(availableWidth);-->
             var shouldSkip = false;
             $.each($('#categories li'), function(i, obj){
@@ -355,7 +356,8 @@
                 if (popularItem.length > 0) {
                     popularItemClass = '<span class="popularBadge" title="Recently Added"></span>';
                 }
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + popularItemClass + '<span class="content" title="Times Played: ' + obj.timesPlayed + '">' + obj.soundFileId + '</span>' + recentClass + '</div>');
+                var soundFileName = obj.soundFileId.charAt(0).toUpperCase() + obj.soundFileId.slice(1).replace(/(?<!\s)([A-Z])/g, ' $1').replace(/_/g, " ").trim()
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1" class="btn btn-secondary m-1" data-category="' + obj.category + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + '">' + soundFileName + '</span>' + recentClass + '</div>');
             });
         });
 
