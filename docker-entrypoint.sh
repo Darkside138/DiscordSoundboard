@@ -34,7 +34,7 @@ PROFILE="prod"
 
 # ==== START ====
 echo "Starting $APP_NAME with profile: $PROFILE..."
-nohup java -jar -Dspring.profiles.active=$PROFILE "$JAR_PATH" &
+nohup java -jar -Dspring.profiles.active=$PROFILE "$JAR_PATH" --spring.config.location=classpath:file:///etc/DiscordSoundboard/config/application.properties,file:///etc/DiscordSoundboard/config/application.yml
 
 PID=$!
 echo "$APP_NAME started with PID $PID"
