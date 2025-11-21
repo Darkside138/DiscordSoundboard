@@ -15,6 +15,7 @@ import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -111,6 +112,12 @@ public class SoundPlayer {
         ConnectorNativeLibLoader.loadConnectorLibrary();
 
         mainWatch.watchDirectoryPath(Paths.get(botConfig.getSoundFileDir()));
+    }
+
+    @PreDestroy
+    public void onShutdown() {
+        System.out.println("Cleaning up resources...");
+        bot.shutdown();
     }
 
     public ServletWebServerApplicationContext getApplicationContext() {
@@ -325,12 +332,13 @@ public class SoundPlayer {
                         user.setUsername(username);
                         user.setSelected(selected);
                         user.setOnlineStatus(member.getOnlineStatus());
+                        user.setInVoice(member.getVoiceState().inAudioChannel());
                         users.add(user);
                     }
                 } else {
                     users.add(
                             new Users(member.getId(), username, selected,
-                                    member.getJDA().getStatus(), member.getOnlineStatus()));
+                                    member.getJDA().getStatus(), member.getOnlineStatus(), member.getVoiceState().inAudioChannel()));
                 }
             });
         });

@@ -368,12 +368,15 @@
             users.sort(createMultiPropertySorter("-onlineStatus", "username"));
             var previousStatus = null;
             $.each(users, function(i, obj){
-                if (previousStatus != obj.onlineStatus) {
-                    previousStatus = obj.onlineStatus;
-                    $('#users').append('</optgroup>');
-                    $('#users').append('<optgroup label="' + obj.onlineStatus + '">');
+                if (obj.inVoice || obj.selected) {
+                    var onlineStatus = (obj.inVoice) ? "IN VOICE" : obj.onlineStatus;
+                    if (previousStatus != onlineStatus) {
+                        previousStatus = onlineStatus;
+                        $('#users').append('</optgroup>');
+                        $('#users').append('<optgroup label="' + onlineStatus + '">');
+                    }
+                    $('#users').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
                 }
-                $('#users').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
             });
         });
 

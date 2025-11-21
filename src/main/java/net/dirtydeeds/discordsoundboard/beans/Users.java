@@ -32,6 +32,7 @@ public class Users {
     private JDA.Status status;
     @NonNull
     private OnlineStatus onlineStatus;
+    private Boolean inVoice;
 
     public Users(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus) {
         this.id = id;
@@ -39,5 +40,15 @@ public class Users {
         this.selected = selected;
         this.status = status;
         this.onlineStatus = onlineStatus;
+        this.inVoice = null;
+    }
+
+    public Users(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus, Boolean inVoice) {
+        this.id = id;
+        this.username = username;
+        this.selected = selected;
+        this.status = status;
+        this.onlineStatus = onlineStatus;
+        this.inVoice = inVoice;
     }
 }
