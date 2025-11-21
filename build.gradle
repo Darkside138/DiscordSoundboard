@@ -63,7 +63,7 @@ dependencies {
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation 'pw.chew:jda-chewtils:1.24.1'
 
-    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -96,7 +96,7 @@ bootDistZip {
     archiveFileName = 'DiscordSoundboard.zip'
     into ("DiscordSoundboard/bin") {
         from ('src/main/resources/application.properties')
-        from ("$buildDir/resources/main/application.yml")
+        from ("${layout.buildDirectory.get().asFile}/resources/main/application.yml")
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
@@ -104,14 +104,17 @@ bootDistZip {
     into("DiscordSoundboard/bin/sounds") {
         from('sounds')
     }
+    into("DiscordSoundboard/bin/") {
+        from("${layout.buildDirectory.get().asFile}/libs/DiscordSoundboard.jar")
+    }
     rename { String fileName ->
         fileName.replace('application.properties.example', 'application.properties') }
 }
 
 tasks.register("renameDist") {
     doLast {
-    new File("$buildDir/distributions/DiscordSoundboard.zip")
-            .renameTo("$buildDir/distributions/DiscordSoundboard-"+projectVersion+".zip")
+    new File("${layout.buildDirectory.get().asFile}/distributions/DiscordSoundboard.zip")
+            .renameTo("${layout.buildDirectory.get().asFile}/distributions/DiscordSoundboard-"+projectVersion+".zip")
     }
 }
 
