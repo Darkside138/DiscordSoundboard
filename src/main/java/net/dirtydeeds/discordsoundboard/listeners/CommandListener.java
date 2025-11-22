@@ -68,10 +68,11 @@ public class CommandListener extends ListenerAdapter {
                         } else if (commandEvent.getMessage().length() > 0) {
                             command = findCommand("play");
                         }
-                    }
-                    command.ifPresent(c -> c.run(commandEvent));
+                    } else {
+                        command.ifPresent(c -> c.run(commandEvent));
 
-                    afterMessageReceived(event);
+                        afterMessageReceived(event);
+                    }
                 }
             }
         }
