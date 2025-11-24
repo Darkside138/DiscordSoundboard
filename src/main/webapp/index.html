@@ -422,6 +422,7 @@
 
         // Setup all of the event handlers
         $(document).on('click', 'a[data-category]', function(){
+            closeMenu()
             // Filter by category
             category = $(this).data('category');
             $('a[data-category]').removeClass('active');
@@ -429,6 +430,7 @@
             $('#more').toggleClass('active', $('a[data-category].active:visible').closest('#more').length > 0);
             filterSounds($('#search').val());
         }).on('input', '#search', function(){
+            closeMenu()
             // Search sound by name
             filterSounds($(this).val());
         }).on('click', '#sounds div', function(){
@@ -462,6 +464,7 @@
                 url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#users').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
+            closeMenu()
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
@@ -497,6 +500,8 @@
                 method: "PATCH",
                 url: "/api/soundFiles/" + soundFileRightClicked.id + "?volumeOffsetPercentage=" + rangeValue
             });
+        }).on('click', '#sounds', function() {
+            closeMenu();
         });
 
         // Determine shown categories in navigation when windows get resized
