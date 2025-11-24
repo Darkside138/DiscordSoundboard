@@ -347,11 +347,12 @@
         }
 
         // Filter the list by category and search-term
-        function filterSounds(search){
+        function filterSounds(search) {
             $('#sounds div').hide();
-            $('#sounds div').filter(function(){
+            $('#sounds div').filter(function() {
                 if (category === 'Favorites') {
-                    return $(this).data('favorite');
+                    var favValue = this.getAttribute("data-favorite");
+                    return (favValue === true || favValue === 'true');
                 } else {
                     return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
                 }
@@ -483,6 +484,7 @@
                 } else {
                     document.getElementById(soundFileRightClicked.id).querySelector(".favoriteItem").style.display= 'none';
                 }
+                filterSounds('');
             });
         }).on('click', '#context-close', function() {
             closeMenu();
