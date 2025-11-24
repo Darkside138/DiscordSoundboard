@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha256-L/W5Wfqfa0sdBNIKN9cG6QA5F2qx4qICmU2VgLruv9Y=" crossorigin="anonymous" />
 
     <style>
+        .dropdown-menu {
+            min-width: 15em;
+        }
         .searchDiv {
             margin-bottom: 0px;
             min-width: 150px;
@@ -55,6 +58,17 @@
             transition: all .3s;
             z-index: 2;
         }
+
+        /* Text inside the star */
+        .favoriteItem {
+            position: absolute;
+            top: 1px;
+            right: -11px;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: #ffca00;
+            z-index: 3;
+        }
         html, body{
           height: 100%;
         }
@@ -91,6 +105,48 @@
             50%{background-position:100% 19%}
             100%{background-position:0% 82%}
         }
+
+        /* Custom context menu styling */
+        #contextMenu {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 150px;
+            border-radius: 4px;
+            overflow: hidden;
+            animation: fadeIn 0.15s ease-in-out;
+        }
+
+        .context-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2c2f31;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .close-btn:hover {
+            color: #ffcccc;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body class="bg-dark">
@@ -111,14 +167,14 @@
                 </div>
             </li>
         </ul>
-        <ul class="searchDiv">
+        <ul class="navbar-nav navbarConfig">
             <li class="navbar-nav">
-                <div class="form-group searchDiv">
-                    <input id="search" class="form-control" type="search" placeholder="Sound title">
+                <div id="searchContainer">
+                    <div class="form-group searchDiv">
+                        <input id="search" class="form-control" type="search" placeholder="Search">
+                    </div>
                 </div>
             </li>
-        </ul>
-        <ul class="navbar-nav">
             <li class="nav-item">
                 <a id="random" class="nav-link" title="Play Random Sound" href="#"><i class="fas fa-fw fa-random"></i></a>
             </li>
@@ -131,8 +187,10 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="settingsLabel">
                     <form class="px-3 pt-2">
+                        <label id="searchLabel" for="search">Search Sounds:</label>
+                        <div id="dropdownSearchContainer" class="dropdownSearch"></div>
                         <div class="form-group">
-                            <label for="users">Play sounds for</label>
+                            <label for="users">Play sounds for:</label>
                             <select id="users" class="custom-select"></select>
 <!--                            <select id="channel" class="custom-select"></select>-->
                         </div>
@@ -152,13 +210,32 @@
 </nav>
 <div id="sounds" class="container-fluid p-3 soundList"></div>
 
+<div id="contextMenu">
+    <div class="context-menu-header">
+        <div id="context-soundFileTitle"></div>
+        <button class="close-btn" id="context-close">×</button>
+    </div>
+    <div>Times Played: <span id="context-timesPlayed"></span></div>
+    <div>Favorite: <span id="context-favorite"></span></div>
+    <div>Date Added: <span id="context-dateAdded"></span></div>
+    <div id="favorite" class="button btn btn-secondary m-1 favoriteButton">Favorite</div>
+    <div id="download" class="button btn btn-secondary m-1 downloadButton">Download</div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.bundle.min.js" integrity="sha256-OUFW7hFO0/r5aEGTQOz9F/aXQOt+TwqI1Z4fbVvww04=" crossorigin="anonymous"></script>
 <script type="text/javascript">
     $(function() {
         const searchBar = document.getElementById('search');
+        const contextMenu = document.getElementById("contextMenu");
 
-        // Listen for any key press on the page
+        // Keep track of the sound file element that was last right clicked on
+        var soundFileRightClicked = null;
+
+        // Listen for any key press on the page. Allow F5 to pass through to refresh the page. If the user is typing
+        // and not already in an input box, then change focus to the search bar.
+        // If the user presses the ESC key then clear the search.
+        // If there is only 1 sound file currently showing pressing enter will play it.
         document.addEventListener('keydown', function(event) {
 
             if (event.key === 'F5') return;
@@ -197,6 +274,10 @@
             event.preventDefault();
         });
 
+        function closeMenu() {
+            contextMenu.style.display = "none";
+        }
+
         function getVisibleDivs() {
             const allDivs = document.getElementById('sounds').children;
             return Array.from(allDivs).filter(div => {
@@ -211,11 +292,13 @@
         var category = 'All';
 
         // Determine what categories to show in navigation and what categories to show in the more-dropdown
+        // Also move the search input to the config/settings menu when the width of the page is too small
         function determineShownNavigation(){
+            closeMenu();
+
             // Get available width for shown categories.
             // 275px extra for spacing, more-dropdown and buttons
             var availableWidth = window.innerWidth - $('.navbar-brand').width() - 380;
-<!--            console.log(availableWidth);-->
             var shouldSkip = false;
             $.each($('#categories li'), function(i, obj){
                 var willFit = availableWidth - $(obj).width() > 0;
@@ -228,6 +311,23 @@
                     shouldSkip = true;
                 }
             });
+            const searchDiv = document.querySelector('.searchDiv');
+            const searchContainer = document.getElementById('searchContainer');
+            const settingsLi = document.getElementById('dropdownSearchContainer');
+            const searchLabel = document.getElementById('searchLabel');
+
+            if (window.innerWidth < 550) {
+                if (!settingsLi.querySelector('.searchDiv')) {
+                    settingsLi.appendChild(searchDiv);
+                }
+                searchLabel.style.display= '';
+            } else {
+                if (!searchContainer.querySelector('.searchDiv')) {
+                    searchContainer.appendChild(searchDiv);
+                }
+                searchLabel.style.display= 'none';
+            }
+
             $('#more').toggle($('#categories li:hidden').length > 0);
         }
 
@@ -239,6 +339,7 @@
             }).show();
         }
 
+        // Create sort function for list of users
         function createDynamicSorter(propertyName) {
             let sortDirection = 1;
             if(propertyName[0] === "-") {
@@ -271,6 +372,35 @@
             }
         }
 
+        // Function to call the download endpoint when the button is clicked in the contextMenu
+        function downloadSoundFile() {
+            const filename = soundFileRightClicked.id + '.mp3';
+            fetch(`/api/soundFiles/download/${soundFileRightClicked.id}`, {
+                method: "GET"
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("File not found or server error");
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create a temporary link to trigger download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error("Download error:", error);
+            });
+        }
+
+        // Setup all of the event handlers
         $(document).on('click', 'a[data-category]', function(){
             // Filter by category
             category = $(this).data('category');
@@ -287,6 +417,9 @@
                 method: "POST",
                 url: "/bot/playFile?soundFileId=" + this.id + "&username=" + $('#users').val()
             });
+            const newTimesPlayed = parseInt(this.getAttribute("data-timesPlayed")) + 1;
+            this.setAttribute("data-timesPlayed", newTimesPlayed);
+            document.getElementById("context-timesPlayed").textContent = newTimesPlayed;
         }).on('click', '#random', function(){
             // Play random sound
             $.ajax({
@@ -316,6 +449,24 @@
             }).done(function( data ) {
                 $('#volume').val(data);
             });
+        }).on('click', '#download', function() {
+            downloadSoundFile(soundFileRightClicked.id);
+        }).on('click', '#favorite', function() {
+            const setFavorite = (document.getElementById(soundFileRightClicked.id).getAttribute("data-favorite") === 'true') ? false : true;
+            $.ajax({
+                method: "POST",
+                url: "/api/soundFiles/favorite/" + soundFileRightClicked.id + "?favorite=" + setFavorite
+            }).done(function( data ) {
+                document.getElementById(soundFileRightClicked.id).setAttribute("data-favorite", setFavorite)
+                document.getElementById("context-favorite").textContent = (setFavorite === true) ? "True" : "False";
+                if (setFavorite) {
+                    document.getElementById(soundFileRightClicked.id).querySelector(".favoriteItem").style.display= '';
+                } else {
+                    document.getElementById(soundFileRightClicked.id).querySelector(".favoriteItem").style.display= 'none';
+                }
+            });
+        }).on('click', '#context-close', function() {
+            closeMenu();
         });
 
         // Determine shown categories in navigation when windows get resized
@@ -349,6 +500,7 @@
             $.each(soundObjects, function(i, obj) {
                 var recentClass = '';
                 var popularItemClass = '';
+                var favoriteClass = '';
                 var recentItem = top10ByDate.filter(e => e.soundFileId === obj.soundFileId);
                 var popularItem = top10Popular.filter(e => e.soundFileId === obj.soundFileId);
                 if (recentItem.length > 0) {
@@ -357,43 +509,51 @@
                 if (popularItem.length > 0) {
                     popularItemClass = '<span class="popularBadge" title="Recently Added"></span>';
                 }
+
+                favoriteClass = '<span class="favoriteItem" title="Favorite">★</span>'
+
                 var soundFileName = obj.soundFileId.charAt(0).toUpperCase() + obj.soundFileId.slice(1).replace(/(?<!\s)([A-Z])/g, ' $1').replace(/_/g, " ").trim()
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '">' + soundFileName + '</span>' + recentClass + '</div>');
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
+                if (!obj.favorite) {
+                    document.getElementById(obj.soundFileId).querySelector(".favoriteItem").style.display= 'none';
+                }
             });
 
+            // Add a context menu event listener so when the sound file is right clicked a menu appears
             document.getElementById('sounds').querySelectorAll('div').forEach(div => {
-            div.addEventListener('contextmenu', function(event) {
-                event.preventDefault(); // Prevent default right-click menu
+                div.addEventListener('contextmenu', function(event) {
+                    event.preventDefault(); // Prevent default right-click menu
 
-                // Log which div was clicked
-                console.log('Right-clicked on:', this.textContent.trim());
+                    soundFileRightClicked = this;
 
-                const filename = this.id + '.mp3';
-                fetch(`/api/soundFiles/download/${this.id}`, {
-                    method: "GET"
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("File not found or server error");
+                    const soundFileButton = document.getElementById(this.id);
+
+                    document.getElementById("context-soundFileTitle").textContent = this.querySelector(".content").textContent;
+                    document.getElementById("context-timesPlayed").textContent = soundFileButton.getAttribute("data-timesPlayed");
+                    document.getElementById("context-favorite").textContent = (soundFileButton.getAttribute("data-favorite") === null || soundFileButton.getAttribute("data-favorite") === "false") ? "False" : "True" ;
+                    document.getElementById("context-dateAdded").textContent = new Date(soundFileButton.getAttribute("data-dateAdded")).toLocaleDateString('en-US');
+
+                    // Position menu within viewport boundaries
+                    let menuWidth = contextMenu.offsetWidth;
+                    let menuHeight = contextMenu.offsetHeight;
+                    let pageWidth = window.innerWidth;
+                    let pageHeight = window.innerHeight;
+
+                    let posX = event.clientX;
+                    let posY = event.clientY;
+
+                    if (posX + menuWidth > pageWidth) {
+                        posX = pageWidth - menuWidth - 5;
                     }
-                    return response.blob();
-                })
-                .then(blob => {
-                    // Create a temporary link to trigger download
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                })
-                .catch(error => {
-                    console.error("Download error:", error);
+                    if (posY + menuHeight > pageHeight) {
+                        posY = pageHeight - menuHeight - 5;
+                    }
+
+                    contextMenu.style.left = posX + "px";
+                    contextMenu.style.top = posY + "px";
+                    contextMenu.style.display = "block";
                 });
             });
-          });
         });
 
         // Get users
@@ -416,16 +576,6 @@
                 }
             });
         });
-
-<!--        // Get channels-->
-<!--        $.ajax({-->
-<!--            method: "GET",-->
-<!--            url: "/bot/channels"-->
-<!--        }).done(function( data ) {-->
-<!--            $.each(data.sort(), function(i, obj){-->
-<!--                $('#channel').append('<option value="' + obj.id + '"' + ((obj.defaultChannel) ? 'selected' : '') + '>' + obj.name + '</option>');-->
-<!--            });-->
-<!--        });-->
 
         // Get categories
         $.ajax({

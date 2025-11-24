@@ -31,4 +31,8 @@ public class SoundFile {
     private Integer timesPlayed;
     @Nullable
     private ZonedDateTime dateAdded;
+    @Nullable
+    private Boolean favorite;
+    @Nullable
+    private String displayName;
 }

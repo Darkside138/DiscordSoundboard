@@ -407,7 +407,7 @@ public class SoundPlayer {
 
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(fileName);
                         if (soundFile == null) {
-                            soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now());
+                            soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now(), false, null);
                             soundFilesFromPath.add(soundFile);
                         } else {
                             soundFile = soundService.initializeDateAdded(soundFile);
