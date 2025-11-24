@@ -35,4 +35,6 @@ public class SoundFile {
     private Boolean favorite;
     @Nullable
     private String displayName;
+    @Nullable
+    private Integer volumeOffsetPercentage;
 }

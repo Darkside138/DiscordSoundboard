@@ -57,13 +57,13 @@ public class BotCommandController {
     @PostMapping(value = "/volume")
     public HttpStatus setVolume(@RequestParam Integer volume, @RequestParam String username,
                                 @RequestParam(defaultValue = "") String voiceChannelId) {
-        soundPlayer.setSoundPlayerVolume(volume, username, null);
+        soundPlayer.setGlobalVolume(volume, username, null);
         return HttpStatus.OK;
     }
 
     @GetMapping(value = "/volume")
     public float getVolume(@RequestParam String username, @RequestParam(defaultValue = "") String voiceChannelId) {
-        return soundPlayer.getSoundPlayerVolume(username, voiceChannelId);
+        return soundPlayer.getGlobalVolume(username, voiceChannelId);
     }
 
     @GetMapping(value = "/channels")

@@ -4,11 +4,14 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
+import lombok.Getter;
+import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.JDABot;
 import net.dv8tion.jda.api.entities.Guild;
 
 public class PlayerManager extends DefaultAudioPlayerManager {
 
+    @Getter
     private final JDABot bot;
 
     public PlayerManager(JDABot bot) {
@@ -19,11 +22,6 @@ public class PlayerManager extends DefaultAudioPlayerManager {
         AudioSourceManagers.registerRemoteSources(this);
         AudioSourceManagers.registerLocalSource(this);
         source(YoutubeAudioSourceManager.class).setPlaylistPageCount(10);
-    }
-
-    public JDABot getBot()
-    {
-        return bot;
     }
 
     public boolean hasHandler(Guild guild)

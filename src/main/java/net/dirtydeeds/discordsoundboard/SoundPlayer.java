@@ -15,7 +15,6 @@ import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -138,6 +137,39 @@ public class SoundPlayer {
     }
 
     /**
+     * Sets global volume.
+     *
+     * @param volume - The volume value to set.
+     * @param voiceChannelId - The voice channel of the guild to set volume for
+     */
+    public void setGlobalVolume(int volume, String user, String voiceChannelId) {
+        Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
+        if (guild != null) {
+            AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
+            if (handler != null) {
+                handler.setGlobalVolume(volume);
+            }
+        }
+    }
+
+    /**
+     * Returns the current global volume
+     *
+     * @return float representing the current global volume.
+     */
+    public float getGlobalVolume(String user, String voiceChannelId) {
+        Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
+        if (guild != null) {
+            AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
+            if (handler != null) {
+                return handler.getGlobalVolume();
+
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Sets volume of the player.
      *
      * @param volume - The volume value to set.
@@ -216,7 +248,7 @@ public class SoundPlayer {
             Guild guild = getGuildForUserOrChannelId(userName, voiceChannelId);
             joinUsersCurrentChannel(userName, voiceChannelId);
 
-            playFile(fileName, guild, repeatTimes);
+            playFile(fileName, guild, repeatTimes, userName, voiceChannelId);
 
             if (botConfig.isLeaveAfterPlayback()) {
                 disconnectFromChannel(guild);
@@ -237,7 +269,7 @@ public class SoundPlayer {
         moveToChannel(channel, channel.getGuild());
         LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
 
-        playFile(fileName, channel.getGuild(), 1);
+        playFile(fileName, channel.getGuild(), 1, fileName, channel.getName());
         if (botConfig.isLeaveAfterPlayback()) {
             disconnectFromChannel(channel.getGuild());
         }
@@ -257,7 +289,7 @@ public class SoundPlayer {
             if (fileToPlay != null) {
                 moveToUserIdsChannel(event, guild);
 
-                playFile(fileName, guild, 1);
+                playFile(fileName, guild, 1, event.getAuthor().getName(), findUsersChannel(event, guild).getName());
 
                 if (botConfig.isLeaveAfterPlayback()) {
                     disconnectFromChannel(event.getGuild());
@@ -273,7 +305,7 @@ public class SoundPlayer {
      *
      * @param fileName - fileName to play.
      */
-    private void playFile(String fileName, Guild guild, Integer repeatTimes) {
+    private void playFile(String fileName, Guild guild, Integer repeatTimes, String user, String voiceChannelId) {
         SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
 
         if (fileToPlay != null) {
@@ -283,6 +315,18 @@ public class SoundPlayer {
             } else {
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
                 soundService.save(fileToPlay);
+                AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
+                int globalVolume = 75;
+                int volumeOffset = 0;
+                if (audioHandler != null) {
+                    globalVolume = audioHandler.getGlobalVolume();
+                }
+                if (fileToPlay.getVolumeOffsetPercentage() != null) {
+                    volumeOffset = fileToPlay.getVolumeOffsetPercentage();
+                }
+
+                setSoundPlayerVolume((int) (globalVolume + (globalVolume * ((float) volumeOffset / 100))), user, voiceChannelId);
+
                 jdaBot.getPlayerManager().loadItem(soundFile.getAbsolutePath(), new FileLoadResultHandler(guild, repeatTimes));
             }
         } else {
@@ -324,6 +368,10 @@ public class SoundPlayer {
                     selected = true;
                 }
                 Optional<Users> optionalUser = userService.findById(member.getId());
+                Boolean inAudioChannel = null;
+                if (member.getVoiceState() != null) {
+                    inAudioChannel = member.getVoiceState().inAudioChannel();
+                }
                 if (optionalUser.isPresent()) {
                     if (member.getUser().isBot() || member.getUser().isSystem()) {
                         userService.delete(optionalUser.get());
@@ -332,13 +380,14 @@ public class SoundPlayer {
                         user.setUsername(username);
                         user.setSelected(selected);
                         user.setOnlineStatus(member.getOnlineStatus());
-                        user.setInVoice(member.getVoiceState().inAudioChannel());
+
+                        user.setInVoice(inAudioChannel);
                         users.add(user);
                     }
                 } else {
                     users.add(
                             new Users(member.getId(), username, selected,
-                                    member.getJDA().getStatus(), member.getOnlineStatus(), member.getVoiceState().inAudioChannel()));
+                                    member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel));
                 }
             });
         });
@@ -407,7 +456,8 @@ public class SoundPlayer {
 
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(fileName);
                         if (soundFile == null) {
-                            soundFile = new SoundFile(fileName, filePath.toString(), parent, 0, ZonedDateTime.now(), false, null);
+                            soundFile = new SoundFile(fileName, filePath.toString(), parent, 0,
+                                    ZonedDateTime.now(), false, null, null);
                             soundFilesFromPath.add(soundFile);
                         } else {
                             soundFile = soundService.initializeDateAdded(soundFile);

@@ -85,7 +85,19 @@ public class SoundController {
         soundFile.setFavorite(favorite);
 
         soundService.save(soundFile);
-        
+
+        return HttpStatus.OK;
+    }
+
+    @PatchMapping(value = "/{soundId}")
+    public HttpStatus patchSoundFile(@PathVariable String soundId, @RequestParam() Integer volumeOffsetPercentage) {
+
+        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
+
+        soundFile.setVolumeOffsetPercentage(volumeOffsetPercentage);
+
+        soundService.save(soundFile);
+
         return HttpStatus.OK;
     }
 }

@@ -5,9 +5,12 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+import lombok.Getter;
+import lombok.Setter;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.data.relational.core.sql.In;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -18,6 +21,8 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
     private final AudioPlayer audioPlayer;
     private final long guildId;
     private AudioFrame lastFrame;
+    @Setter
+    private Integer globalVolume;
 
     protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
     {
@@ -26,8 +31,11 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
         this.guildId = guild.getIdLong();
     }
 
-    public int addTrack(AudioTrack track)
-    {
+    public Integer getGlobalVolume() {
+        return (globalVolume != null) ? globalVolume : 75;
+    }
+
+    public int addTrack(AudioTrack track) {
         audioPlayer.playTrack(track);
         return -1;
     }
@@ -48,6 +56,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
             track.setUserData(--repeatTimes);
             audioPlayer.playTrack(track.makeClone());
         }
+        audioPlayer.setVolume(globalVolume);
     }
 
     @Override

@@ -130,6 +130,10 @@
             font-weight: bold;
         }
 
+        .custom-offset-range {
+            width: 90%;
+        }
+
         .close-btn {
             background: transparent;
             border: none;
@@ -157,6 +161,9 @@
             <li class="nav-item">
                 <a class="nav-link active" href="#" data-category="All">All</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-category="Favorites">★</a>
+            </li>
         </ul>
         <ul class="navbar-nav mr-auto">
             <li id="more" class="nav-item dropdown" style="display:none;">
@@ -164,6 +171,8 @@
                     More...
                 </a>
                 <div class="dropdown-menu" aria-labelledby="moreLabel">
+                    <a class="dropdown-item" href="#" data-category="All" style="display:none;">All</a>
+                    <a class="dropdown-item" href="#" data-category="Favorites" style="display:none;">★</a>
                 </div>
             </li>
         </ul>
@@ -215,11 +224,17 @@
         <div id="context-soundFileTitle"></div>
         <button class="close-btn" id="context-close">×</button>
     </div>
-    <div>Times Played: <span id="context-timesPlayed"></span></div>
-    <div>Favorite: <span id="context-favorite"></span></div>
-    <div>Date Added: <span id="context-dateAdded"></span></div>
-    <div id="favorite" class="button btn btn-secondary m-1 favoriteButton">Favorite</div>
-    <div id="download" class="button btn btn-secondary m-1 downloadButton">Download</div>
+    <form class="px-3 pt-2">
+        <div>Times Played: <span id="context-timesPlayed"></span></div>
+        <div>Favorite: <span id="context-favorite"></span></div>
+        <div>Date Added: <span id="context-dateAdded"></span></div>
+        <div>
+            <div><label for="volumeOffset">Volume Offset: <span id="volumeOffsetValue">0</span></label></div>
+            <input id="volumeOffset" type="range" min="-100" max="100" value="0" class="custom-offset-range">
+        </div>
+        <div id="favorite" class="button btn btn-secondary m-1 favoriteButton">Favorite</div>
+        <div id="download" class="button btn btn-secondary m-1 downloadButton">Download</div>
+    </form>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
@@ -335,7 +350,11 @@
         function filterSounds(search){
             $('#sounds div').hide();
             $('#sounds div').filter(function(){
-                return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
+                if (category === 'Favorites') {
+                    return $(this).data('favorite');
+                } else {
+                    return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
+                }
             }).show();
         }
 
@@ -467,6 +486,15 @@
             });
         }).on('click', '#context-close', function() {
             closeMenu();
+        }).on('input', '#volumeOffset', function() {
+            const rangeValue = document.getElementById('volumeOffsetValue');
+            rangeValue.textContent = document.getElementById('volumeOffset').value;
+        }).on('change', '#volumeOffset', function() {
+            const rangeValue = document.getElementById('volumeOffset').value;
+            $.ajax({
+                method: "PATCH",
+                url: "/api/soundFiles/" + soundFileRightClicked.id + "?volumeOffsetPercentage=" + rangeValue
+            });
         });
 
         // Determine shown categories in navigation when windows get resized
@@ -513,7 +541,7 @@
                 favoriteClass = '<span class="favoriteItem" title="Favorite">★</span>'
 
                 var soundFileName = obj.soundFileId.charAt(0).toUpperCase() + obj.soundFileId.slice(1).replace(/(?<!\s)([A-Z])/g, ' $1').replace(/_/g, " ").trim()
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '" data-volumeOffsetPercentage="' + obj.volumeOffsetPercentage + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '\nVolume Offset: ' + ((obj.volumeOffsetPercentage === null) ? 0 : obj.volumeOffsetPercentage) + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
                 if (!obj.favorite) {
                     document.getElementById(obj.soundFileId).querySelector(".favoriteItem").style.display= 'none';
                 }
@@ -532,6 +560,9 @@
                     document.getElementById("context-timesPlayed").textContent = soundFileButton.getAttribute("data-timesPlayed");
                     document.getElementById("context-favorite").textContent = (soundFileButton.getAttribute("data-favorite") === null || soundFileButton.getAttribute("data-favorite") === "false") ? "False" : "True" ;
                     document.getElementById("context-dateAdded").textContent = new Date(soundFileButton.getAttribute("data-dateAdded")).toLocaleDateString('en-US');
+                    const volumeOffsetPercentage = soundFileButton.getAttribute("data-volumeOffsetPercentage");
+                    document.getElementById('volumeOffset').value = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
+                    document.getElementById('volumeOffsetValue').textContent = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
 
                     // Position menu within viewport boundaries
                     let menuWidth = contextMenu.offsetWidth;
