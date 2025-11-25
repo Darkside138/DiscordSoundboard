@@ -654,7 +654,7 @@
                     discordUsers = discordUsers.concat(json.content);
 
                     // Update pagination info
-                    totalPages = json.totalPages || totalPages;
+                    totalPages = json.page.totalPages || totalPages;
                     currentPage++;
 
                 } while (currentPage <= totalPages);
