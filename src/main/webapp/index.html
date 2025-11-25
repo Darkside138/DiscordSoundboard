@@ -24,6 +24,7 @@
             padding: 0px;
             font-family: 'Segoe UI', sans-serif;
             color: #e9ecef;
+            padding-bottom: 10px;
         }
         .searchDiv {
             margin-bottom: 0px;
@@ -276,7 +277,7 @@
                     || event.metaKey || event.altKey || event.keyCode === 27 || event.key === 'Enter') {
                 if (event.keyCode === 27) {
                     searchBar.value = '';
-                    $('#sounds div').show();
+                    filterSounds('');
                 }
                 if (event.key === 'Enter') {
                     var visibleDivs = getVisibleDivs();
@@ -367,11 +368,26 @@
             $('#sounds div').filter(function() {
                 if (category === 'Favorites') {
                     var favValue = this.getAttribute("data-favorite");
-                    return (favValue === true || favValue === 'true');
+                    return (favValue === true || favValue === 'true') && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
                 } else {
                     return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
                 }
             }).show();
+            var visibleSounds = Array.from(document.getElementById('sounds').children).filter(isVisible);
+            document.getElementById('search').placeholder = "Search " + visibleSounds.length + " sounds";
+        }
+
+        function isVisible(el) {
+            if (!(el instanceof HTMLElement)) return false;
+
+            const style = window.getComputedStyle(el);
+            return (
+                style.display !== 'none' &&
+                style.visibility !== 'hidden' &&
+                style.opacity !== '0' &&
+                el.offsetWidth > 0 &&
+                el.offsetHeight > 0
+            );
         }
 
         // Create sort function for list of users
@@ -528,6 +544,7 @@
             url: "api/soundFiles/findAll"
         }).done(function( data ) {
             var soundObjects = data.content;
+            document.getElementById('search').placeholder = "Search " + soundObjects.length + " sounds";
             soundObjects.sort(function(a,b){
               // Turn your strings into dates, and then subtract them
               // to get a value that is either negative, positive, or zero.
