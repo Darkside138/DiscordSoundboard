@@ -494,14 +494,15 @@
                 url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#discordUser').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
-            closeMenu()
-            fetchDiscordUsers();
-            // Get current volume when opening settings
-            $.ajax({
-                method: "GET",
-                url: "/bot/volume?username=" + $('#discordUser').val() + "&voiceChannelId=" + $('#channel').val()
-            }).done(function( data ) {
-                $('#volume').val(data);
+            closeMenu();
+            fetchDiscordUsers().then(result => {
+                // Get current volume when opening settings
+                $.ajax({
+                    method: "GET",
+                    url: "/bot/volume?username=" + $('#discordUser').val() + "&voiceChannelId=" + $('#channel').val()
+                }).done(function( data ) {
+                    $('#volume').val(data);
+                });
             });
         }).on('click', '#download', function() {
             downloadSoundFile(soundFileRightClicked.id);
@@ -666,7 +667,7 @@
                 const groups = userSelect.querySelectorAll("optgroup");
                 groups.forEach(group => group.remove());
                 var previousStatus = null;
-                $.each(discordUsers, function(i, obj){
+                $.each(discordUsers, function(i, obj) {
                     if (obj.inVoice || obj.selected) {
                         var onlineStatus = (obj.inVoice) ? "IN VOICE" : obj.onlineStatus;
                         if (previousStatus != onlineStatus) {
