@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha256-L/W5Wfqfa0sdBNIKN9cG6QA5F2qx4qICmU2VgLruv9Y=" crossorigin="anonymous" />
 
     <style>
+        .dropdown-item {
+            color: #e9ecef;
+        }
         .dropdown-menu {
             min-width: 15em;
             background-color: #2c2f33;
@@ -577,7 +580,7 @@
 
                     document.getElementById("context-soundFileTitle").textContent = this.querySelector(".content").textContent;
                     document.getElementById("context-timesPlayed").textContent = soundFileButton.getAttribute("data-timesPlayed");
-                    document.getElementById("context-favorite").textContent = (soundFileButton.getAttribute("data-favorite") === null || soundFileButton.getAttribute("data-favorite") === "false") ? "False" : "True" ;
+                    document.getElementById("context-favorite").textContent = (soundFileButton.getAttribute("data-favorite") === null || soundFileButton.getAttribute("data-favorite") === "null" || soundFileButton.getAttribute("data-favorite") === "false" || soundFileButton.getAttribute("data-favorite") === false) ? "False" : "True" ;
                     document.getElementById("context-dateAdded").textContent = new Date(soundFileButton.getAttribute("data-dateAdded")).toLocaleDateString('en-US');
                     const volumeOffsetPercentage = soundFileButton.getAttribute("data-volumeOffsetPercentage");
                     document.getElementById('volumeOffset').value = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
