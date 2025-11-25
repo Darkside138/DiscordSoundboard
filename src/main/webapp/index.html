@@ -424,6 +424,23 @@
 
         // Function to call the download endpoint when the button is clicked in the contextMenu
         function downloadSoundFile() {
+            var filePath = soundFileRightClicked.dataset.soundfilelocation;
+            if (typeof filePath !== "string" || filePath.trim() === "") {
+                throw new Error("Invalid file path: must be a non-empty string.");
+            }
+            filePath = filePath.split(/[/\\]/).pop()
+            var extension = "";
+
+            // Find the last dot in the file name
+            const lastDotIndex = filePath.lastIndexOf(".");
+
+            // No dot found or dot is the first character (hidden file without extension)
+            if (lastDotIndex <= 0 || lastDotIndex === filePath.length - 1) {
+                extension = "";
+            } else {
+                extension = filePath.slice(lastDotIndex + 1);
+            }
+
             const filename = soundFileRightClicked.id + '.mp3';
             fetch(`/api/soundFiles/download/${soundFileRightClicked.id}`, {
                 method: "GET"
@@ -581,7 +598,7 @@
                 favoriteClass = '<span class="favoriteItem" title="Favorite">★</span>'
 
                 var soundFileName = obj.soundFileId.charAt(0).toUpperCase() + obj.soundFileId.slice(1).replace(/(?<!\s)([A-Z])/g, ' $1').replace(/_/g, " ").trim()
-                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '" data-volumeOffsetPercentage="' + obj.volumeOffsetPercentage + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '\nVolume Offset: ' + ((obj.volumeOffsetPercentage === null) ? 0 : obj.volumeOffsetPercentage) + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '" data-volumeOffsetPercentage="' + obj.volumeOffsetPercentage + '" data-soundFileLocation="' + obj.soundFileLocation + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '\nVolume Offset: ' + ((obj.volumeOffsetPercentage === null) ? 0 : obj.volumeOffsetPercentage) + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
                 if (!obj.favorite) {
                     document.getElementById(obj.soundFileId).querySelector(".favoriteItem").style.display= 'none';
                 }
