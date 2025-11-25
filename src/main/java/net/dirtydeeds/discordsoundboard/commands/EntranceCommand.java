@@ -2,9 +2,9 @@ package net.dirtydeeds.discordsoundboard.commands;
 
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.Users;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
 
 /**
  * @author Dave Furrer
@@ -14,14 +14,14 @@ import net.dirtydeeds.discordsoundboard.service.UserService;
  */
 public class EntranceCommand extends Command {
 
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final SoundService soundService;
     private final SoundPlayer soundPlayer;
 
-    public EntranceCommand(SoundPlayer soundPlayer, UserService userService,
+    public EntranceCommand(SoundPlayer soundPlayer, DiscordUserService discordUserService,
                            SoundService soundService) {
         this.soundPlayer = soundPlayer;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.soundService = soundService;
         this.name = "entrance";
         this.help = "Sets entrance sound for user. Leave soundFileName empty to remove";
@@ -40,26 +40,26 @@ public class EntranceCommand extends Command {
             if (event.userIsAdmin() ||
                     (pmUser.getName().equalsIgnoreCase(userNameOrId)
                             || pmUser.getId().equals(userNameOrId))) {
-                Users users = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
-                if (users == null) {
+                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+                if (discordUser == null) {
                     net.dv8tion.jda.api.entities.User jdaUser = soundPlayer.retrieveUserById(userNameOrId);
                     if (jdaUser != null) {
-                        users = new Users(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
+                        discordUser = new DiscordUser(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
                     }
                 }
-                if (users != null) {
+                if (discordUser != null) {
                     if (soundFileName.isEmpty()) {
-                        users.setEntranceSound(null);
+                        discordUser.setEntranceSound(null);
                         event.replyByPrivateMessage("User: " + userNameOrId + " entrance sound cleared");
-                        userService.save(users);
+                        discordUserService.save(discordUser);
                     } else {
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileName);
                         if (soundFile == null) {
                             event.replyByPrivateMessage("Could not find sound file: " + soundFileName);
                         } else {
-                            users.setEntranceSound(soundFileName);
+                            discordUser.setEntranceSound(soundFileName);
                             event.replyByPrivateMessage("User: " + userNameOrId + " entrance sound set to: " + soundFileName);
-                            userService.save(users);
+                            discordUserService.save(discordUser);
                         }
                     }
                 } else {

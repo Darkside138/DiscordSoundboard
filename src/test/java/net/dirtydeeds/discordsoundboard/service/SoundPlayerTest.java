@@ -4,7 +4,7 @@ import net.dirtydeeds.discordsoundboard.MainWatch;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
-import net.dirtydeeds.discordsoundboard.repository.UserRepository;
+import net.dirtydeeds.discordsoundboard.repository.DiscordUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ class SoundPlayerTest {
     @Mock private SoundFile soundFile2;
     @Mock private MainWatch watch;
     @Mock private SoundFileRepository soundFileRepository;
-    @Mock private UserRepository userRepository;
+    @Mock private DiscordUserRepository discordUserRepository;
 
     private SoundPlayer soundPlayer;
 

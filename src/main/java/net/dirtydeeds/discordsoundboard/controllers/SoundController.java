@@ -1,11 +1,13 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
  *
  * @author dfurrer.
  */
+@Hidden
 @RestController
 @RequestMapping("/api/soundFiles")
 @SuppressWarnings("unused")
@@ -40,17 +43,17 @@ public class SoundController {
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<Iterable<SoundFile>> getAll() {
+    public Page<SoundFile> getAll() {
         Pageable wholePage = Pageable.unpaged();
-        return new ResponseEntity<>(soundService.findAll(wholePage), HttpStatus.OK);
+        return soundService.findAll(wholePage);
     }
 
     @GetMapping(value = "/categories")
-    public ResponseEntity<Set<String>> getSoundCategories() {
+    public Set<String> getSoundCategories() {
         Map<String, SoundFile> soundMap = soundPlayer.getAvailableSoundFiles();
-        return new ResponseEntity<>(soundMap.values().stream()
+        return soundMap.values().stream()
                 .map(SoundFile::getCategory)
-                .collect(Collectors.toSet()), HttpStatus.OK);
+                .collect(Collectors.toSet());
     }
 
     @GetMapping("/download/{soundId}")
@@ -90,7 +93,7 @@ public class SoundController {
     }
 
     @PatchMapping(value = "/{soundId}")
-    public HttpStatus patchSoundFile(@PathVariable String soundId, @RequestParam() Integer volumeOffsetPercentage) {
+    public HttpStatus patchSoundFile(@PathVariable String soundId, @RequestParam(defaultValue = "0") Integer volumeOffsetPercentage) {
 
         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
 

@@ -1,14 +1,17 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Hidden
 @RestController
 @RequestMapping("/bot")
 @SuppressWarnings("unused")
@@ -16,7 +19,7 @@ public class BotCommandController {
 
     private final SoundPlayer soundPlayer;
 
-    @Inject
+    @Autowired
     public BotCommandController(SoundPlayer soundPlayer) {
         this.soundPlayer = soundPlayer;
     }

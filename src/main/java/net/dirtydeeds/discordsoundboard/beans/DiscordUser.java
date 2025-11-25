@@ -18,7 +18,7 @@ import jakarta.persistence.Entity;
 @NoArgsConstructor
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class Users {
+public class DiscordUser {
 
     @Id
     @NonNull
@@ -34,7 +34,7 @@ public class Users {
     private OnlineStatus onlineStatus;
     private Boolean inVoice;
 
-    public Users(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus) {
+    public DiscordUser(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus) {
         this.id = id;
         this.username = username;
         this.selected = selected;
@@ -43,7 +43,7 @@ public class Users {
         this.inVoice = null;
     }
 
-    public Users(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus, Boolean inVoice) {
+    public DiscordUser(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus, Boolean inVoice) {
         this.id = id;
         this.username = username;
         this.selected = selected;

@@ -5,14 +5,14 @@ import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.Users;
 import net.dirtydeeds.discordsoundboard.commands.*;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.listeners.*;
 import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
@@ -46,7 +46,7 @@ public class SoundPlayer {
     private static final Logger LOG = LoggerFactory.getLogger(SoundPlayer.class);
 
     private final SoundService soundService;
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final MainWatch mainWatch;
     private final ServletWebServerApplicationContext webServerApplicationContext;
     private final ShutdownManager shutdownManager;
@@ -56,12 +56,12 @@ public class SoundPlayer {
 
     @Inject
     public SoundPlayer(MainWatch mainWatch, SoundService soundService,
-                       UserService userService, ShutdownManager shutdownManager, BotConfig botConfig,
+                       DiscordUserService discordUserService, ShutdownManager shutdownManager, BotConfig botConfig,
                        ServletWebServerApplicationContext webServerApplicationContext) {
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
         this.soundService = soundService;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.shutdownManager = shutdownManager;
         this.botConfig = botConfig;
         this.webServerApplicationContext = webServerApplicationContext;
@@ -84,10 +84,10 @@ public class SoundPlayer {
 
         CommandListener commandListener = new CommandListener(botConfig);
         commandListener.addCommand(new DisconnectCommand(this));
-        commandListener.addCommand(new EntranceCommand(this, userService, soundService));
+        commandListener.addCommand(new EntranceCommand(this, discordUserService, soundService));
         commandListener.addCommand(new HelpCommand(commandListener, botConfig));
         commandListener.addCommand(new InfoCommand(this, botConfig));
-        commandListener.addCommand(new LeaveCommand(this, userService, soundService));
+        commandListener.addCommand(new LeaveCommand(this, discordUserService, soundService));
         commandListener.addCommand(new ListCommand(this, botConfig));
         commandListener.addCommand(new PingCommand());
         commandListener.addCommand(new PlayCommand(this));
@@ -96,14 +96,14 @@ public class SoundPlayer {
         commandListener.addCommand(new RemoveCommand(this, botConfig, soundService));
         commandListener.addCommand(new StopCommand(this));
         commandListener.addCommand(new URLCommand(this));
-        commandListener.addCommand(new UserDetailsCommand(userService, this));
+        commandListener.addCommand(new UserDetailsCommand(discordUserService, this));
         commandListener.addCommand(new VolumeCommand(this));
 
         bot.addEventListener(commandListener);
-        bot.addEventListener(new EntranceSoundBoardListener(this, userService, soundService,
+        bot.addEventListener(new EntranceSoundBoardListener(this, discordUserService, soundService,
                 botConfig.isPlayEntranceOnJoin(), botConfig));
-        bot.addEventListener(new LeaveSoundBoardListener(this, userService, soundService, botConfig));
-        bot.addEventListener(new MovedChannelListener(this, userService, soundService,
+        bot.addEventListener(new LeaveSoundBoardListener(this, discordUserService, soundService, botConfig));
+        bot.addEventListener(new MovedChannelListener(this, discordUserService, soundService,
                 botConfig.isPlayEntranceOnMove(), botConfig));
         bot.addEventListener(new BotLeaveListener(botConfig));
         bot.addEventListener(new FileAttachmentListener(botConfig));
@@ -358,7 +358,7 @@ public class SoundPlayer {
      */
     public void updateUsersInDb() {
         String userNameToSelect = botConfig.getBotOwnerName();
-        List<Users> users = new ArrayList<>();
+        List<DiscordUser> users = new ArrayList<>();
         bot.getGuilds().forEach( guild -> {
             List<Member> members = guild.getMembers();
             members.forEach( member -> {
@@ -367,16 +367,16 @@ public class SoundPlayer {
                 if (userNameToSelect != null && userNameToSelect.equals(username)) {
                     selected = true;
                 }
-                Optional<Users> optionalUser = userService.findById(member.getId());
+                Optional<DiscordUser> optionalUser = discordUserService.findById(member.getId());
                 Boolean inAudioChannel = null;
                 if (member.getVoiceState() != null) {
                     inAudioChannel = member.getVoiceState().inAudioChannel();
                 }
                 if (optionalUser.isPresent()) {
                     if (member.getUser().isBot() || member.getUser().isSystem()) {
-                        userService.delete(optionalUser.get());
+                        discordUserService.delete(optionalUser.get());
                     } else {
-                        Users user = optionalUser.get();
+                        DiscordUser user = optionalUser.get();
                         user.setUsername(username);
                         user.setSelected(selected);
                         user.setOnlineStatus(member.getOnlineStatus());
@@ -386,12 +386,12 @@ public class SoundPlayer {
                     }
                 } else {
                     users.add(
-                            new Users(member.getId(), username, selected,
+                            new DiscordUser(member.getId(), username, selected,
                                     member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel));
                 }
             });
         });
-        userService.saveAll(users);
+        discordUserService.saveAll(users);
     }
 
     public net.dv8tion.jda.api.entities.User retrieveUserById(String idOrName) {

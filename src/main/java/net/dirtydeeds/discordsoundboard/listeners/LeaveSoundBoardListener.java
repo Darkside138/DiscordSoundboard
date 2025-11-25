@@ -1,11 +1,11 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.Users;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
@@ -22,14 +22,14 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(LeaveSoundBoardListener.class);
 
     private final SoundPlayer bot;
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final SoundService soundService;
     private final BotConfig botConfig;
 
-    public LeaveSoundBoardListener(SoundPlayer bot, UserService userService, SoundService soundService,
+    public LeaveSoundBoardListener(SoundPlayer bot, DiscordUserService discordUserService, SoundService soundService,
                                    BotConfig botConfig) {
         this.bot = bot;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.soundService = soundService;
         this.botConfig = botConfig;
     }
@@ -39,14 +39,14 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
         if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
             String userNameDisconnected = event.getMember().getEffectiveName();
             String userIdDisconnected = event.getMember().getId();
-            Users users = userService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
-            if (users != null) {
-                if (StringUtils.hasText(users.getLeaveSound())) {
-                    bot.playFileInChannel(users.getLeaveSound(), event.getChannelLeft());
+            DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
+            if (discordUser != null) {
+                if (StringUtils.hasText(discordUser.getLeaveSound())) {
+                    bot.playFileInChannel(discordUser.getLeaveSound(), event.getChannelLeft());
                 } else {
                     //If DB doesn't have a leave sound check for a file named with the userName + leave suffix
                     SoundFile leaveFile = soundService.findOneBySoundFileIdIgnoreCase(
-                            users.getUsername() + botConfig.getLeaveSuffix());
+                            discordUser.getUsername() + botConfig.getLeaveSuffix());
                     if (leaveFile != null) {
                         try {
                             bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());

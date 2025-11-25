@@ -5,7 +5,7 @@ set -e
 mkdir -p /etc/DiscordSoundboard/config
 #If the file is still in /bin move it to ../config so that we can expose that as a persistent directory
 # on something like unraid. Only moves the file if it's not already there.
-[ -f /etc/DiscordSoundboard/bin/application.properties ] && mv -n /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
+[ -f /etc/DiscordSoundboard/bin/application.properties ] && mv /etc/DiscordSoundboard/bin/application.properties /etc/DiscordSoundboard/config/application.properties
 [ -f /etc/DiscordSoundboard/bin/application.yml ] && mv -n /etc/DiscordSoundboard/bin/application.yml /etc/DiscordSoundboard/config/application.yml
 
 echo "changing to config directory to update application.properties file"

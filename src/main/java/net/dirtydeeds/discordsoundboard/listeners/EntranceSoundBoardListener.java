@@ -2,10 +2,10 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.Users;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -23,18 +23,18 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(EntranceSoundBoardListener.class);
 
     private final SoundPlayer bot;
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final boolean playEntranceOnJoin;
     private final BotConfig botConfig;
     private final SoundService soundService;
 
-    public EntranceSoundBoardListener(SoundPlayer bot, UserService userService,
+    public EntranceSoundBoardListener(SoundPlayer bot, DiscordUserService discordUserService,
                                       SoundService soundService,
                                       boolean playEntranceOnJoin,
                                       BotConfig botConfig) {
         this.soundService = soundService;
         this.bot = bot;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.playEntranceOnJoin = playEntranceOnJoin;
         this.botConfig = botConfig;
     }
@@ -46,10 +46,10 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                 String userJoined = event.getMember().getEffectiveName();
                 String userId = event.getMember().getId();
 
-                Users users = userService.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
-                if (users != null) {
-                    if (StringUtils.hasText(users.getEntranceSound())) {
-                        String entranceSound = users.getEntranceSound();
+                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userId, userJoined);
+                if (discordUser != null) {
+                    if (StringUtils.hasText(discordUser.getEntranceSound())) {
+                        String entranceSound = discordUser.getEntranceSound();
                         LOG.info(String.format("Playing entrance sound %s", entranceSound));
                         bot.playFileInChannel(entranceSound, event.getChannelJoined());
                     } else if (StringUtils.hasText(botConfig.getEntranceForAll())) {
@@ -57,7 +57,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                         bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined());
                     } else {
                         //If DB doesn't have an entrance sound check for a file with the same name as the user
-                        SoundFile entranceFile = soundService.findOneBySoundFileIdIgnoreCase(users.getUsername());
+                        SoundFile entranceFile = soundService.findOneBySoundFileIdIgnoreCase(discordUser.getUsername());
                         if (entranceFile != null) {
                             try {
                                 bot.playFileInChannel(entranceFile.getSoundFileId(), event.getChannelJoined());

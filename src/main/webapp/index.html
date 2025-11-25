@@ -215,8 +215,8 @@
                         <label id="searchLabel" for="search">Search Sounds:</label>
                         <div id="dropdownSearchContainer" class="dropdownSearch"></div>
                         <div class="form-group">
-                            <label for="users">Play sounds for:</label>
-                            <select id="users" class="custom-select"></select>
+                            <label for="discordUser">Play sounds for:</label>
+                            <select id="discordUser" class="custom-select"></select>
 <!--                            <select id="channel" class="custom-select"></select>-->
                         </div>
                         <div class="form-group">
@@ -390,7 +390,7 @@
             );
         }
 
-        // Create sort function for list of users
+        // Create sort function for list of discordUser
         function createDynamicSorter(propertyName) {
             let sortDirection = 1;
             if(propertyName[0] === "-") {
@@ -468,7 +468,7 @@
             // Play sound
             $.ajax({
                 method: "POST",
-                url: "/bot/playFile?soundFileId=" + this.id + "&username=" + $('#users').val()
+                url: "/bot/playFile?soundFileId=" + this.id + "&username=" + $('#discordUser').val()
             });
             const newTimesPlayed = parseInt(this.getAttribute("data-timesPlayed")) + 1;
             this.setAttribute("data-timesPlayed", newTimesPlayed);
@@ -477,13 +477,13 @@
             // Play random sound
             $.ajax({
                 method: "POST",
-                url: "/bot/random?username=" + $('#users').val()
+                url: "/bot/random?username=" + $('#discordUser').val()
             });
         }).on('click', '#stop', function(){
             // Stop sound
             $.ajax({
                 method: "POST",
-                url: "/bot/stop?username=" + $('#users').val()
+                url: "/bot/stop?username=" + $('#discordUser').val()
             });
         }).on('change', '#rgb', function(){
             // Enable RGB
@@ -492,14 +492,14 @@
             // Change volume
             $.ajax({
                 method: "POST",
-                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#users').val()
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#discordUser').val()
             });
         }).on('show.bs.dropdown', '#settings', function(){
             closeMenu()
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
-                url: "/bot/volume?username=" + $('#users').val() + "&voiceChannelId=" + $('#channel').val()
+                url: "/bot/volume?username=" + $('#discordUser').val() + "&voiceChannelId=" + $('#channel').val()
             }).done(function( data ) {
                 $('#volume').val(data);
             });
@@ -626,26 +626,59 @@
             });
         });
 
-        // Get users
-        $.ajax({
-            method: "GET",
-            url: "api/users/findAll"
-        }).done(function( data ) {
-            var users = data.content;
-            users.sort(createMultiPropertySorter("-onlineStatus", "username"));
-            var previousStatus = null;
-            $.each(users, function(i, obj){
-                if (obj.inVoice || obj.selected) {
-                    var onlineStatus = (obj.inVoice) ? "IN VOICE" : obj.onlineStatus;
-                    if (previousStatus != onlineStatus) {
-                        previousStatus = onlineStatus;
-                        $('#users').append('</optgroup>');
-                        $('#users').append('<optgroup label="' + onlineStatus + '">');
+        async function fetchDiscordUsers() {
+            let discordUsers = [];
+            let currentPage = 1;
+            let totalPages = 1; // Will be updated after first request
+
+            try {
+                do {
+                    const response = await fetch(`api/discordUsers?page=` + currentPage, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
                     }
-                    $('#users').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
-                }
-            });
-        });
+
+                    const json = await response.json();
+
+                    // Validate structure
+                    if (!Array.isArray(json.content)) {
+                        throw new Error("Unexpected API response format: 'data' is not an array");
+                    }
+
+                    discordUsers = discordUsers.concat(json.content);
+
+                    // Update pagination info
+                    totalPages = json.totalPages || totalPages;
+                    currentPage++;
+
+                } while (currentPage <= totalPages);
+
+                discordUsers.sort(createMultiPropertySorter("-onlineStatus", "username"));
+                var previousStatus = null;
+                $.each(discordUsers, function(i, obj){
+                    if (obj.inVoice || obj.selected) {
+                        var onlineStatus = (obj.inVoice) ? "IN VOICE" : obj.onlineStatus;
+                        if (previousStatus != onlineStatus) {
+                            previousStatus = onlineStatus;
+                            $('#discordUser').append('</optgroup>');
+                            $('#discordUser').append('<optgroup label="' + onlineStatus + '">');
+                        }
+                        $('#discordUser').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching paginated data:", error);
+                return [];
+            }
+        }
+
+        fetchDiscordUsers();
 
         // Get categories
         $.ajax({

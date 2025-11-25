@@ -1,8 +1,8 @@
 package net.dirtydeeds.discordsoundboard.commands;
 
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
-import net.dirtydeeds.discordsoundboard.beans.Users;
-import net.dirtydeeds.discordsoundboard.service.UserService;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 
 /**
  * @author Dave Furrer
@@ -11,11 +11,11 @@ import net.dirtydeeds.discordsoundboard.service.UserService;
  */
 public class UserDetailsCommand extends Command {
 
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final SoundPlayer soundPlayer;
 
-    public UserDetailsCommand(UserService userService, SoundPlayer soundPlayer) {
-        this.userService = userService;
+    public UserDetailsCommand(DiscordUserService discordUserService, SoundPlayer soundPlayer) {
+        this.discordUserService = discordUserService;
         this.soundPlayer = soundPlayer;
         this.name = "userDetails";
         this.help = "userDetails userName - Get details for user";
@@ -25,25 +25,25 @@ public class UserDetailsCommand extends Command {
     protected void execute(CommandEvent event) {
         if (!event.getArguments().isEmpty()) {
             String userNameOrId = event.getArguments().getFirst();
-            Users users = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
-            if (users == null) {
+            DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+            if (discordUser == null) {
                 net.dv8tion.jda.api.entities.User jdaUser = soundPlayer.retrieveUserById(userNameOrId);
                 if (jdaUser != null) {
-                    users = new Users(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
+                    discordUser = new DiscordUser(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
                 }
             }
-            if (users != null) {
+            if (discordUser != null) {
                 StringBuilder response = new StringBuilder();
                 response.append("User details for ").append(userNameOrId).append("```")
-                        .append("\nDiscord Id: ").append(users.getId())
-                        .append("\nUsername: ").append(users.getUsername())
+                        .append("\nDiscord Id: ").append(discordUser.getId())
+                        .append("\nUsername: ").append(discordUser.getUsername())
                         .append("\nEntrance Sound: ");
-                if (users.getEntranceSound() != null) {
-                    response.append(users.getEntranceSound());
+                if (discordUser.getEntranceSound() != null) {
+                    response.append(discordUser.getEntranceSound());
                 }
                 response.append("\nLeave Sound: ");
-                if (users.getLeaveSound() != null) {
-                    response.append(users.getLeaveSound());
+                if (discordUser.getLeaveSound() != null) {
+                    response.append(discordUser.getLeaveSound());
                 }
                 response.append("```");
                 event.replyByPrivateMessage(response.toString());

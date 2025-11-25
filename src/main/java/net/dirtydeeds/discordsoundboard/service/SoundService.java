@@ -1,11 +1,12 @@
 package net.dirtydeeds.discordsoundboard.service;
 
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SoundService {
 
-    Iterable<SoundFile> findAll(Pageable pageable);
+    Page<SoundFile> findAll(Pageable pageable);
 
     SoundFile findOneBySoundFileIdIgnoreCase(String fileName);
 

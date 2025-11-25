@@ -108,12 +108,12 @@ Unzip the application. Update the application.properties with your bot token and
 * ?userdetails userName
 
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
-Responses will be sent to the requesting users via direct message also.
+Responses will be sent to the requesting discordUser via direct message also.
 
 PM the bot a wav or mp3 file < 10MB and it will add it to the soundboard.
 
 ### Playing sounds by text commands
 Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
-be the name of the sound file minus extension. When a users types one of the sound file commands listed the bot 
-will join that users channel and then play the requested sound file. The bot remains in that channel unless the 
+be the name of the sound file minus extension. When a discordUser types one of the sound file commands listed the bot 
+will join that discordUser channel and then play the requested sound file. The bot remains in that channel unless the 
 bot is requested to play sound in a different channel.

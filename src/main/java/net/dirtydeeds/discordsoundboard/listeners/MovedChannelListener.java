@@ -2,10 +2,10 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.Users;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -23,15 +23,15 @@ public class MovedChannelListener extends ListenerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(MovedChannelListener.class);
 
     private final SoundPlayer bot;
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final boolean playEntranceOnMove;
     private final BotConfig botConfig;
     private final SoundService soundService;
 
-    public MovedChannelListener(SoundPlayer bot, UserService userService, SoundService soundService,
+    public MovedChannelListener(SoundPlayer bot, DiscordUserService discordUserService, SoundService soundService,
                                 boolean playEntranceOnMove, BotConfig botConfig) {
         this.bot = bot;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.soundService = soundService;
         this.playEntranceOnMove = playEntranceOnMove;
         this.botConfig = botConfig;
@@ -46,7 +46,7 @@ public class MovedChannelListener extends ListenerAdapter {
                 String entranceFile = null;
                 String disconnectFile = null;
 
-                Users users = userService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
+                DiscordUser users = discordUserService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
                 if (users != null) {
                     if (StringUtils.hasText(users.getEntranceSound())) {
                         entranceFile = users.getEntranceSound();
