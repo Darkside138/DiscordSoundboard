@@ -217,7 +217,6 @@
                         <div class="form-group">
                             <label for="discordUser">Play sounds for:</label>
                             <select id="discordUser" class="custom-select"></select>
-<!--                            <select id="channel" class="custom-select"></select>-->
                         </div>
                         <div class="form-group">
                             <label for="volume">Volume</label>
@@ -496,6 +495,7 @@
             });
         }).on('show.bs.dropdown', '#settings', function(){
             closeMenu()
+            fetchDiscordUsers();
             // Get current volume when opening settings
             $.ajax({
                 method: "GET",
@@ -660,6 +660,11 @@
                 } while (currentPage <= totalPages);
 
                 discordUsers.sort(createMultiPropertySorter("-onlineStatus", "username"));
+
+                var userSelect = document.getElementById("discordUser")
+                userSelect.options.length = 0;
+                const groups = userSelect.querySelectorAll("optgroup");
+                groups.forEach(group => group.remove());
                 var previousStatus = null;
                 $.each(discordUsers, function(i, obj){
                     if (obj.inVoice || obj.selected) {
