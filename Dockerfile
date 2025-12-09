@@ -3,6 +3,10 @@ FROM gradle:7.4.2-jdk17-alpine AS builder
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
+RUN apt update && \
+    apt upgrade -y && \
+    apt install nodejs npm
+
 WORKDIR /app
 
 # Copy repo from GitHub actions checkout
