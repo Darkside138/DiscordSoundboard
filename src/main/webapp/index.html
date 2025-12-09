@@ -621,28 +621,44 @@
                     document.getElementById('volumeOffset').value = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
                     document.getElementById('volumeOffsetValue').textContent = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
 
-                    // Position menu within viewport boundaries
-                    let menuWidth = contextMenu.offsetWidth;
-                    let menuHeight = contextMenu.offsetHeight;
-                    let pageWidth = window.innerWidth;
-                    let pageHeight = window.innerHeight;
-
-                    let posX = event.clientX;
-                    let posY = event.clientY;
-
-                    if (posX + menuWidth > pageWidth) {
-                        posX = pageWidth - menuWidth - 5;
-                    }
-                    if (posY + menuHeight > pageHeight) {
-                        posY = pageHeight - menuHeight - 5;
-                    }
-
-                    contextMenu.style.left = posX + "px";
-                    contextMenu.style.top = posY + "px";
                     contextMenu.style.display = "block";
+
+                    positionPopup(document.getElementById("contextMenu"), soundFileButton);
+
                 });
             });
         });
+
+        function positionPopup(popup, target) {
+            const padding = 8; // space from edges
+            const targetRect = target.getBoundingClientRect();
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let top = targetRect.bottom + window.scrollY + padding;
+            let left = targetRect.left + window.scrollX;
+
+            // Adjust horizontally if overflowing
+            if (left + popupRect.width > viewportWidth - padding) {
+                left = viewportWidth - popupRect.width - padding + window.scrollX;
+            }
+            if (left < padding) {
+                left = padding + window.scrollX;
+            }
+
+            // Adjust vertically if overflowing
+            if (top + popupRect.height > viewportHeight + window.scrollY - padding) {
+                // Place above target if not enough space below
+                top = targetRect.top + window.scrollY - popupRect.height - padding;
+            }
+            if (top < padding + window.scrollY) {
+                top = padding + window.scrollY;
+            }
+
+            popup.style.left = `${left}px`;
+            popup.style.top = `${top}px`;
+        }
 
         async function fetchDiscordUsers() {
             let discordUsers = [];

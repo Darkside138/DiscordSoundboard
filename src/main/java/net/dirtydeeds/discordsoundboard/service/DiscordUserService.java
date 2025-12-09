@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service;
 
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,4 +21,10 @@ public interface DiscordUserService {
     Page<DiscordUser> findAll(Pageable pageable);
 
     void delete(DiscordUser discordUser);
+
+    Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable);
+
+    void updateUsersInDb();
+
+    void setSoundPlayer(SoundPlayer soundPlayer);
 }

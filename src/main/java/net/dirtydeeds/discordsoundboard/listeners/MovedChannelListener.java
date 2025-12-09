@@ -4,6 +4,7 @@ import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -27,19 +28,22 @@ public class MovedChannelListener extends ListenerAdapter {
     private final boolean playEntranceOnMove;
     private final BotConfig botConfig;
     private final SoundService soundService;
+    private final DiscordUserController discordUserController;
 
     public MovedChannelListener(SoundPlayer bot, DiscordUserService discordUserService, SoundService soundService,
-                                boolean playEntranceOnMove, BotConfig botConfig) {
+                                boolean playEntranceOnMove, BotConfig botConfig, DiscordUserController discordUserController) {
         this.bot = bot;
         this.discordUserService = discordUserService;
         this.soundService = soundService;
         this.playEntranceOnMove = playEntranceOnMove;
         this.botConfig = botConfig;
+        this.discordUserController = discordUserController;
     }
 
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
         if (event.getChannelLeft() != null && event.getChannelJoined() != null) {
+            discordUserController.broadcastUpdate();
             if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
                 String discordUser = event.getMember().getEffectiveName();
                 String discordUserId = event.getMember().getId();

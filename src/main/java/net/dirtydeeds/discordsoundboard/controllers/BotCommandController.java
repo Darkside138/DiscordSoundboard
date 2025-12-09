@@ -7,6 +7,7 @@ import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,50 +19,57 @@ import java.util.List;
 public class BotCommandController {
 
     private final SoundPlayer soundPlayer;
+    private final SoundController soundController;
+    private final BotVolumeController botVolumeController;
 
     @Autowired
-    public BotCommandController(SoundPlayer soundPlayer) {
+    public BotCommandController(SoundPlayer soundPlayer, SoundController soundController, BotVolumeController botVolumeController) {
         this.soundPlayer = soundPlayer;
+        this.soundController = soundController;
+        this.botVolumeController = botVolumeController;
     }
 
     @PostMapping(value = "/playFile")
-    public HttpStatus playSoundFile(@RequestParam String soundFileId, @RequestParam String username,
-                                    @RequestParam(defaultValue = "1") Integer repeatTimes,
-                                    @RequestParam(defaultValue = "") String voiceChannelId) {
+    public ResponseEntity<Void> playSoundFile(@RequestParam String soundFileId, @RequestParam String username,
+                                                @RequestParam(defaultValue = "1") Integer repeatTimes,
+                                                @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.playForUser(soundFileId, username, repeatTimes, voiceChannelId);
-        return HttpStatus.OK;
+        soundController.broadcastUpdate();
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/playUrl")
-    public HttpStatus playSoundUrl(@RequestParam String url, @RequestParam String username,
+    public ResponseEntity<Void> playSoundUrl(@RequestParam String url, @RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.playForUser(url, username, 1, voiceChannelId);
-        return HttpStatus.OK;
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/random")
-    public HttpStatus soundCommand(@RequestParam String username,
+    public ResponseEntity<Void> soundCommand(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         try {
             soundPlayer.playRandomSoundFile(username, null);
+            soundController.broadcastUpdate();
         } catch (SoundPlaybackException e) {
-            return HttpStatus.INTERNAL_SERVER_ERROR;
+            return ResponseEntity.internalServerError().build();
         }
-        return HttpStatus.OK;
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/stop")
-    public HttpStatus stopPlayback(@RequestParam String username,
+    public ResponseEntity<Void> stopPlayback(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.stop(username, voiceChannelId);
-        return HttpStatus.OK;
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/volume")
-    public HttpStatus setVolume(@RequestParam Integer volume, @RequestParam String username,
+    public ResponseEntity<Void> setVolume(@RequestParam Integer volume, @RequestParam String username,
                                 @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.setGlobalVolume(volume, username, null);
-        return HttpStatus.OK;
+        botVolumeController.broadcastUpdate(username);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/volume")

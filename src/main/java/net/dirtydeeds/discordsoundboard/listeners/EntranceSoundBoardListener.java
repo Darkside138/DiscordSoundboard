@@ -4,6 +4,7 @@ import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -27,21 +28,25 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     private final boolean playEntranceOnJoin;
     private final BotConfig botConfig;
     private final SoundService soundService;
+    private final DiscordUserController discordUserController;
 
     public EntranceSoundBoardListener(SoundPlayer bot, DiscordUserService discordUserService,
-                                      SoundService soundService,
-                                      boolean playEntranceOnJoin,
-                                      BotConfig botConfig) {
+                                        SoundService soundService,
+                                        boolean playEntranceOnJoin,
+                                        BotConfig botConfig,
+                                        DiscordUserController discordUserController) {
         this.soundService = soundService;
         this.bot = bot;
         this.discordUserService = discordUserService;
         this.playEntranceOnJoin = playEntranceOnJoin;
         this.botConfig = botConfig;
+        this.discordUserController = discordUserController;
     }
 
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
         if (event.getChannelLeft() == null && event.getChannelJoined() != null) {
+            discordUserController.broadcastUpdate();
             if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
                 String userJoined = event.getMember().getEffectiveName();
                 String userId = event.getMember().getId();

@@ -56,7 +56,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
             track.setUserData(--repeatTimes);
             audioPlayer.playTrack(track.makeClone());
         }
-        audioPlayer.setVolume(globalVolume);
+        audioPlayer.setVolume(getGlobalVolume());
     }
 
     @Override

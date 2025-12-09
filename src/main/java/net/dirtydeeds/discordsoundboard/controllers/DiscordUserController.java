@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Hidden
 @RestController
@@ -19,19 +24,76 @@ import org.springframework.web.bind.annotation.RestController;
 public class DiscordUserController {
 
     private final DiscordUserService discordUserService;
-    private final SoundPlayer soundPlayer;
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
     @Autowired
-    public DiscordUserController(DiscordUserService discordUserService, SoundPlayer soundPlayer) {
+    public DiscordUserController(DiscordUserService discordUserService) {
         this.discordUserService = discordUserService;
-        this.soundPlayer = soundPlayer;
     }
 
     @GetMapping()
     public Page<DiscordUser> getAll(@RequestParam(defaultValue = "1") int page,
                                     @RequestParam(defaultValue = "20") int size) {
         //Need to call this to refresh the list of users.
-        soundPlayer.updateUsersInDb();
+        discordUserService.updateUsersInDb();
         return discordUserService.findAll(Pageable.ofSize(size).withPage(page));
+    }
+
+    @GetMapping("/invoiceorselected")
+    public Page<DiscordUser> getInvoiceOrSelected(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "200") int size) {
+        //Need to call this to refresh the list of users.
+        discordUserService.updateUsersInDb();
+        return discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(Pageable.ofSize(size).withPage(page));
+    }
+
+    @GetMapping("/invoiceorselected/stream")
+    public SseEmitter streamInvoiceOrSelected() {
+        //Need to call this to refresh the list of users.
+        discordUserService.updateUsersInDb();
+
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+
+        // Add emitter to the list
+        emitters.add(emitter);
+
+        // Remove emitter when completed or timed out
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
+        emitter.onError((e) -> emitters.remove(emitter));
+
+        // Send initial data immediately
+        try {
+            Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(
+                    Pageable.ofSize(200).withPage(0));
+            emitter.send(SseEmitter.event()
+                    .name("discordUsers")
+                    .data(discordUsers));
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
+
+        return emitter;
+    }
+
+    // Helper method to broadcast updates to all connected clients
+    public void broadcastUpdate() {
+        discordUserService.updateUsersInDb();
+
+        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(
+                Pageable.ofSize(200).withPage(0));
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("discordUsers")
+                        .data(discordUsers));
+            } catch (IOException e) {
+                deadEmitters.add(emitter);
+            }
+        });
+
+        // Remove dead emitters
+        emitters.removeAll(deadEmitters);
     }
 }

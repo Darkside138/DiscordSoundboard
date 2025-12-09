@@ -7,3 +7,4 @@ build
 .gradle/
 /src/main/resources/application.properties
 /discordDB/
+/src/frontend/node_modules/

@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service.impl;
 
+import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.repository.DiscordUserRepository;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
@@ -17,6 +18,8 @@ public class DiscordUserServiceImpl implements DiscordUserService {
 
     @Autowired
     private DiscordUserRepository discordUserRepository;
+
+    private SoundPlayer soundPlayer;
 
     @Override
     public Optional<DiscordUser> findById(String id) {
@@ -45,4 +48,18 @@ public class DiscordUserServiceImpl implements DiscordUserService {
 
     @Override
     public void delete(DiscordUser discordUser) { discordUserRepository.delete(discordUser); }
+
+    @Override
+    public Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable) {
+        return discordUserRepository.findByInVoiceIsTrueOrSelectedIsTrue(pageable);
+    }
+
+    @Override
+    public void updateUsersInDb() {
+        soundPlayer.updateUsersInDb();
+    }
+
+    public void setSoundPlayer(SoundPlayer soundPlayer) {
+        this.soundPlayer = soundPlayer;
+    }
 }

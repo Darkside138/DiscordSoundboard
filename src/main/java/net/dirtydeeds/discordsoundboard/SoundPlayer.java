@@ -8,6 +8,8 @@ import jakarta.inject.Singleton;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.commands.*;
+import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
+import net.dirtydeeds.discordsoundboard.controllers.SoundController;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.listeners.*;
 import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
@@ -53,18 +55,26 @@ public class SoundPlayer {
     private final BotConfig botConfig;
     private JDA bot;
     private JDABot jdaBot;
+    private final DiscordUserController discordUserController;
+    private final SoundController soundController;
 
     @Inject
     public SoundPlayer(MainWatch mainWatch, SoundService soundService,
                        DiscordUserService discordUserService, ShutdownManager shutdownManager, BotConfig botConfig,
-                       ServletWebServerApplicationContext webServerApplicationContext) {
+                       ServletWebServerApplicationContext webServerApplicationContext,
+                       DiscordUserController discordUserController,
+                       SoundController soundController) {
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
         this.soundService = soundService;
         this.discordUserService = discordUserService;
+        this.discordUserService.setSoundPlayer(this);
         this.shutdownManager = shutdownManager;
         this.botConfig = botConfig;
         this.webServerApplicationContext = webServerApplicationContext;
+        this.discordUserController = discordUserController;
+        this.soundController = soundController;
+        this.soundController.setSoundPlayer(this);
 
         init();
     }
@@ -101,10 +111,10 @@ public class SoundPlayer {
 
         bot.addEventListener(commandListener);
         bot.addEventListener(new EntranceSoundBoardListener(this, discordUserService, soundService,
-                botConfig.isPlayEntranceOnJoin(), botConfig));
-        bot.addEventListener(new LeaveSoundBoardListener(this, discordUserService, soundService, botConfig));
+                botConfig.isPlayEntranceOnJoin(), botConfig, discordUserController));
+        bot.addEventListener(new LeaveSoundBoardListener(this, discordUserService, soundService, botConfig, discordUserController));
         bot.addEventListener(new MovedChannelListener(this, discordUserService, soundService,
-                botConfig.isPlayEntranceOnMove(), botConfig));
+                botConfig.isPlayEntranceOnMove(), botConfig, discordUserController));
         bot.addEventListener(new BotLeaveListener(botConfig));
         bot.addEventListener(new FileAttachmentListener(botConfig));
 
@@ -385,9 +395,11 @@ public class SoundPlayer {
                         users.add(user);
                     }
                 } else {
-                    users.add(
-                            new DiscordUser(member.getId(), username, selected,
-                                    member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel));
+                    if (!member.getUser().isBot() && !member.getUser().isSystem()) {
+                        users.add(
+                                new DiscordUser(member.getId(), username, selected,
+                                        member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel));
+                    }
                 }
             });
         });
@@ -478,9 +490,10 @@ public class SoundPlayer {
                     .toList();
 
             difference.forEach(soundService::delete);
+
+            soundController.broadcastUpdate();
         } catch (IOException e) {
             LOG.error(e.toString());
-            e.printStackTrace();
         }
     }
 
@@ -627,5 +640,9 @@ public class SoundPlayer {
     public void cleanUp() {
         System.out.println("SoundPlayer is shutting down. Cleaning up.");
         bot.shutdown();
+    }
+
+    public String getSoundsDirectory() {
+        return botConfig.getSoundFileDir();
     }
 }

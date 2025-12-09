@@ -18,19 +18,20 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.asciidoctor.jvm.convert' version '4.0.5'
     id 'application'
+    id 'com.github.node-gradle.node' version '7.0.1'
 }
 
 repositories {
     mavenCentral()
     maven {
-        name 'm2-dv8tion'
-        url 'https://m2.dv8tion.net/releases'
+        name = 'm2-dv8tion'
+        url = 'https://m2.dv8tion.net/releases'
     }
     maven {
-        url 'https://jitpack.io'
+        url = 'https://jitpack.io'
     }
     maven {
-        url "https://m2.chew.pro/releases"
+        url = "https://m2.chew.pro/releases"
     }
 }
 
@@ -63,7 +64,7 @@ dependencies {
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation 'pw.chew:jda-chewtils:1.24.1'
 
-    implementation group: 'commons-io', name: 'commons-io', version: '2.14.0'
+    implementation 'commons-io:commons-io:2.14.0'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
@@ -87,6 +88,44 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 }
 
+node {
+    version = '20.11.0'
+    npmVersion = '10.2.4'
+    download = true
+    nodeProjectDir = file("${project.projectDir}/src/frontend")
+}
+
+npm_install {
+    outputs.dir("${project.projectDir}/src/frontend/node_modules")
+}
+
+// Task to build the React app
+task buildFrontend(type: com.github.gradle.node.npm.task.NpmTask) {
+    description = 'Build the frontend application'
+    args = ['run', 'build']
+    dependsOn npm_install  // Use the plugin's built-in task
+}
+
+// Task to copy built files to Spring Boot static directory
+task copyFrontend(type: Copy, dependsOn: buildFrontend) {
+    description = 'Copy built frontend files to Spring Boot static resources'
+    from "${project.projectDir}/src/frontend/build"
+    into "${layout.buildDirectory.get().asFile}/resources/main/static"
+    rename { String fileName ->
+        fileName.replace("index.html", "indexV2.html") }
+}
+
+// Make processResources depend on copyFrontend
+processResources.dependsOn copyFrontend
+
+// Clean frontend build
+task cleanFrontend(type: Delete) {
+    delete "${project.projectDir}/src/frontend/build"
+    delete "${project.projectDir}/src/frontend/node_modules"
+}
+
+clean.dependsOn cleanFrontend
+
 processResources {
     exclude 'app.properties'
 }
@@ -100,6 +139,7 @@ bootDistZip {
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
+        from ("${layout.buildDirectory.get()}/resources/main/static/")
     }
     into("DiscordSoundboard/bin/sounds") {
         from('sounds')
@@ -107,8 +147,6 @@ bootDistZip {
     into("DiscordSoundboard/bin/") {
         from("${layout.buildDirectory.get().asFile}/libs/DiscordSoundboard.jar")
     }
-    rename { String fileName ->
-        fileName.replace('application.properties.example', 'application.properties') }
 }
 
 tasks.register("renameDist") {
