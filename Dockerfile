@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM gradle:8.5-jdk21 AS builder
+FROM gradle:7.4.2-jdk17 AS builder
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
