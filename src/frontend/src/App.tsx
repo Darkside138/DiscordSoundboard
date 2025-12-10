@@ -934,7 +934,7 @@ export default function App() {
           </div>
 
           {/* Sound Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
             {filteredSounds.map(sound => (
               <SoundButton
                 key={sound.id}

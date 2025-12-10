@@ -49,26 +49,26 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
       onContextMenu={onContextMenu}
     >
       {isFavorite && (
-        <div className="absolute top-2 right-2 z-10 bg-yellow-500 rounded-full p-1.5 shadow-lg p-[3px]" title="Favorite">
-          <Star className="w-3 h-3 fill-white text-white" />
+        <div className="absolute top-1.5 right-1.5 z-10 bg-yellow-500 rounded-full p-1 shadow-lg" title="Favorite">
+          <Star className="w-2.5 h-2.5 fill-white text-white" />
         </div>
       )}
-      
+
       {isTopPlayed && (
-        <div className={`absolute top-2 ${isFavorite ? 'right-10' : 'right-2'} z-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full p-1.5 shadow-lg p-[3px]`} title="Popular sound">
-          <Trophy className="w-3 h-3 fill-white text-white" />
+        <div className={`absolute top-1.5 ${isFavorite ? 'right-8' : 'right-1.5'} z-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full p-1 shadow-lg`} title="Popular sound">
+          <Trophy className="w-2.5 h-2.5 fill-white text-white" />
         </div>
       )}
-      
+
       {isRecentlyAdded && (
-        <div className="absolute top-2 right-2 z-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full p-1.5 shadow-lg p-[3px]">
-          <Sparkles className="w-3 h-3 fill-white text-white" />
+        <div className="absolute top-1.5 right-1.5 z-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full p-1 shadow-lg">
+          <Sparkles className="w-2.5 h-2.5 fill-white text-white" />
         </div>
       )}
-      
+
       <button
         onClick={disabled ? undefined : onPlay}
-        className={`w-full h-full p-3 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis ${
+        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm ${
           disabled
             ? 'cursor-not-allowed'
             : theme === 'dark'
