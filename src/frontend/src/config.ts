@@ -1,6 +1,6 @@
 // API configuration
 // Force development mode when running in this environment
-const isDevelopment = true; // Always use localhost:8080 in this environment
+const isDevelopment = false; // Always use localhost:8080 in this environment
 
 // In development, use localhost:8080
 // In production (built app served by Spring Boot), use relative URLs
