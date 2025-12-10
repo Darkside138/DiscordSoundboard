@@ -68,7 +68,7 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
 
       <button
         onClick={disabled ? undefined : onPlay}
-        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm ${
+        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg ${
           disabled
             ? 'cursor-not-allowed'
             : theme === 'dark'
