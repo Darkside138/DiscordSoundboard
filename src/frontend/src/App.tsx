@@ -76,6 +76,20 @@ export default function App() {
   const toggleFavoriteInProgressRef = useRef<Set<string>>(new Set());
   const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
 
+  // Global ESC key handler - works from anywhere
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSearchQuery('');
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, []);
+
   useEffect(() => {
     // Prevent double SSE connections in StrictMode
     let eventSource: EventSource | null = null;
@@ -85,7 +99,7 @@ export default function App() {
     try {
       console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
       eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
-      
+
       eventSource.onopen = () => {
         console.log('✅ SSE connection established');
         setConnectionStatus('connected');
@@ -107,7 +121,7 @@ export default function App() {
           const apiSounds = Array.isArray(data) ? data : (data.content || []);
           const transformedSounds = transformApiSounds(apiSounds);
           setSounds(transformedSounds);
-          
+
           // Update favorites based on sounds with favorite=true from backend
           const newFavorites = new Set<string>();
           transformedSounds.forEach(sound => {
@@ -115,13 +129,13 @@ export default function App() {
               newFavorites.add(sound.id);
             }
           });
-          
+
           console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
           console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
           console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
-          
+
           setFavorites(newFavorites);
-          
+
           setLoading(false);
           setConnectionStatus('connected');
         } catch (error) {
@@ -213,7 +227,7 @@ export default function App() {
     // Add a small delay to ensure initial fetch completes before opening SSE
     const sseTimeout = setTimeout(() => {
       if (!isMounted) return;
-      
+
       try {
         const sseUrl = `${API_ENDPOINTS.VOLUME_STREAM}/${selectedUserId}`;
         console.log('🔌 Creating EventSource for:', sseUrl);
@@ -239,7 +253,7 @@ export default function App() {
           console.log('📦 Event type:', event.type);
           console.log('📦 Event data:', event.data);
           console.log('📦 Event lastEventId:', event.lastEventId);
-          
+
           if (!isMounted) {
             console.log('⚠️ Component unmounted, ignoring message');
             return;
@@ -264,7 +278,7 @@ export default function App() {
         volumeEventSource.addEventListener('volume', (event) => {
           console.log('🔔 Volume SSE NAMED EVENT received!');
           console.log('📦 Named event data:', event.data);
-          
+
           if (!isMounted) {
             console.log('⚠️ Component unmounted, ignoring named event');
             return;
@@ -289,7 +303,7 @@ export default function App() {
         volumeEventSource.addEventListener('globalVolume', (event) => {
           console.log('🔔 Volume SSE GLOBALVOLUME EVENT received!');
           console.log('📦 GlobalVolume event data:', event.data);
-          
+
           if (!isMounted) {
             console.log('⚠ Component unmounted, ignoring globalVolume event');
             return;
@@ -297,11 +311,11 @@ export default function App() {
           try {
             console.log('Processing globalVolume SSE event:', event.data);
             const volumeValue = parseFloat(event.data);
-            
+
             // Backend sends volume as percentage (0-100), not decimal (0-1)
             const volumePercentage = Math.round(volumeValue);
             console.log('Parsed globalVolume value:', volumeValue, '-> percentage:', volumePercentage);
-            
+
             if (!isNaN(volumePercentage) && volumePercentage >= 0 && volumePercentage <= 100) {
               console.log('✅ VALID globalVolume value, calling setVolume with:', volumePercentage);
               setVolume(volumePercentage);
@@ -325,7 +339,7 @@ export default function App() {
           console.error('❌ Volume SSE connection ERROR:', error);
           console.log('📊 Volume SSE readyState:', volumeEventSource?.readyState, '(0=CONNECTING, 1=OPEN, 2=CLOSED)');
           console.log('🔗 Volume SSE url:', volumeEventSource?.url);
-          
+
           if (volumeEventSource?.readyState === EventSource.CLOSED) {
             console.error('🚫 SSE connection is CLOSED - will not receive updates');
           } else if (volumeEventSource?.readyState === EventSource.CONNECTING) {
@@ -356,23 +370,23 @@ export default function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check if user is typing a letter or number
       const isTypingChar = event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key);
-      
+
       // Don't interfere if user is already in an input, textarea, or select
       const activeElement = document.activeElement;
-      const isInInputField = activeElement instanceof HTMLInputElement || 
-                            activeElement instanceof HTMLTextAreaElement || 
+      const isInInputField = activeElement instanceof HTMLInputElement ||
+                            activeElement instanceof HTMLTextAreaElement ||
                             activeElement instanceof HTMLSelectElement;
-      
+
       // Don't interfere with keyboard shortcuts (Ctrl, Alt, Cmd, etc.)
       const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
-      
+
       if (isTypingChar && !isInInputField && !hasModifier && searchInputRef.current) {
         searchInputRef.current.focus();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -381,28 +395,28 @@ export default function App() {
   const toggleFavorite = async (soundId: string) => {
     const isFavorite = favorites.has(soundId);
     const newFavoriteState = !isFavorite;
-    
+
     // Generate unique call ID to track if this function is called multiple times
     const callId = Math.random().toString(36).substring(7);
-    
+
     // Check if a toggle is already in progress for this sound
     if (toggleFavoriteInProgressRef.current.has(soundId)) {
       console.log(`[${callId}] toggleFavorite called for ${soundId}, but a toggle is already in progress`);
       return;
     }
-    
+
     // Mark this sound as being toggled
     toggleFavoriteInProgressRef.current.add(soundId);
-    
+
     try {
       console.log(`[${callId}] toggleFavorite called for ${soundId}, changing to ${newFavoriteState}`);
       console.trace(`[${callId}] Call stack`);
-      
+
       // Call the API to update favorite status on the backend
       console.log(`[${callId}] About to call fetch...`);
       const response = await fetch(
         `${API_ENDPOINTS.FAVORITE}/${soundId}?favorite=${newFavoriteState}`,
-        { 
+        {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -411,7 +425,7 @@ export default function App() {
         }
       );
       console.log(`[${callId}] Fetch completed, response received`);
-      
+
       if (!response.ok) {
         console.error(`[${callId}] Failed to update favorite status:`, response.status);
         throw new Error('Failed to update favorite status');
@@ -427,7 +441,7 @@ export default function App() {
       }
 
       console.log(`[${callId}] Favorite status updated successfully: ${newFavoriteState}`);
-      
+
       // Update local state after successful API call
       console.log(`[${callId}] Updating local favorites state...`);
       setFavorites(prev => {
@@ -500,7 +514,7 @@ export default function App() {
     try {
       const response = await fetch(
         `${API_ENDPOINTS.PLAY_FILE}?soundFileId=${soundId}&username=${selectedUserId}`,
-        { 
+        {
           method: 'POST',
           mode: 'cors'
         }
@@ -657,7 +671,7 @@ export default function App() {
 
       console.log('✅ File uploaded successfully');
       alert(`File "${file.name}" uploaded successfully!`);
-      
+
       // Reset file input so the same file can be uploaded again if needed
       event.target.value = '';
     } catch (error) {
@@ -719,15 +733,15 @@ export default function App() {
         <header className="mb-8 flex items-start justify-between">
           <div>
             <h1 className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-900'} mb-2 flex items-center gap-3`}>
-              <img 
-                src="https://github.com/Darkside138/DiscordSoundboard/blob/master/distFiles/avatar.jpg?raw=true" 
-                alt="Discord Soundboard Logo" 
+              <img
+                src="https://github.com/Darkside138/DiscordSoundboard/blob/master/distFiles/avatar.jpg?raw=true"
+                alt="Discord Soundboard Logo"
                 className="w-8 h-8 rounded-full"
               />
               Discord Soundboard
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Upload Button */}
             <button
@@ -793,9 +807,7 @@ export default function App() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          setSearchQuery('');
-                        } else if (e.key === 'Enter' && filteredSounds.length === 1) {
+                        if (e.key === 'Enter' && filteredSounds.length === 1) {
                           // Play the single filtered sound when Enter is pressed
                           playSoundWithBot(filteredSounds[0].id);
                         }

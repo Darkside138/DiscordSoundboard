@@ -113,6 +113,8 @@ task copyFrontend(type: Copy, dependsOn: buildFrontend) {
     into "${layout.buildDirectory.get().asFile}/resources/main/static"
     rename { String fileName ->
         fileName.replace("index.html", "indexV2.html") }
+    from "${project.projectDir}/public/favicon.png"
+    into "${layout.buildDirectory.get().asFile}/resources/main/static"
 }
 
 // Make processResources depend on copyFrontend
