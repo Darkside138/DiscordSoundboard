@@ -13,6 +13,7 @@ import net.dirtydeeds.discordsoundboard.controllers.SoundController;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.listeners.*;
 import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.util.ShutdownManager;
@@ -57,13 +58,16 @@ public class SoundPlayer {
     private JDABot jdaBot;
     private final DiscordUserController discordUserController;
     private final SoundController soundController;
+    private final PlaybackService playbackService;
 
     @Inject
     public SoundPlayer(MainWatch mainWatch, SoundService soundService,
                        DiscordUserService discordUserService, ShutdownManager shutdownManager, BotConfig botConfig,
                        ServletWebServerApplicationContext webServerApplicationContext,
                        DiscordUserController discordUserController,
-                       SoundController soundController) {
+                       SoundController soundController,
+                       PlaybackService playbackService) {
+        this.playbackService = playbackService;
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
         this.soundService = soundService;
@@ -80,7 +84,7 @@ public class SoundPlayer {
     }
 
     private void init() {
-        jdaBot = new JDABot(botConfig);
+        jdaBot = new JDABot(botConfig, playbackService);
         bot = jdaBot.getJda();
         if (bot == null) {
             shutdownManager.initiateShutdown(0);

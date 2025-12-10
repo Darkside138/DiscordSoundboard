@@ -77,6 +77,7 @@ export default function App() {
   const toggleFavoriteInProgressRef = useRef<Set<string>>(new Set());
   const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
   const [showUsersOverlay, setShowUsersOverlay] = useState(false);
+  const [currentlyPlayingSoundId, setCurrentlyPlayingSoundId] = useState<string | null>(null);
 
   // Global ESC key handler - works from anywhere
   useEffect(() => {
@@ -367,6 +368,63 @@ export default function App() {
     };
   }, [selectedUserId]);
 
+  // SSE connection for playback status tracking
+  useEffect(() => {
+    let playbackEventSource: EventSource | null = null;
+    let isMounted = true;
+
+    try {
+      console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
+      playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
+
+      playbackEventSource.onopen = () => {
+        console.log('✅ Playback SSE connection established');
+      };
+
+      // Listen for track start event
+      playbackEventSource.addEventListener('trackStart', (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          console.log('🎵 Track started:', data);
+          if (data.soundFileId) {
+            setCurrentlyPlayingSoundId(data.soundFileId);
+          }
+        } catch (error) {
+          console.error('Error parsing trackStart event:', error);
+        }
+      });
+
+      // Listen for track end event
+      playbackEventSource.addEventListener('trackEnd', (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          console.log('🎵 Track ended:', data);
+          setCurrentlyPlayingSoundId(null);
+        } catch (error) {
+          console.error('Error parsing trackEnd event:', error);
+        }
+      });
+
+      playbackEventSource.onerror = (error) => {
+        console.error('❌ Playback SSE connection error:', error);
+        console.error('Playback SSE readyState:', playbackEventSource?.readyState);
+        // EventSource will automatically try to reconnect
+      };
+    } catch (error) {
+      console.error('Failed to create playback SSE connection:', error);
+    }
+
+    return () => {
+      isMounted = false;
+      if (playbackEventSource) {
+        console.log('🧹 Closing playback SSE connection');
+        playbackEventSource.close();
+      }
+    };
+  }, []);
+
   // Auto-focus search box when user starts typing
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -529,6 +587,7 @@ export default function App() {
       }
 
       console.log('Sound played successfully through bot');
+      setCurrentlyPlayingSoundId(soundId);
     } catch (error) {
       console.error('Error playing sound through bot:', error);
       // Only show alert for actual errors, not successful plays
@@ -624,6 +683,7 @@ export default function App() {
       }
 
       console.log('Sound stopped successfully');
+      setCurrentlyPlayingSoundId(null);
     } catch (error) {
       console.error('Error stopping sound:', error);
       if (error instanceof TypeError) {
@@ -975,6 +1035,7 @@ export default function App() {
                 onContextMenu={(e) => handleContextMenu(e, sound.id)}
                 theme={theme}
                 disabled={!isPlaybackEnabled}
+                isCurrentlyPlaying={currentlyPlayingSoundId === sound.id}
               />
             ))}
           </div>

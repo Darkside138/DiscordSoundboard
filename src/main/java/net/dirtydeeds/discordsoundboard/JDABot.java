@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard;
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.listeners.OnReadyListener;
 import net.dirtydeeds.discordsoundboard.handlers.PlayerManager;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -20,12 +21,14 @@ public class JDABot {
 
     private final PlayerManager playerManager;
     private final BotConfig botConfig;
+    private final PlaybackService playbackService;
 
     private JDA jda;
 
-    public JDABot(BotConfig botConfig) {
+    public JDABot(BotConfig botConfig, PlaybackService playbackService) {
         this.botConfig = botConfig;
-        this.playerManager = new PlayerManager(this);
+        this.playbackService = playbackService;
+        this.playerManager = new PlayerManager(this, playbackService);
         this.playerManager.init();
 
         try {

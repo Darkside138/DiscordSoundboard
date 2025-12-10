@@ -7,15 +7,18 @@ import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import lombok.Getter;
 import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.JDABot;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.entities.Guild;
 
 public class PlayerManager extends DefaultAudioPlayerManager {
 
     @Getter
     private final JDABot bot;
+    private final PlaybackService playbackService;
 
-    public PlayerManager(JDABot bot) {
+    public PlayerManager(JDABot bot, PlaybackService playbackService) {
         this.bot = bot;
+        this.playbackService = playbackService;
     }
 
     public void init() {
@@ -34,7 +37,7 @@ public class PlayerManager extends DefaultAudioPlayerManager {
         if(guild.getAudioManager().getSendingHandler()==null) {
             AudioPlayer player = createPlayer();
             player.setVolume(75);
-            handler = new AudioHandler(this, guild, player);
+            handler = new AudioHandler(this, guild, player, playbackService);
             player.addListener(handler);
             guild.getAudioManager().setSendingHandler(handler);
         }

@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,12 +22,15 @@ public class BotCommandController {
     private final SoundPlayer soundPlayer;
     private final SoundController soundController;
     private final BotVolumeController botVolumeController;
+    private final PlaybackService playbackService;
 
     @Autowired
-    public BotCommandController(SoundPlayer soundPlayer, SoundController soundController, BotVolumeController botVolumeController) {
+    public BotCommandController(SoundPlayer soundPlayer, SoundController soundController,
+                                BotVolumeController botVolumeController, PlaybackService playbackService) {
         this.soundPlayer = soundPlayer;
         this.soundController = soundController;
         this.botVolumeController = botVolumeController;
+        this.playbackService = playbackService;
     }
 
     @PostMapping(value = "/playFile")
@@ -34,6 +38,7 @@ public class BotCommandController {
                                                 @RequestParam(defaultValue = "1") Integer repeatTimes,
                                                 @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.playForUser(soundFileId, username, repeatTimes, voiceChannelId);
+        playbackService.sendTrackStart(soundFileId);
         soundController.broadcastUpdate();
         return ResponseEntity.ok().build();
     }
@@ -50,6 +55,9 @@ public class BotCommandController {
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         try {
             soundPlayer.playRandomSoundFile(username, null);
+//            if (currentSoundId != null) {
+//                playbackService.sendTrackEnd(currentSoundId);
+//            }
             soundController.broadcastUpdate();
         } catch (SoundPlaybackException e) {
             return ResponseEntity.internalServerError().build();
@@ -61,6 +69,11 @@ public class BotCommandController {
     public ResponseEntity<Void> stopPlayback(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.stop(username, voiceChannelId);
+
+//        if (currentSoundId != null) {
+//            playbackService.sendTrackEnd(currentSoundId);
+//        }
+
         return ResponseEntity.ok().build();
     }
 

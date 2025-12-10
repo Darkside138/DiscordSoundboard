@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Trophy, Sparkles } from 'lucide-react';
+import { Star, Trophy, Sparkles, Volume2 } from 'lucide-react';
 
 interface Sound {
   id: string;
@@ -19,9 +19,10 @@ interface SoundButtonProps {
   onContextMenu: (e: React.MouseEvent) => void;
   theme: 'light' | 'dark';
   disabled?: boolean;
+  isCurrentlyPlaying?: boolean;
 }
 
-export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled }: SoundButtonProps) {
+export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, isCurrentlyPlaying }: SoundButtonProps) {
   const formatSoundName = (name: string) => {
     return name
       // Replace underscores and hyphens with spaces
@@ -68,7 +69,7 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
 
       <button
         onClick={disabled ? undefined : onPlay}
-        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg ${
+        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg relative ${
           disabled
             ? 'cursor-not-allowed'
             : theme === 'dark'
@@ -76,10 +77,15 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
             : 'text-gray-900 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-300 hover:text-white'
         } ${
           theme === 'dark' ? 'text-white' : 'text-gray-900'
+        } ${
+          isCurrentlyPlaying ? 'bg-gradient-to-br from-blue-600 to-blue-400 text-white' : ''
         }`}
         title={disabled ? 'User must be in voice channel to play sounds' : displayText}
         disabled={disabled}
       >
+        {isCurrentlyPlaying && (
+          <Volume2 className="w-4 h-4 absolute top-1 right-1 animate-pulse" />
+        )}
         {displayText}
       </button>
     </div>

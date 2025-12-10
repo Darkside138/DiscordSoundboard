@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
 import lombok.Getter;
 import lombok.Setter;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import org.jetbrains.annotations.Nullable;
@@ -23,12 +24,14 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
     private AudioFrame lastFrame;
     @Setter
     private Integer globalVolume;
+    private final PlaybackService playbackService;
 
-    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
+    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player, PlaybackService playbackService)
     {
         this.manager = manager;
         this.audioPlayer = player;
         this.guildId = guild.getIdLong();
+        this.playbackService = playbackService;
     }
 
     public Integer getGlobalVolume() {
@@ -57,6 +60,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
             audioPlayer.playTrack(track.makeClone());
         }
         audioPlayer.setVolume(getGlobalVolume());
+        playbackService.sendTrackEnd(track.getIdentifier());
     }
 
     @Override
