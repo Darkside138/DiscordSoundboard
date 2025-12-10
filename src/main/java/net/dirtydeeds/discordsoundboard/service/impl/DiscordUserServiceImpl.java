@@ -62,4 +62,21 @@ public class DiscordUserServiceImpl implements DiscordUserService {
     public void setSoundPlayer(SoundPlayer soundPlayer) {
         this.soundPlayer = soundPlayer;
     }
+
+    @Override
+    public DiscordUser updateSounds(String userId, String entranceSound, String leaveSound) throws Exception {
+        Optional<DiscordUser> optionalDiscordUser = discordUserRepository.findById(userId);
+
+        if (optionalDiscordUser.isPresent()) {
+            DiscordUser discordUser = optionalDiscordUser.get();
+            discordUser.setEntranceSound(entranceSound);
+            discordUser.setLeaveSound(leaveSound);
+
+            discordUserRepository.save(discordUser);
+
+            return discordUser;
+        }
+
+        throw new Exception("Could not load discord user");
+    }
 }

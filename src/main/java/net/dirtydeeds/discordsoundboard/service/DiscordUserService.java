@@ -27,4 +27,6 @@ public interface DiscordUserService {
     void updateUsersInDb();
 
     void setSoundPlayer(SoundPlayer soundPlayer);
+
+    DiscordUser updateSounds(String userId, String entranceSound, String leaveSound) throws Exception;
 }

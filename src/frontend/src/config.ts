@@ -20,4 +20,5 @@ export const API_ENDPOINTS = {
   STOP: `${API_BASE_URL}/bot/stop`,
   USERS_STREAM: `${API_BASE_URL}/api/users/stream`,
   DISCORD_USERS_STREAM: `${API_BASE_URL}/api/discordUsers/invoiceorselected/stream`,
+  DISCORD_USERS: `${API_BASE_URL}/api/discordUsers`,
 };

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SoundButton } from './components/SoundButton';
 import { ContextMenu } from './components/ContextMenu';
 import { DiscordUsersList } from './components/DiscordUsersList';
-import { Search, Star, Grid3x3, Sun, Moon, Volume2, Shuffle, StopCircle, Upload } from 'lucide-react';
+import { UsersOverlay } from './components/UsersOverlay';
+import { Search, Star, Grid3x3, Sun, Moon, Volume2, Shuffle, StopCircle, Upload, Users } from 'lucide-react';
 import { API_ENDPOINTS } from './config';
 
 interface Sound {
@@ -75,6 +76,7 @@ export default function App() {
   const [volume, setVolume] = useState<number>(100);
   const toggleFavoriteInProgressRef = useRef<Set<string>>(new Set());
   const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
+  const [showUsersOverlay, setShowUsersOverlay] = useState(false);
 
   // Global ESC key handler - works from anywhere
   useEffect(() => {
@@ -765,6 +767,20 @@ export default function App() {
               aria-label="File upload input"
             />
 
+            {/* Users Button */}
+            <button
+              onClick={() => setShowUsersOverlay(true)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                theme === 'dark'
+                  ? 'bg-purple-700 text-white hover:bg-purple-600'
+                  : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
+              }`}
+              aria-label="Manage users"
+            >
+              <Users className="w-5 h-5" />
+              Users
+            </button>
+
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -934,8 +950,8 @@ export default function App() {
 
               {/* Right side - Discord Users */}
               <div>
-                <DiscordUsersList 
-                  theme={theme} 
+                <DiscordUsersList
+                  theme={theme}
                   onUserSelect={setSelectedUserId}
                   selectedUserId={selectedUserId}
                   onVolumeUpdate={setVolume}
@@ -996,6 +1012,14 @@ export default function App() {
             />
           ) : null;
         })()}
+
+        {/* Users Overlay */}
+        <UsersOverlay
+          isOpen={showUsersOverlay}
+          onClose={() => setShowUsersOverlay(false)}
+          theme={theme}
+          sounds={sounds.map(s => ({ id: s.id, name: s.name }))}
+        />
       </div>
     </div>
   );
