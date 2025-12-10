@@ -1,0 +1,23 @@
+// API configuration
+// Force development mode when running in this environment
+const isDevelopment = true; // Always use localhost:8080 in this environment
+
+// In development, use localhost:8080
+// In production (built app served by Spring Boot), use relative URLs
+export const API_BASE_URL = isDevelopment ? 'http://localhost:8080' : '';
+
+export const API_ENDPOINTS = {
+  BASE: API_BASE_URL,
+  SOUNDS_STREAM: `${API_BASE_URL}/api/soundFiles/stream`,
+  VOLUME: `${API_BASE_URL}/api/volume`,
+  VOLUME_STREAM: `${API_BASE_URL}/api/volume/stream`,
+  FAVORITE: `${API_BASE_URL}/api/soundFiles/favorite`,
+  SOUND_FILE: `${API_BASE_URL}/api/soundFiles`,
+  DOWNLOAD: `${API_BASE_URL}/api/soundFiles/download`,
+  UPLOAD: `${API_BASE_URL}/api/soundFiles/upload`,
+  PLAY_FILE: `${API_BASE_URL}/bot/playFile`,
+  RANDOM: `${API_BASE_URL}/bot/random`,
+  STOP: `${API_BASE_URL}/bot/stop`,
+  USERS_STREAM: `${API_BASE_URL}/api/users/stream`,
+  DISCORD_USERS_STREAM: `${API_BASE_URL}/api/discordUsers/invoiceorselected/stream`,
+};
