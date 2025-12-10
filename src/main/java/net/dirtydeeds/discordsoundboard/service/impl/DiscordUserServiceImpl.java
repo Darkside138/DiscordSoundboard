@@ -69,8 +69,20 @@ public class DiscordUserServiceImpl implements DiscordUserService {
 
         if (optionalDiscordUser.isPresent()) {
             DiscordUser discordUser = optionalDiscordUser.get();
-            discordUser.setEntranceSound(entranceSound);
-            discordUser.setLeaveSound(leaveSound);
+            if (entranceSound != null) {
+                if (entranceSound.isEmpty()) {
+                    discordUser.setEntranceSound(null);
+                } else {
+                    discordUser.setEntranceSound(entranceSound);
+                }
+            }
+            if (leaveSound != null) {
+                if (leaveSound.isEmpty()) {
+                    discordUser.setLeaveSound(null);
+                } else {
+                    discordUser.setLeaveSound(leaveSound);
+                }
+            }
 
             discordUserRepository.save(discordUser);
 

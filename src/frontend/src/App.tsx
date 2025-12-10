@@ -772,8 +772,8 @@ export default function App() {
               onClick={() => setShowUsersOverlay(true)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 theme === 'dark'
-                  ? 'bg-purple-700 text-white hover:bg-purple-600'
-                  : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
+                  ? 'bg-teal-700 text-white hover:bg-teal-600'
+                  : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
               }`}
               aria-label="Manage users"
             >

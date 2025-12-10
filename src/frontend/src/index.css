@@ -72,6 +72,8 @@
     --color-green-700: oklch(.527 .154 150.069);
     --color-green-900: oklch(.393 .095 152.535);
     --color-emerald-600: oklch(.596 .145 163.225);
+    --color-teal-600: oklch(.6 .118 184.704);
+    --color-teal-700: oklch(.511 .096 186.391);
     --color-blue-50: oklch(.97 .014 254.604);
     --color-blue-100: oklch(.932 .032 255.585);
     --color-blue-200: oklch(.882 .059 254.128);
@@ -82,8 +84,6 @@
     --color-blue-700: oklch(.488 .243 264.376);
     --color-blue-900: oklch(.379 .146 265.522);
     --color-purple-500: oklch(.627 .265 303.9);
-    --color-purple-600: oklch(.558 .288 302.321);
-    --color-purple-700: oklch(.496 .265 301.924);
     --color-gray-50: oklch(.985 .002 247.839);
     --color-gray-100: oklch(.967 .003 264.542);
     --color-gray-200: oklch(.928 .006 264.531);
@@ -524,6 +524,10 @@
     margin-bottom: calc(var(--spacing) * 8);
   }
 
+  .ml-1 {
+    margin-left: calc(var(--spacing) * 1);
+  }
+
   .ml-2 {
     margin-left: calc(var(--spacing) * 2);
   }
@@ -542,6 +546,10 @@
 
   .hidden {
     display: none;
+  }
+
+  .inline {
+    display: inline;
   }
 
   .table {
@@ -931,14 +939,6 @@
     }
   }
 
-  .bg-purple-600 {
-    background-color: var(--color-purple-600);
-  }
-
-  .bg-purple-700 {
-    background-color: var(--color-purple-700);
-  }
-
   .bg-red-500 {
     background-color: var(--color-red-500);
   }
@@ -949,6 +949,14 @@
 
   .bg-red-700 {
     background-color: var(--color-red-700);
+  }
+
+  .bg-teal-600 {
+    background-color: var(--color-teal-600);
+  }
+
+  .bg-teal-700 {
+    background-color: var(--color-teal-700);
   }
 
   .bg-white {
@@ -1275,6 +1283,11 @@
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
 
+  .select-none {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   .running {
     animation-play-state: running;
   }
@@ -1334,18 +1347,6 @@
   }
 
   @media (hover: hover) {
-    .hover\:bg-purple-600:hover {
-      background-color: var(--color-purple-600);
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:bg-purple-700:hover {
-      background-color: var(--color-purple-700);
-    }
-  }
-
-  @media (hover: hover) {
     .hover\:bg-red-600:hover {
       background-color: var(--color-red-600);
     }
@@ -1354,6 +1355,18 @@
   @media (hover: hover) {
     .hover\:bg-red-700:hover {
       background-color: var(--color-red-700);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-teal-600:hover {
+      background-color: var(--color-teal-600);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-teal-700:hover {
+      background-color: var(--color-teal-700);
     }
   }
 

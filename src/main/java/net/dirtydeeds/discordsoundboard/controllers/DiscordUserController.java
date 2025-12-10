@@ -34,10 +34,15 @@ public class DiscordUserController {
     @GetMapping()
     public Page<DiscordUser> getAll(@RequestParam(defaultValue = "1") int page,
                                     @RequestParam(defaultValue = "20") int size,
-                                    @RequestParam(defaultValue = "username") String sortBy) {
+                                    @RequestParam(defaultValue = "username") String sortBy,
+                                    @RequestParam(defaultValue = "asc") String sortDir) {
         //Need to call this to refresh the list of users.
         discordUserService.updateUsersInDb();
-        return discordUserService.findAll(PageRequest.of(page,size, Sort.by(Sort.Order.asc(sortBy))));
+        Sort.Order sortOrder = Sort.Order.asc(sortBy);
+        if (sortDir.equalsIgnoreCase("desc")) {
+            sortOrder = Sort.Order.desc(sortBy);
+        }
+        return discordUserService.findAll(PageRequest.of(page,size, Sort.by(sortOrder, Sort.Order.asc("username"))));
     }
 
     @GetMapping("/invoiceorselected")
@@ -57,6 +62,9 @@ public class DiscordUserController {
         // Update the user's entrance and leave sounds in your database
         try {
             DiscordUser user = discordUserService.updateSounds(userId, entranceSound, leaveSound);
+
+            broadcastUpdate();
+
             return ResponseEntity.ok(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();

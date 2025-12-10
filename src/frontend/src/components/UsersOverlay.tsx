@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 
 interface DiscordUser {
@@ -25,6 +25,8 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<'entranceSound' | 'leaveSound' | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string | null>('username');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Sort sounds alphabetically by name
   const sortedSounds = [...sounds].sort((a, b) => a.name.localeCompare(b.name));
@@ -33,13 +35,23 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
     if (isOpen) {
       fetchUsers(currentPage);
     }
-  }, [isOpen, currentPage]);
+  }, [isOpen, currentPage, sortBy, sortDirection]);
 
   const fetchUsers = async (page: number) => {
     setLoading(true);
     try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: pageSize.toString()
+      });
+
+      if (sortBy) {
+        params.append('sortBy', sortBy);
+        params.append('sortDir', sortDirection);
+      }
+
       const response = await fetch(
-        `${API_ENDPOINTS.DISCORD_USERS}?page=${page}&size=${pageSize}`,
+        `${API_ENDPOINTS.DISCORD_USERS}?${params.toString()}`,
         { mode: 'cors' }
       );
 
@@ -56,6 +68,32 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      // Cycle through: asc -> desc -> no sort
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        setSortBy(null);
+        setSortDirection('asc');
+      }
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+    // Reset to first page when sorting changes
+    setCurrentPage(0);
+  };
+
+  const getSortIcon = (column: string) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-4 h-4 ml-1 inline opacity-50" />;
+    }
+    return sortDirection === 'asc'
+      ? <ArrowUp className="w-4 h-4 ml-1 inline" />
+      : <ArrowDown className="w-4 h-4 ml-1 inline" />;
   };
 
   const startEditing = (userId: string, field: 'entranceSound' | 'leaveSound', currentValue: string | null) => {
@@ -165,9 +203,30 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                   <tr className={`border-b ${
                     theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
                   }`}>
-                    <th className="px-4 py-3 text-left">Username</th>
-                    <th className="px-4 py-3 text-left">Entrance Sound</th>
-                    <th className="px-4 py-3 text-left">Leave Sound</th>
+                    <th
+                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
+                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleSort('username')}
+                    >
+                      Username {getSortIcon('username')}
+                    </th>
+                    <th
+                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
+                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleSort('entranceSound')}
+                    >
+                      Entrance Sound {getSortIcon('entranceSound')}
+                    </th>
+                    <th
+                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
+                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                      }`}
+                      onClick={() => handleSort('leaveSound')}
+                    >
+                      Leave Sound {getSortIcon('leaveSound')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
