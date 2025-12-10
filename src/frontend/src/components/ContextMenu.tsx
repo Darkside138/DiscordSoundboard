@@ -86,10 +86,10 @@ export function ContextMenu({
     console.log(`Calling API to update volume offset to ${newValue}%`);
     
     try {
-      const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`);
+      const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`, window.location.origin);
       url.searchParams.append('volumeOffsetPercentage', newValue.toString());
       url.searchParams.append('displayName', displayName || '');
-      
+
       const response = await fetch(url.toString(), {
         method: 'PATCH',
         mode: 'cors',
@@ -120,7 +120,7 @@ export function ContextMenu({
 
   const handleVolumeRelease = () => {
     console.log('handleVolumeRelease called');
-    
+
     // Only update if the value has changed from what we last sent
     if (localVolumeOffset !== lastSentValueRef.current) {
       updateVolumeOffset(localVolumeOffset);
@@ -135,7 +135,7 @@ export function ContextMenu({
     console.log(`Calling API to update display name to: ${newName}`);
 
     try {
-      const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`);
+      const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`, window.location.origin);
       url.searchParams.append('displayName', newName);
       url.searchParams.append('volumeOffsetPercentage', localVolumeOffset.toString());
 

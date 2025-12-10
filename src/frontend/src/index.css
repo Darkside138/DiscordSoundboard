@@ -447,20 +447,20 @@
     position: relative;
   }
 
-  .top-1\.5 {
-    top: calc(var(--spacing) * 1.5);
+  .-top-1\.5 {
+    top: calc(var(--spacing) * -1.5);
   }
 
   .top-1\/2 {
     top: 50%;
   }
 
-  .right-0 {
-    right: calc(var(--spacing) * 0);
+  .-right-1\.5 {
+    right: calc(var(--spacing) * -1.5);
   }
 
-  .right-1\.5 {
-    right: calc(var(--spacing) * 1.5);
+  .right-0 {
+    right: calc(var(--spacing) * 0);
   }
 
   .right-8 {
@@ -475,8 +475,8 @@
     left: calc(var(--spacing) * 3);
   }
 
-  .z-10 {
-    z-index: 10;
+  .z-20 {
+    z-index: 20;
   }
 
   .z-50 {
