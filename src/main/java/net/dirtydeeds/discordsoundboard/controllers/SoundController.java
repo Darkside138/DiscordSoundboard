@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -23,9 +24,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -43,9 +42,26 @@ public class SoundController {
     private SoundPlayer soundPlayer;
     private final SoundService soundService;
 
+    // Allowed MIME types for sound files
+    private static final Set<String> ALLOWED_MIME_TYPES = new HashSet<>(Arrays.asList(
+            "audio/mpeg",   // mp3
+            "audio/wav",    // wav
+            "audio/ogg",    // ogg
+            "audio/x-wav",
+            "audio/x-m4a",
+            "audio/mp4"
+    ));
+
+    // Allowed file extensions
+    private static final Set<String> ALLOWED_EXTENSIONS = new HashSet<>(Arrays.asList(
+            "mp3", "wav", "ogg", "m4a"
+    ));
+
+    // Max file size (10 MB)
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+
     @Inject
     public SoundController (SoundService soundService) {
-        this.soundPlayer = soundPlayer;
         this.soundService = soundService;
     }
 
@@ -169,8 +185,31 @@ public class SoundController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            if (file.isEmpty()) {
+            if (file.isEmpty() || file.getOriginalFilename() == null) {
                 return ResponseEntity.badRequest().body("File is empty");
+            }
+
+            // 2. Check file size
+            if (file.getSize() > MAX_FILE_SIZE) {
+                return ResponseEntity.badRequest().body("File size exceeds 10 MB limit.");
+            }
+
+            // 3. Validate extension
+            String filename = StringUtils.cleanPath(file.getOriginalFilename());
+            String extension = getFileExtension(filename);
+            if (!ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
+                return ResponseEntity.badRequest().body("Invalid file extension. Allowed: " + ALLOWED_EXTENSIONS);
+            }
+
+            // 4. Validate MIME type
+            String mimeType = file.getContentType();
+            if (mimeType == null || !ALLOWED_MIME_TYPES.contains(mimeType.toLowerCase())) {
+                return ResponseEntity.badRequest().body("Invalid file type. Allowed: " + ALLOWED_MIME_TYPES);
+            }
+
+            // 5. (Optional) Deep validation: check magic bytes
+            if (!isAudioFile(file)) {
+                return ResponseEntity.badRequest().body("File content is not a valid audio file.");
             }
 
             String originalFilename = file.getOriginalFilename();
@@ -194,5 +233,31 @@ public class SoundController {
 
     public void setSoundPlayer(SoundPlayer soundPlayer) {
         this.soundPlayer = soundPlayer;
+    }
+
+    private String getFileExtension(String filename) {
+        int dotIndex = filename.lastIndexOf('.');
+        return (dotIndex >= 0) ? filename.substring(dotIndex + 1) : "";
+    }
+
+    // Basic magic byte check for audio files
+    private boolean isAudioFile(MultipartFile file) throws IOException {
+        byte[] header = new byte[12];
+        int bytesRead = file.getInputStream().read(header, 0, header.length);
+        if (bytesRead < 4) return false;
+
+        // MP3: starts with ID3 or 0xFFFB
+        if ((header[0] == 'I' && header[1] == 'D' && header[2] == '3') ||
+                ((header[0] & 0xFF) == 0xFF && (header[1] & 0xE0) == 0xE0)) {
+            return true;
+        }
+
+        // WAV: starts with "RIFF" and "WAVE"
+        if (header[0] == 'R' && header[1] == 'I' && header[2] == 'F' && header[3] == 'F') {
+            return true;
+        }
+
+        // OGG: starts with "OggS"
+        return header[0] == 'O' && header[1] == 'g' && header[2] == 'g' && header[3] == 'S';
     }
 }
