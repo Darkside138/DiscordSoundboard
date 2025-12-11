@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Star, Trash2, Download, Clock, Calendar, Volume2, Edit3, Check, X, FileText, FolderOpen } from 'lucide-react';
+import { Star, Trash2, Download, Clock, Calendar, Volume2, Edit3, Check, X, FileText, FolderOpen, Play } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
 interface ContextMenuProps {
@@ -9,6 +9,7 @@ interface ContextMenuProps {
   onFavorite: () => void | Promise<void>;
   onDelete: () => void;
   onDownload: () => void;
+  onPlayLocally: () => void;
   isFavorite: boolean;
   theme: 'light' | 'dark';
   timesPlayed: number;
@@ -26,6 +27,7 @@ export function ContextMenu({
   onFavorite,
   onDelete,
   onDownload,
+  onPlayLocally,
   isFavorite,
   theme,
   timesPlayed,
@@ -54,10 +56,10 @@ export function ContextMenu({
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
       });
     } catch {
       return dateString;
@@ -67,24 +69,24 @@ export function ContextMenu({
   // Update volume offset on the backend
   const updateVolumeOffset = async (newValue: number) => {
     const now = Date.now();
-    
+
     // Block if we just sent a request within the last 300ms
     if (now - lastUpdateTimeRef.current < 300) {
       console.log('Blocked duplicate API call (too soon)');
       return;
     }
-    
+
     // Block if this exact value was already sent
     if (lastSentValueRef.current === newValue) {
       console.log('Blocked duplicate API call (same value)');
       return;
     }
-    
+
     lastUpdateTimeRef.current = now;
     setIsUpdating(true);
-    
+
     console.log(`Calling API to update volume offset to ${newValue}%`);
-    
+
     try {
       const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`, window.location.origin);
       url.searchParams.append('volumeOffsetPercentage', newValue.toString());
@@ -311,6 +313,21 @@ export function ContextMenu({
         >
           <Download className="w-4 h-4" />
           Download Sound
+        </button>
+
+        <button
+          onClick={() => {
+            onPlayLocally();
+            onClose();
+          }}
+          className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
+            theme === 'dark'
+              ? 'hover:bg-gray-700 text-gray-200'
+              : 'hover:bg-gray-100 text-gray-700'
+          }`}
+        >
+          <Play className="w-4 h-4" />
+          Play Locally
         </button>
 
         <div className={`my-1 h-px ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`} />

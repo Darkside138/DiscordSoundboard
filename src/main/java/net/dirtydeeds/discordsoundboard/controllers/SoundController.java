@@ -21,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
@@ -132,6 +133,22 @@ public class SoundController {
         broadcastUpdate();
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/{soundFileId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Resource> getAudioFile(@PathVariable String soundFileId) throws IOException {
+        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileId);
+        Path filePath = Paths.get(soundFile.getSoundFileLocation());
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (resource.exists() || resource.isReadable()) {
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .contentType(MediaType.parseMediaType(Files.probeContentType(filePath)))
+                    .body(resource);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // Store all active SSE connections

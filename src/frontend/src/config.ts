@@ -22,4 +22,5 @@ export const API_ENDPOINTS = {
   DISCORD_USERS_STREAM: `${API_BASE_URL}/api/discordUsers/invoiceorselected/stream`,
   DISCORD_USERS: `${API_BASE_URL}/api/discordUsers`,
   PLAYBACK_STREAM: `${API_BASE_URL}/api/playback/stream`,
+  AUDIO_FILE: `${API_BASE_URL}/api/soundFiles`,
 };

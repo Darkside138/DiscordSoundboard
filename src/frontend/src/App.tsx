@@ -372,52 +372,112 @@ export default function App() {
   useEffect(() => {
     let playbackEventSource: EventSource | null = null;
     let isMounted = true;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 10;
+    const BASE_RECONNECT_DELAY = 1000; // 1 second
+    const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
-    try {
-      console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
-      playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
+    const connectToPlayback = () => {
+      // Close existing connection if any
+      if (playbackEventSource) {
+        playbackEventSource.close();
+        playbackEventSource = null;
+      }
 
-      playbackEventSource.onopen = () => {
-        console.log('✅ Playback SSE connection established');
-      };
+      try {
+        console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
+        playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
 
-      // Listen for track start event
-      playbackEventSource.addEventListener('trackStart', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          console.log('🎵 Track started:', data);
-          if (data.soundFileId) {
-            setCurrentlyPlayingSoundId(data.soundFileId);
+        playbackEventSource.onopen = () => {
+          console.log('✅ Playback SSE connection established');
+          reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+        };
+
+        // Listen for track start event
+        playbackEventSource.addEventListener('trackStart', (event) => {
+          if (!isMounted) return;
+          try {
+            const data = JSON.parse(event.data);
+            console.log('🎵 Track started:', data);
+            if (data.soundFileId) {
+              setCurrentlyPlayingSoundId(data.soundFileId);
+            }
+          } catch (error) {
+            console.error('Error parsing trackStart event:', error);
           }
-        } catch (error) {
-          console.error('Error parsing trackStart event:', error);
-        }
-      });
+        });
 
-      // Listen for track end event
-      playbackEventSource.addEventListener('trackEnd', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          console.log('🎵 Track ended:', data);
-          setCurrentlyPlayingSoundId(null);
-        } catch (error) {
-          console.error('Error parsing trackEnd event:', error);
-        }
-      });
+        // Listen for track end event
+        playbackEventSource.addEventListener('trackEnd', (event) => {
+          if (!isMounted) return;
+          try {
+            const data = JSON.parse(event.data);
+            console.log('🎵 Track ended:', data);
+            setCurrentlyPlayingSoundId(null);
+          } catch (error) {
+            console.error('Error parsing trackEnd event:', error);
+          }
+        });
 
-      playbackEventSource.onerror = (error) => {
-        console.error('❌ Playback SSE connection error:', error);
-        console.error('Playback SSE readyState:', playbackEventSource?.readyState);
-        // EventSource will automatically try to reconnect
-      };
-    } catch (error) {
-      console.error('Failed to create playback SSE connection:', error);
-    }
+        playbackEventSource.onerror = (error) => {
+          console.error('❌ Playback SSE connection error:', error);
+          console.error('Playback SSE readyState:', playbackEventSource?.readyState);
+
+          // Close the connection
+          if (playbackEventSource) {
+            playbackEventSource.close();
+            playbackEventSource = null;
+          }
+
+          // Attempt to reconnect if not unmounted and haven't exceeded max attempts
+          if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            const delay = Math.min(
+              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+              MAX_RECONNECT_DELAY
+            );
+            console.log(`🔄 Playback SSE will reconnect in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+
+            reconnectTimeout = setTimeout(() => {
+              if (isMounted) {
+                console.log('🔄 Attempting to reconnect to playback SSE...');
+                connectToPlayback();
+              }
+            }, delay);
+          } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            console.error('❌ Max reconnection attempts reached for playback SSE. Giving up.');
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create playback SSE connection:', error);
+
+        // Try to reconnect on exception as well
+        if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = Math.min(
+            BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+            MAX_RECONNECT_DELAY
+          );
+          console.log(`🔄 Playback SSE will reconnect in ${delay}ms after exception (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+
+          reconnectTimeout = setTimeout(() => {
+            if (isMounted) {
+              connectToPlayback();
+            }
+          }, delay);
+        }
+      }
+    };
+
+    // Initial connection
+    connectToPlayback();
 
     return () => {
       isMounted = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (playbackEventSource) {
         console.log('🧹 Closing playback SSE connection');
         playbackEventSource.close();
@@ -556,6 +616,16 @@ export default function App() {
   const playSound = (url: string) => {
     const audio = new Audio(url);
     audio.play().catch(err => console.error('Error playing sound:', err));
+  };
+
+  const playLocalSound = async (soundId: string) => {
+    try {
+      const audioUrl = `${API_ENDPOINTS.AUDIO_FILE}/${soundId}`;
+      const audio = new Audio(audioUrl);
+      audio.play().catch(err => console.error('Error playing sound locally:', err));
+    } catch (error) {
+      console.error('Error playing sound locally:', error);
+    }
   };
 
   const playSoundWithBot = async (soundId: string) => {
@@ -1062,6 +1132,7 @@ export default function App() {
               }}
               onDelete={() => deleteSound(contextMenu.soundId)}
               onDownload={() => downloadSound(sound)}
+              onPlayLocally={() => playLocalSound(contextMenu.soundId)}
               isFavorite={favorites.has(contextMenu.soundId)}
               theme={theme}
               timesPlayed={sound.timesPlayed}
