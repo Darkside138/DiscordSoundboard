@@ -97,58 +97,115 @@ export default function App() {
     // Prevent double SSE connections in StrictMode
     let eventSource: EventSource | null = null;
     let isMounted = true;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 10;
+    const BASE_RECONNECT_DELAY = 1000; // 1 second
+    const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
-    // Connect to SSE endpoint for real-time updates
-    try {
-      console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
-      eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
+    const connectToSounds = () => {
+      // Close existing connection if any
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
 
-      eventSource.onopen = () => {
-        console.log('✅ SSE connection established');
-        setConnectionStatus('connected');
-      };
+      try {
+        console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
+        eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
 
-      eventSource.onerror = (error) => {
-        console.error('❌ SSE connection error:', error);
-        console.error('SSE readyState:', eventSource?.readyState);
-        console.error('SSE url:', eventSource?.url);
-        setConnectionStatus('error');
-        // EventSource will automatically try to reconnect
-      };
-
-      eventSource.addEventListener('sounds', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          // Handle both array and paginated responses
-          const apiSounds = Array.isArray(data) ? data : (data.content || []);
-          const transformedSounds = transformApiSounds(apiSounds);
-          setSounds(transformedSounds);
-
-          // Update favorites based on sounds with favorite=true from backend
-          const newFavorites = new Set<string>();
-          transformedSounds.forEach(sound => {
-            if (sound.favorite) {
-              newFavorites.add(sound.id);
-            }
-          });
-
-          console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
-          console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
-          console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
-
-          setFavorites(newFavorites);
-
-          setLoading(false);
+        eventSource.onopen = () => {
+          if (!isMounted) return;
+          console.log('✅ SSE connection established');
           setConnectionStatus('connected');
-        } catch (error) {
-          console.error('Error parsing SSE data:', error);
+          reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+        };
+
+        eventSource.onerror = (error) => {
+          // Only log errors if we've exceeded max attempts or if it's the first error
+          if (reconnectAttempts === 0) {
+            console.warn('⚠️ SSE connection interrupted, will attempt to reconnect...');
+          }
+
+          setConnectionStatus('error');
+
+          // Close the connection
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+
+          // Attempt to reconnect if not unmounted and haven't exceeded max attempts
+          if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            const delay = Math.min(
+              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+              MAX_RECONNECT_DELAY
+            );
+
+            reconnectTimeout = setTimeout(() => {
+              if (isMounted) {
+                connectToSounds();
+              }
+            }, delay);
+          } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+            console.error('❌ Max reconnection attempts reached for sounds SSE. Connection failed.');
+            setConnectionStatus('error');
+          }
+        };
+
+        eventSource.addEventListener('sounds', (event) => {
+          if (!isMounted) return;
+          try {
+            const data = JSON.parse(event.data);
+            // Handle both array and paginated responses
+            const apiSounds = Array.isArray(data) ? data : (data.content || []);
+            const transformedSounds = transformApiSounds(apiSounds);
+            setSounds(transformedSounds);
+
+            // Update favorites based on sounds with favorite=true from backend
+            const newFavorites = new Set<string>();
+            transformedSounds.forEach(sound => {
+              if (sound.favorite) {
+                newFavorites.add(sound.id);
+              }
+            });
+
+            console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
+            console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
+            console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
+
+            setFavorites(newFavorites);
+
+            setLoading(false);
+            setConnectionStatus('connected');
+          } catch (error) {
+            console.error('Error parsing SSE data:', error);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to create SSE connection:', error);
+        setConnectionStatus('error');
+
+        // Try to reconnect on exception as well
+        if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = Math.min(
+            BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+            MAX_RECONNECT_DELAY
+          );
+
+          reconnectTimeout = setTimeout(() => {
+            if (isMounted) {
+              connectToSounds();
+            }
+          }, delay);
         }
-      });
-    } catch (error) {
-      console.error('Failed to create SSE connection:', error);
-      setConnectionStatus('error');
-    }
+      }
+    };
+
+    // Initial connection
+    connectToSounds();
 
     // Load favorites from localStorage
     const savedFavorites = localStorage.getItem('soundboard-favorites');
@@ -171,6 +228,9 @@ export default function App() {
     // Cleanup: close the SSE connection when component unmounts
     return () => {
       isMounted = false;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
       if (eventSource) {
         eventSource.close();
       }
@@ -421,8 +481,10 @@ export default function App() {
         });
 
         playbackEventSource.onerror = (error) => {
-          console.error('❌ Playback SSE connection error:', error);
-          console.error('Playback SSE readyState:', playbackEventSource?.readyState);
+          // Only log errors if it's the first error or we've exceeded max attempts
+          if (reconnectAttempts === 0) {
+            console.warn('⚠️ Playback SSE connection interrupted, will attempt to reconnect...');
+          }
 
           // Close the connection
           if (playbackEventSource) {
@@ -437,16 +499,14 @@ export default function App() {
               BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
               MAX_RECONNECT_DELAY
             );
-            console.log(`🔄 Playback SSE will reconnect in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
 
             reconnectTimeout = setTimeout(() => {
               if (isMounted) {
-                console.log('🔄 Attempting to reconnect to playback SSE...');
                 connectToPlayback();
               }
             }, delay);
           } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.error('❌ Max reconnection attempts reached for playback SSE. Giving up.');
+            console.error('❌ Max reconnection attempts reached for playback SSE. Connection failed.');
           }
         };
       } catch (error) {
@@ -459,7 +519,6 @@ export default function App() {
             BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
             MAX_RECONNECT_DELAY
           );
-          console.log(`🔄 Playback SSE will reconnect in ${delay}ms after exception (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
 
           reconnectTimeout = setTimeout(() => {
             if (isMounted) {
@@ -866,7 +925,7 @@ export default function App() {
           <div>
             <h1 className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-900'} mb-2 flex items-center gap-3`}>
               <img
-                src="https://github.com/Darkside138/DiscordSoundboard/blob/master/distFiles/avatar.jpg?raw=true"
+                src="/favicon.png"
                 alt="Discord Soundboard Logo"
                 className="w-8 h-8 rounded-full"
               />
