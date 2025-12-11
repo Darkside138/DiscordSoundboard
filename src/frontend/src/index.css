@@ -461,10 +461,6 @@
     top: calc(var(--spacing) * -1.5);
   }
 
-  .top-1 {
-    top: calc(var(--spacing) * 1);
-  }
-
   .top-1\/2 {
     top: 50%;
   }
@@ -475,10 +471,6 @@
 
   .right-0 {
     right: calc(var(--spacing) * 0);
-  }
-
-  .right-1 {
-    right: calc(var(--spacing) * 1);
   }
 
   .right-8 {
@@ -1258,6 +1250,10 @@
 
   .accent-blue-600 {
     accent-color: var(--color-blue-600);
+  }
+
+  .opacity-0 {
+    opacity: 0;
   }
 
   .opacity-50 {

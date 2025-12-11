@@ -84,9 +84,11 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
         disabled={disabled}
       >
         {isCurrentlyPlaying && (
-          <Volume2 className="w-4 h-4 absolute top-1 right-1 animate-pulse" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Volume2 className="w-8 h-8 animate-pulse" />
+          </div>
         )}
-        {displayText}
+        <span className={isCurrentlyPlaying ? 'opacity-0' : ''}>{displayText}</span>
       </button>
     </div>
   );
