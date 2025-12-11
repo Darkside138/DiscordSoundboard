@@ -1,7 +1,6 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
-import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -71,7 +71,7 @@ public class DiscordUserController {
         }
     }
 
-    @GetMapping("/invoiceorselected/stream")
+    @GetMapping(value = "/invoiceorselected/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamInvoiceOrSelected() {
         //Need to call this to refresh the list of users.
         discordUserService.updateUsersInDb();

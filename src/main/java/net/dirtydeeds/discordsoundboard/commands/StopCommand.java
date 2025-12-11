@@ -24,12 +24,12 @@ public class StopCommand extends Command {
     @Override
     protected void execute(CommandEvent event) {
         int fadeoutTimeout = 0;
-        if (event.getArguments().size() > 0) {
+        if (!event.getArguments().isEmpty()) {
             fadeoutTimeout = Integer.parseInt(event.getArguments().getFirst());
         }
 
         LOG.info("Stop requested by {} with a fadeout of {} seconds", event.getRequestingUser(), fadeoutTimeout);
-        if (soundPlayer.stop(event.getRequestingUser(), null)) {
+        if (soundPlayer.stop(event.getRequestingUser(), null) != null) {
             event.replyByPrivateMessage("Playback stopped.");
         } else {
             event.replyByPrivateMessage("Nothing was playing.");

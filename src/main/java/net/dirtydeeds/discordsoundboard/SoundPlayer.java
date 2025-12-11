@@ -216,7 +216,7 @@ public class SoundPlayer {
         return 0;
     }
 
-    public void playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
+    public SoundFile playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
         try {
             Map<String, SoundFile> sounds = getAvailableSoundFiles();
             List<String> keysAsArray = new ArrayList<>(sounds.keySet());
@@ -240,8 +240,10 @@ public class SoundPlayer {
                         disconnectFromChannel(event.getGuild());
                     }
                 }
+                return randomValue;
             } catch (Exception e) {
                 LOG.error("Could not play random file: " + randomValue.getSoundFileId());
+                throw new SoundPlaybackException("Problem playing random file.");
             }
         } catch (Exception e) {
             throw new SoundPlaybackException("Problem playing random file.");
@@ -351,19 +353,21 @@ public class SoundPlayer {
     /**
      * Stops sound playback and returns true or false depending on if playback was stopped.
      *
-     * @return boolean representing whether playback was stopped.
+     * @return String representing whether playback was stopped the id of the stopped track. If no track was stopped
+     * return null value.
      */
-    public boolean stop(String user, String voiceChannelId) {
+    public String stop(String user, String voiceChannelId) {
         Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
         if (guild != null) {
             AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
             if (handler != null) {
+                String soundFileId = handler.getPlayer().getPlayingTrack().getIdentifier();
                 handler.getPlayer().stopTrack();
-                return true;
+                return soundFileId;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**

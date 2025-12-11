@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,10 +55,10 @@ public class BotCommandController {
     public ResponseEntity<Void> soundCommand(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         try {
-            soundPlayer.playRandomSoundFile(username, null);
-//            if (currentSoundId != null) {
-//                playbackService.sendTrackEnd(currentSoundId);
-//            }
+            SoundFile soundFile = soundPlayer.playRandomSoundFile(username, null);
+            if (soundFile != null) {
+                playbackService.sendTrackStart(soundFile.getSoundFileId());
+            }
             soundController.broadcastUpdate();
         } catch (SoundPlaybackException e) {
             return ResponseEntity.internalServerError().build();
@@ -68,11 +69,11 @@ public class BotCommandController {
     @PostMapping(value = "/stop")
     public ResponseEntity<Void> stopPlayback(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
-        soundPlayer.stop(username, voiceChannelId);
+        String soundFileId = soundPlayer.stop(username, voiceChannelId);
 
-//        if (currentSoundId != null) {
-//            playbackService.sendTrackEnd(currentSoundId);
-//        }
+        if (soundFileId != null) {
+            playbackService.sendTrackEnd(soundFileId);
+        }
 
         return ResponseEntity.ok().build();
     }

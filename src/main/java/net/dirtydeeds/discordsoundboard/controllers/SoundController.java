@@ -79,7 +79,7 @@ public class SoundController {
                 .collect(Collectors.toSet());
     }
 
-    @GetMapping("/download/{soundId}")
+    @GetMapping(value = "/download/{soundId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Resource> downloadFile(@PathVariable String soundId) {
         try {
             SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
