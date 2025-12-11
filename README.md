@@ -117,3 +117,9 @@ Type ?list to get a list of sounds file commands the soundboard has available. T
 be the name of the sound file minus extension. When a discordUser types one of the sound file commands listed the bot 
 will join that discordUser channel and then play the requested sound file. The bot remains in that channel unless the 
 bot is requested to play sound in a different channel.
+
+### Local Development
+Included in the project files /.run folder there are IntelliJ run configurations. Execute the bootRun to run the application locally.
+For the local run to work you need to, at minimum, put your bot_token into application-local.properties.
+
+To create a distribution zip simply execute the gradle assembleBootDist. Once complete there will be a file in /build/distributions called DiscordSoundboard-version.zip

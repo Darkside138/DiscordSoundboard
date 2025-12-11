@@ -376,7 +376,8 @@ public class SoundPlayer {
      */
     public void updateUsersInDb() {
         String userNameToSelect = botConfig.getBotOwnerName();
-        List<DiscordUser> users = new ArrayList<>();
+        List<DiscordUser> usersFromBot = new ArrayList<>();
+
         bot.getGuilds().forEach( guild -> {
             List<Member> members = guild.getMembers();
             members.forEach( member -> {
@@ -390,6 +391,9 @@ public class SoundPlayer {
                 if (member.getVoiceState() != null) {
                     inAudioChannel = member.getVoiceState().inAudioChannel();
                 }
+
+                //Bot Member is already in the database. Update the user unless it's a bot or a system user
+                //If the DB already has en entry for a bot then delete that entry, they should not have been added
                 if (optionalUser.isPresent()) {
                     if (member.getUser().isBot() || member.getUser().isSystem()) {
                         discordUserService.delete(optionalUser.get());
@@ -400,18 +404,30 @@ public class SoundPlayer {
                         user.setOnlineStatus(member.getOnlineStatus());
 
                         user.setInVoice(inAudioChannel);
-                        users.add(user);
+                        DiscordUser discordUser = discordUserService.save(user);
+                        usersFromBot.add(discordUser);
                     }
                 } else {
+                    //JDABot is returning a user that is not in the DB let's add them unless they are a bot
                     if (!member.getUser().isBot() && !member.getUser().isSystem()) {
-                        users.add(
-                                new DiscordUser(member.getId(), username, selected,
-                                        member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel));
+                        DiscordUser discordUser = new DiscordUser(member.getId(), username, selected,
+                                member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel);
+                        discordUser = discordUserService.save(discordUser);
+                        usersFromBot.add(discordUser);
                     }
                 }
             });
         });
-        discordUserService.saveAll(users);
+
+        Iterable<DiscordUser> discordUsers = discordUserService.findAll(Pageable.unpaged());
+
+        List<DiscordUser> difference = StreamSupport
+                .stream(discordUsers.spliterator(), false)
+                .filter(s -> usersFromBot.stream()
+                        .noneMatch(path -> path.getId().equals(s.getId())))
+                .toList();
+
+        difference.forEach(discordUserService::delete);
     }
 
     public net.dv8tion.jda.api.entities.User retrieveUserById(String idOrName) {
