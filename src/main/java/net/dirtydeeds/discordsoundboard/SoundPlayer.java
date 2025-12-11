@@ -664,6 +664,7 @@ public class SoundPlayer {
     public void cleanUp() {
         System.out.println("SoundPlayer is shutting down. Cleaning up.");
         bot.shutdown();
+        mainWatch.shutdown();
     }
 
     public String getSoundsDirectory() {

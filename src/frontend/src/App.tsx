@@ -3,7 +3,8 @@ import { SoundButton } from './components/SoundButton';
 import { ContextMenu } from './components/ContextMenu';
 import { DiscordUsersList } from './components/DiscordUsersList';
 import { UsersOverlay } from './components/UsersOverlay';
-import { Search, Star, Grid3x3, Sun, Moon, Volume2, Shuffle, StopCircle, Upload, Users } from 'lucide-react';
+import { SettingsMenu } from './components/SettingsMenu';
+import { Search, Star, Grid3x3, Sun, Moon, Volume2, Shuffle, StopCircle, Upload, Users, Settings } from 'lucide-react';
 import { API_ENDPOINTS } from './config';
 
 interface Sound {
@@ -60,7 +61,7 @@ export default function App() {
   const [sounds, setSounds] = useState<Sound[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'none' | 'favorites' | 'popular' | 'recent'>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -78,6 +79,9 @@ export default function App() {
   const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
   const [showUsersOverlay, setShowUsersOverlay] = useState(false);
   const [currentlyPlayingSoundId, setCurrentlyPlayingSoundId] = useState<string | null>(null);
+  const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
+  const [popularCount, setPopularCount] = useState<number>(10);
+  const [recentCount, setRecentCount] = useState<number>(10);
 
   // Global ESC key handler - works from anywhere
   useEffect(() => {
@@ -225,6 +229,17 @@ export default function App() {
       setVolume(parseInt(savedVolume, 10));
     }
 
+    // Load settings from localStorage
+    const savedPopularCount = localStorage.getItem('soundboard-popular-count');
+    if (savedPopularCount) {
+      setPopularCount(parseInt(savedPopularCount, 10));
+    }
+
+    const savedRecentCount = localStorage.getItem('soundboard-recent-count');
+    if (savedRecentCount) {
+      setRecentCount(parseInt(savedRecentCount, 10));
+    }
+
     // Cleanup: close the SSE connection when component unmounts
     return () => {
       isMounted = false;
@@ -251,6 +266,12 @@ export default function App() {
     // Save volume to localStorage
     localStorage.setItem('soundboard-volume', volume.toString());
   }, [volume]);
+
+  useEffect(() => {
+    // Save settings to localStorage
+    localStorage.setItem('soundboard-popular-count', popularCount.toString());
+    localStorage.setItem('soundboard-recent-count', recentCount.toString());
+  }, [popularCount, recentCount]);
 
   // SSE connection for volume updates based on selected user
   useEffect(() => {
@@ -884,7 +905,7 @@ export default function App() {
     [...sounds]
       .filter(sound => !favorites.has(sound.id))
       .sort((a, b) => b.timesPlayed - a.timesPlayed)
-      .slice(0, 10)
+      .slice(0, popularCount)
       .map(s => s.id)
   );
 
@@ -893,7 +914,7 @@ export default function App() {
     [...sounds]
       .filter(sound => !favorites.has(sound.id) && !top10SoundIds.has(sound.id))
       .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
-      .slice(0, 10)
+      .slice(0, recentCount)
       .map(s => s.id)
   );
 
@@ -901,9 +922,19 @@ export default function App() {
   const filteredSounds = sounds
     .filter(sound => {
       const matchesCategory = selectedCategory === 'all' || sound.category === selectedCategory;
-      const matchesFavorites = !showFavoritesOnly || favorites.has(sound.id);
+
+      // Apply active filter
+      let matchesFilter = true;
+      if (activeFilter === 'favorites') {
+        matchesFilter = favorites.has(sound.id);
+      } else if (activeFilter === 'popular') {
+        matchesFilter = top10SoundIds.has(sound.id);
+      } else if (activeFilter === 'recent') {
+        matchesFilter = recentlyAddedIds.has(sound.id);
+      }
+
       const matchesSearch = sound.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesFavorites && matchesSearch;
+      return matchesCategory && matchesFilter && matchesSearch;
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -921,7 +952,7 @@ export default function App() {
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-blue-50 to-blue-100'} p-6`}>
       <div>
-        <header className="mb-8 flex items-start justify-between">
+        <header className="mb-4 flex items-start justify-between">
           <div>
             <h1 className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-900'} mb-2 flex items-center gap-3`}>
               <img
@@ -992,6 +1023,25 @@ export default function App() {
                 </>
               )}
             </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setSettingsMenu({
+                  x: rect.right - 280, // Position to align right edge of menu with button
+                  y: rect.bottom + 8, // 8px below button
+                });
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                theme === 'dark'
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
+              }`}
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -1037,9 +1087,9 @@ export default function App() {
                     value={selectedCategory}
                     onChange={(e) => {
                       setSelectedCategory(e.target.value);
-                      // Disable "Show Favorites Only" when selecting a specific category
+                      // Disable all filters when selecting a specific category
                       if (e.target.value !== 'all') {
-                        setShowFavoritesOnly(false);
+                        setActiveFilter('none');
                       }
                     }}
                     className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
@@ -1056,27 +1106,92 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Favorites Filter and Volume Control */}
-                <div className="flex items-center gap-4">
+                {/* Filter Buttons and Action Buttons Row - All on one line when possible */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Filter Buttons */}
                   <button
                     onClick={() => {
-                      setShowFavoritesOnly(!showFavoritesOnly);
+                      setActiveFilter(activeFilter === 'favorites' ? 'none' : 'favorites');
                       // Reset category to "all" when showing favorites
-                      if (!showFavoritesOnly) {
+                      if (activeFilter !== 'favorites') {
                         setSelectedCategory('all');
                       }
                     }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      showFavoritesOnly
+                      activeFilter === 'favorites'
                         ? 'bg-yellow-600 text-white'
                         : theme === 'dark'
                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <Star className={`w-5 h-5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                    {showFavoritesOnly ? 'Showing Favorites' : 'Show Favorites Only'}
+                    <Star className={`w-5 h-5 ${activeFilter === 'favorites' ? 'fill-current' : ''}`} />
+                    {activeFilter === 'favorites' ? 'Favorites' : 'Favorites'}
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveFilter(activeFilter === 'popular' ? 'none' : 'popular');
+                      // Reset category to "all" when showing popular
+                      if (activeFilter !== 'popular') {
+                        setSelectedCategory('all');
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      activeFilter === 'popular'
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white'
+                        : theme === 'dark'
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Grid3x3 className="w-5 h-5" />
+                    {activeFilter === 'popular' ? 'Popular' : 'Popular'}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveFilter(activeFilter === 'recent' ? 'none' : 'recent');
+                      // Reset category to "all" when showing recent
+                      if (activeFilter !== 'recent') {
+                        setSelectedCategory('all');
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      activeFilter === 'recent'
+                        ? 'bg-green-600 text-white'
+                        : theme === 'dark'
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {activeFilter === 'recent' ? 'Recent' : 'Recent'}
+                  </button>
+
+                  {/* Volume Slider - Reserve space even when hidden */}
+                  <div className={`flex items-center gap-3 flex-1 min-w-[200px] ${selectedUserId && isPlaybackEnabled ? '' : 'invisible'}`}>
+                    <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={volume}
+                      onChange={(e) => setVolume(parseInt(e.target.value, 10))}
+                      onMouseUp={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
+                      onTouchEnd={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      style={{
+                        background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} 0%, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} 100%)`
+                      }}
+                      disabled={!selectedUserId || !isPlaybackEnabled}
+                    />
+                    <span className={`min-w-[3rem] text-right ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {volume}%
+                    </span>
+                  </div>
 
                   {/* Play Random Sound Button */}
                   <button
@@ -1111,29 +1226,6 @@ export default function App() {
                     <StopCircle className="w-5 h-5" />
                     Stop
                   </button>
-
-                  {/* Volume Slider - Only show when user is selected and in voice */}
-                  {selectedUserId && isPlaybackEnabled && (
-                    <div className="flex items-center gap-3 flex-1">
-                      <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={volume}
-                        onChange={(e) => setVolume(parseInt(e.target.value, 10))}
-                        onMouseUp={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
-                        onTouchEnd={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
-                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                        style={{
-                          background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} 0%, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} 100%)`
-                        }}
-                      />
-                      <span className={`min-w-[3rem] text-right ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {volume}%
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -1211,6 +1303,20 @@ export default function App() {
           theme={theme}
           sounds={sounds.map(s => ({ id: s.id, name: s.name }))}
         />
+
+        {/* Settings Menu */}
+        {settingsMenu && (
+          <SettingsMenu
+            x={settingsMenu.x}
+            y={settingsMenu.y}
+            onClose={() => setSettingsMenu(null)}
+            theme={theme}
+            popularCount={popularCount}
+            recentCount={recentCount}
+            onPopularCountChange={setPopularCount}
+            onRecentCountChange={setRecentCount}
+          />
+        )}
       </div>
     </div>
   );

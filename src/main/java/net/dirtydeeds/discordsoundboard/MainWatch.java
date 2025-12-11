@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard;
 
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -21,7 +22,9 @@ public class MainWatch {
 
     private static final Logger LOG = LoggerFactory.getLogger(MainWatch.class);
 
+    @Setter
     private SoundPlayer soundPlayer;
+    private boolean shutdown = false;
 
     @Async
     public void watchDirectoryPath(Path path) {
@@ -39,7 +42,7 @@ public class MainWatch {
             WatchKey watchKey = path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
                     StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
 
-            while (true) {
+            while (!shutdown) {
                 watchKey.pollEvents().forEach(event -> soundPlayer.updateFileList());
 
                 // Reset the watch key everytime for continuing to use it for further event polling
@@ -51,11 +54,11 @@ public class MainWatch {
             }
         } catch (IOException | InterruptedException e) {
             // Folder does not exist or we were interrupted
-            e.printStackTrace();
+            LOG.warn(e.getLocalizedMessage());
         }
     }
 
-    public void setSoundPlayer(SoundPlayer soundPlayer) {
-        this.soundPlayer = soundPlayer;
+    public void shutdown() {
+        shutdown = true;
     }
 }
