@@ -1,8 +1,5 @@
-/app.properties
 *.iml
-tokens.json
 .idea/
-src/main/resources/app.properties
 build
 .gradle/
 /discordDB/
