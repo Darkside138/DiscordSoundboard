@@ -15,3 +15,21 @@ spring:
   datasource:
     url: jdbc:h2:file:./discordDB/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
     driver-class-name: org.h2.Driver
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          discord:
+#            clientAuthenticationMethod: post
+#            authorizationGrantType: authorization_code
+#            scope:
+#              - identify
+#            redirectUriTemplate: "{baseUrl}/login/oauth2/code/discord"
+#            redirectUri: "/success"
+#            clientName: Discord Soundboard
+#        provider:
+#          discord:
+#            authorizationUri: https://discordapp.com/api/oauth2/authorize
+#            tokenUri: https://discordapp.com/api/oauth2/token
+#            userInfoUri: https://discordapp.com/api/users/@me
+#            usernameAttribute: username

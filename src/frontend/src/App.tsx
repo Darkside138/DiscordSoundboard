@@ -82,6 +82,8 @@ export default function App() {
   const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
   const [popularCount, setPopularCount] = useState<number>(10);
   const [recentCount, setRecentCount] = useState<number>(10);
+  const [locallyPlayingSoundId, setLocallyPlayingSoundId] = useState<string | null>(null);
+  const currentLocalAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Global ESC key handler - works from anywhere
   useEffect(() => {
@@ -700,11 +702,46 @@ export default function App() {
 
   const playLocalSound = async (soundId: string) => {
     try {
+      // Stop any currently playing local audio
+      if (currentLocalAudioRef.current) {
+        currentLocalAudioRef.current.pause();
+        currentLocalAudioRef.current = null;
+      }
+
       const audioUrl = `${API_ENDPOINTS.AUDIO_FILE}/${soundId}`;
       const audio = new Audio(audioUrl);
-      audio.play().catch(err => console.error('Error playing sound locally:', err));
+
+      // Set up event listeners
+      audio.addEventListener('ended', () => {
+        setLocallyPlayingSoundId(null);
+        currentLocalAudioRef.current = null;
+      });
+
+      audio.addEventListener('error', () => {
+        console.error('Error playing sound locally');
+        setLocallyPlayingSoundId(null);
+        currentLocalAudioRef.current = null;
+      });
+
+      audio.play().catch(err => {
+        console.error('Error playing sound locally:', err);
+        setLocallyPlayingSoundId(null);
+        currentLocalAudioRef.current = null;
+      });
+
+      setLocallyPlayingSoundId(soundId);
+      currentLocalAudioRef.current = audio;
     } catch (error) {
       console.error('Error playing sound locally:', error);
+      setLocallyPlayingSoundId(null);
+    }
+  };
+
+  const stopLocalSound = () => {
+    if (currentLocalAudioRef.current) {
+      currentLocalAudioRef.current.pause();
+      currentLocalAudioRef.current = null;
+      setLocallyPlayingSoundId(null);
     }
   };
 
@@ -1257,6 +1294,8 @@ export default function App() {
                 theme={theme}
                 disabled={!isPlaybackEnabled}
                 isCurrentlyPlaying={currentlyPlayingSoundId === sound.id}
+                isLocallyPlaying={locallyPlayingSoundId === sound.id}
+                onStopLocalPlayback={stopLocalSound}
               />
             ))}
           </div>

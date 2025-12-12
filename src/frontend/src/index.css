@@ -489,6 +489,10 @@
     left: calc(var(--spacing) * 3);
   }
 
+  .z-10 {
+    z-index: 10;
+  }
+
   .z-20 {
     z-index: 20;
   }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Trophy, Sparkles, Volume2 } from 'lucide-react';
+import { Star, Trophy, Sparkles, Volume2, CircleStop } from 'lucide-react';
 
 interface Sound {
   id: string;
@@ -20,9 +20,11 @@ interface SoundButtonProps {
   theme: 'light' | 'dark';
   disabled?: boolean;
   isCurrentlyPlaying?: boolean;
+  isLocallyPlaying?: boolean;
+  onStopLocalPlayback?: () => void;
 }
 
-export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, isCurrentlyPlaying }: SoundButtonProps) {
+export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
   const formatSoundName = (name: string) => {
     return name
       // Replace underscores and hyphens with spaces
@@ -88,7 +90,19 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
             <Volume2 className="w-8 h-8 animate-pulse" />
           </div>
         )}
-        <span className={isCurrentlyPlaying ? 'opacity-0' : ''}>{displayText}</span>
+        {isLocallyPlaying && (
+          <button
+            className="absolute inset-0 flex items-center justify-center bg-red-600 bg-opacity-90 rounded-lg hover:bg-opacity-100 transition-all cursor-pointer z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStopLocalPlayback?.();
+            }}
+            title="Click to stop local playback"
+          >
+            <CircleStop className="w-8 h-8 text-white" />
+          </button>
+        )}
+        <span className={isCurrentlyPlaying || isLocallyPlaying ? 'opacity-0' : ''}>{displayText}</span>
       </button>
     </div>
   );

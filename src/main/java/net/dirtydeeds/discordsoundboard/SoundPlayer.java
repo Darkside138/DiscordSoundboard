@@ -383,7 +383,7 @@ public class SoundPlayer {
             members.forEach( member -> {
                 boolean selected = false;
                 String username = member.getEffectiveName();
-                if (userNameToSelect != null && userNameToSelect.equals(username)) {
+                if (userNameToSelect != null && (userNameToSelect.equals(username) || userNameToSelect.equals(member.getId()))) {
                     selected = true;
                 }
                 Optional<DiscordUser> optionalUser = discordUserService.findById(member.getId());
