@@ -32,6 +32,6 @@ public class BotLeaveListener extends ListenerAdapter {
         return guild.getAudioManager().getConnectedChannel().getMembers().stream()
                 .noneMatch(x ->
                         !Objects.requireNonNull(x.getVoiceState()).isDeafened()
-                                && !x.getUser().isBot());
+                                && (!x.getUser().isBot() || !x.getUser().isSystem()));
     }
 }
