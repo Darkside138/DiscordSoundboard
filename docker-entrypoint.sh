@@ -21,7 +21,7 @@ sed -i 's/dj_user_list=/dj_user_list='$djuserlist'/g' application.properties
 sed -i 's/spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id/spring.security.oauth2.client.registration.discord.client-id='$discordclientid'/g' application.properties
 sed -i 's/spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret/spring.security.oauth2.client.registration.discord.client-secret='$discordclientsecret'/g' application.properties
 sed -i 's/jwt.secret=your-secret-key-here-change-this-in-production/jwt.secret='$jwtsecret'/g' application.properties
-sed -i 's/app.frontend-url=http:\/\/localhost:8080/app.frontend-url='frontendurl'/g' application.properties
+sed -i 's/app.frontend-url=http:\/\/localhost:8080/app.frontend-url='$frontendurl'/g' application.properties
 
 echo "changing working directory to /etc/DiscordSoundboard/bin"
 
