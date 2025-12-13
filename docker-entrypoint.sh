@@ -15,12 +15,12 @@ cd /etc/DiscordSoundboard/config
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
-sed -i 's/admin_user_list=/admin_user_list='adminuserlist'/g' application.properties
-sed -i 's/moderator_user_list=/moderator_user_list='moderatoruserlist'/g' application.properties
-sed -i 's/dj_user_list=/dj_user_list='djuserlist'/g' application.properties
-sed -i 's/spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id/spring.security.oauth2.client.registration.discord.client-id='discordclientid'/g' application.properties
-sed -i 's/spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret/spring.security.oauth2.client.registration.discord.client-secret='discordclientsecret'/g' application.properties
-sed -i 's/jwt.secret=your-secret-key-here-change-this-in-production/jwt.secret='jwtsecret'/g' application.properties
+sed -i 's/admin_user_list=/admin_user_list='$adminuserlist'/g' application.properties
+sed -i 's/moderator_user_list=/moderator_user_list='$moderatoruserlist'/g' application.properties
+sed -i 's/dj_user_list=/dj_user_list='$djuserlist'/g' application.properties
+sed -i 's/spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id/spring.security.oauth2.client.registration.discord.client-id='$discordclientid'/g' application.properties
+sed -i 's/spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret/spring.security.oauth2.client.registration.discord.client-secret='$discordclientsecret'/g' application.properties
+sed -i 's/jwt.secret=your-secret-key-here-change-this-in-production/jwt.secret='$jwtsecret'/g' application.properties
 
 echo "changing working directory to /etc/DiscordSoundboard/bin"
 
