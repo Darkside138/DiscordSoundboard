@@ -23,4 +23,9 @@ export const API_ENDPOINTS = {
   DISCORD_USERS: `${API_BASE_URL}/api/discordUsers`,
   PLAYBACK_STREAM: `${API_BASE_URL}/api/playback/stream`,
   AUDIO_FILE: `${API_BASE_URL}/api/soundFiles`,
+  // Auth endpoints
+  AUTH_CALLBACK: `${API_BASE_URL}/api/auth/callback`,
+  AUTH_USER: `${API_BASE_URL}/api/auth/user`,
+  AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+  OAUTH_LOGIN: `${API_BASE_URL}/oauth2/authorization/discord`,
 };

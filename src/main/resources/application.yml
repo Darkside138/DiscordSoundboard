@@ -15,21 +15,48 @@ spring:
   datasource:
     url: jdbc:h2:file:./discordDB/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
     driver-class-name: org.h2.Driver
-#  security:
-#    oauth2:
-#      client:
-#        registration:
-#          discord:
-#            clientAuthenticationMethod: post
-#            authorizationGrantType: authorization_code
-#            scope:
-#              - identify
-#            redirectUriTemplate: "{baseUrl}/login/oauth2/code/discord"
-#            redirectUri: "/success"
-#            clientName: Discord Soundboard
-#        provider:
-#          discord:
-#            authorizationUri: https://discordapp.com/api/oauth2/authorize
-#            tokenUri: https://discordapp.com/api/oauth2/token
-#            userInfoUri: https://discordapp.com/api/users/@me
-#            usernameAttribute: username
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            authorizationGrantType: authorization_code
+            scope:
+              - identify
+              - email
+            redirectUri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            clientName: Discord Soundboard
+        provider:
+          discord:
+            authorizationUri: https://discordapp.com/api/oauth2/authorize
+            tokenUri: https://discordapp.com/api/oauth2/token
+            userInfoUri: https://discordapp.com/api/users/@me
+            usernameAttribute: id
+app:
+  users:
+    permissions:
+      admin:
+        - upload
+        - delete-sounds
+        - edit-sounds
+        - manage-users
+        - play-sounds
+        - download-sounds
+      dj:
+        - upload
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      moderator:
+        - delete-sounds
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      user:
+        - play-sounds
+        - download-sounds
+
+      # Default permissions for unauthenticated users
+      default-permissions:
+        - play-sounds
+        - download-sounds

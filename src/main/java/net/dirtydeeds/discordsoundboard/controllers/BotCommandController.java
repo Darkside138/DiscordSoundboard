@@ -21,17 +21,13 @@ import java.util.List;
 public class BotCommandController {
 
     private final SoundPlayer soundPlayer;
-    private final SoundController soundController;
     private final BotVolumeController botVolumeController;
-    private final PlaybackService playbackService;
 
     @Autowired
-    public BotCommandController(SoundPlayer soundPlayer, SoundController soundController,
-                                BotVolumeController botVolumeController, PlaybackService playbackService) {
+    public BotCommandController(SoundPlayer soundPlayer,
+                                BotVolumeController botVolumeController) {
         this.soundPlayer = soundPlayer;
-        this.soundController = soundController;
         this.botVolumeController = botVolumeController;
-        this.playbackService = playbackService;
     }
 
     @PostMapping(value = "/playFile")
@@ -39,8 +35,6 @@ public class BotCommandController {
                                                 @RequestParam(defaultValue = "1") Integer repeatTimes,
                                                 @RequestParam(defaultValue = "") String voiceChannelId) {
         soundPlayer.playForUser(soundFileId, username, repeatTimes, voiceChannelId);
-        playbackService.sendTrackStart(soundFileId);
-        soundController.broadcastUpdate();
         return ResponseEntity.ok().build();
     }
 
@@ -56,10 +50,6 @@ public class BotCommandController {
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         try {
             SoundFile soundFile = soundPlayer.playRandomSoundFile(username, null);
-            if (soundFile != null) {
-                playbackService.sendTrackStart(soundFile.getSoundFileId());
-            }
-            soundController.broadcastUpdate();
         } catch (SoundPlaybackException e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -70,10 +60,6 @@ public class BotCommandController {
     public ResponseEntity<Void> stopPlayback(@RequestParam String username,
                                    @RequestParam(defaultValue = "") String voiceChannelId) {
         String soundFileId = soundPlayer.stop(username, voiceChannelId);
-
-        if (soundFileId != null) {
-            playbackService.sendTrackEnd(soundFileId);
-        }
 
         return ResponseEntity.ok().build();
     }

@@ -282,6 +282,14 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                       ? 'hover:bg-gray-700'
                       : 'hover:bg-gray-50'
                   }`}
+                  title={
+                    user.entranceSound || user.leaveSound
+                      ? [
+                          user.entranceSound ? `Entrance: ${user.entranceSound}` : null,
+                          user.leaveSound ? `Leave: ${user.leaveSound}` : null
+                        ].filter(Boolean).join(' | ')
+                      : undefined
+                  }
                 >
                   {/* Online Status Indicator */}
                   <div className="relative">
@@ -302,11 +310,24 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                     <p className={`truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                       {user.username}
                     </p>
-                    {user.entranceSound && (
+                    {user.entranceSound && user.leaveSound ? (
+                      <>
+                        <p className={`text-xs truncate hidden sm:block ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Entrance: {user.entranceSound} | Leave: {user.leaveSound}
+                        </p>
+                        <p className={`text-xs truncate sm:hidden ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Entrance: {user.entranceSound}
+                        </p>
+                      </>
+                    ) : (user.entranceSound || user.leaveSound) && (
                       <p className={`text-xs truncate ${
                         theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
                       }`}>
-                        Entrance: {user.entranceSound}
+                        {user.entranceSound ? `Entrance: ${user.entranceSound}` : `Leave: ${user.leaveSound}`}
                       </p>
                     )}
                   </div>

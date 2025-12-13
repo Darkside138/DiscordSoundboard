@@ -43,7 +43,9 @@ public class MainWatch {
                     StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
 
             while (!shutdown) {
-                watchKey.pollEvents().forEach(event -> soundPlayer.updateFileList());
+                watchKey.pollEvents().forEach(event -> {
+                    soundPlayer.updateFileList();
+                });
 
                 // Reset the watch key everytime for continuing to use it for further event polling
                 boolean valid = watchKey.reset();

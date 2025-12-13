@@ -4,8 +4,19 @@ import { ContextMenu } from './components/ContextMenu';
 import { DiscordUsersList } from './components/DiscordUsersList';
 import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
-import { Search, Star, Grid3x3, Sun, Moon, Volume2, Shuffle, StopCircle, Upload, Users, Settings } from 'lucide-react';
+import { AuthButton } from './components/AuthButton';
+import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Upload, Users, Settings } from 'lucide-react';
 import { API_ENDPOINTS } from './config';
+import {
+  loadAuth,
+  initiateDiscordLogin,
+  logout,
+  validateToken,
+  clearAuth,
+  handleOAuthRedirect,
+  type DiscordUser
+} from './utils/auth';
+import { getAuthHeaders } from './utils/api';
 
 interface Sound {
   id: string;
@@ -84,6 +95,59 @@ export default function App() {
   const [recentCount, setRecentCount] = useState<number>(10);
   const [locallyPlayingSoundId, setLocallyPlayingSoundId] = useState<string | null>(null);
   const currentLocalAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  // Handle Discord OAuth callback
+  useEffect(() => {
+    const handleCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (token) {
+        try {
+          console.log('🔐 Processing OAuth redirect with token');
+          const authState = await handleOAuthRedirect(token);
+          setAuthUser(authState.user);
+          setAuthLoading(false);
+
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+          console.error('Failed to authenticate:', error);
+          setAuthLoading(false);
+        }
+      } else {
+        // No OAuth callback, check for existing auth
+        const storedAuth = loadAuth();
+        if (storedAuth.accessToken && storedAuth.user) {
+          // Validate token
+          const user = await validateToken(storedAuth.accessToken);
+          if (user) {
+            setAuthUser(user);
+          } else {
+            // Token invalid, clear stored auth
+            clearAuth();
+          }
+        }
+        setAuthLoading(false);
+      }
+    };
+
+    handleCallback();
+  }, []);
+
+  const handleLogin = () => {
+    initiateDiscordLogin();
+  };
+
+  const handleLogout = async () => {
+    const storedAuth = loadAuth();
+    if (storedAuth.accessToken) {
+      await logout(storedAuth.accessToken);
+    }
+    setAuthUser(null);
+  };
 
   // Global ESC key handler - works from anywhere
   useEffect(() => {
@@ -906,11 +970,23 @@ export default function App() {
 
     try {
       console.log('📤 Uploading file:', file.name);
+
+      // Get auth headers
+      const authHeaders = getAuthHeaders();
+      console.log('📋 Auth headers:', authHeaders);
+
       const response = await fetch(API_ENDPOINTS.UPLOAD, {
         method: 'POST',
         mode: 'cors',
+        headers: authHeaders,
         body: formData
       });
+
+      if (response.status === 403) {
+        alert('Permission denied: You do not have permission to upload sounds.');
+        event.target.value = '';
+        return;
+      }
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
@@ -1002,66 +1078,57 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Upload Button */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-blue-700 text-white hover:bg-blue-600'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-              }`}
-              aria-label="Upload sound file"
-            >
-              <Upload className="w-5 h-5" />
-              Upload
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*,.mp3,.wav,.ogg,.webm,.flac"
-              onChange={handleFileUpload}
-              className="hidden"
-              aria-label="File upload input"
+            {/* Upload Button - Only visible with upload permission */}
+            {authUser?.permissions?.upload && (
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-blue-700 text-white hover:bg-blue-600'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                  }`}
+                  aria-label="Upload sound file"
+                >
+                  <Upload className="w-5 h-5" />
+                  Upload
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.ogg,.webm,.flac"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  aria-label="File upload input"
+                />
+              </>
+            )}
+
+            {/* Users Button - Only visible with manage-users permission */}
+            {authUser?.permissions?.manageUsers && (
+              <button
+                onClick={() => setShowUsersOverlay(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-teal-700 text-white hover:bg-teal-600'
+                    : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
+                }`}
+                aria-label="Manage users"
+              >
+                <Users className="w-5 h-5" />
+                Users
+              </button>
+            )}
+
+            {/* Auth Button */}
+            <AuthButton
+              user={authUser}
+              onLogin={handleLogin}
+              onLogout={handleLogout}
+              theme={theme}
             />
 
-            {/* Users Button */}
-            <button
-              onClick={() => setShowUsersOverlay(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-teal-700 text-white hover:bg-teal-600'
-                  : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
-              }`}
-              aria-label="Manage users"
-            >
-              <Users className="w-5 h-5" />
-              Users
-            </button>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
-              }`}
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <>
-                  <Sun className="w-5 h-5" />
-                  Light
-                </>
-              ) : (
-                <>
-                  <Moon className="w-5 h-5" />
-                  Dark
-                </>
-              )}
-            </button>
-
-            {/* Settings Button */}
+            {/* Settings Button - Far Right */}
             <button
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -1070,7 +1137,7 @@ export default function App() {
                   y: rect.bottom + 8, // 8px below button
                 });
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
                 theme === 'dark'
                   ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
@@ -1331,6 +1398,8 @@ export default function App() {
               soundId={sound.id}
               displayName={sound.displayName ?? null}
               category={sound.category}
+              canEditSounds={authUser?.permissions?.editSounds ?? false}
+              canDeleteSounds={authUser?.permissions?.deleteSounds ?? false}
             />
           ) : null;
         })()}
@@ -1354,6 +1423,7 @@ export default function App() {
             recentCount={recentCount}
             onPopularCountChange={setPopularCount}
             onRecentCountChange={setRecentCount}
+            onThemeChange={setTheme}
           />
         )}
       </div>

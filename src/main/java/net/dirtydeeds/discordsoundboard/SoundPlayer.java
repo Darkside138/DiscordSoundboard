@@ -329,6 +329,9 @@ public class SoundPlayer {
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId());
+                soundController.broadcastUpdate();
+
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
                 soundService.save(fileToPlay);
                 AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
@@ -354,16 +357,21 @@ public class SoundPlayer {
      * Stops sound playback and returns true or false depending on if playback was stopped.
      *
      * @return String representing whether playback was stopped the id of the stopped track. If no track was stopped
-     * return null value.
+     * return soundFileId of the track that was stopped. Null if nothing was playing.
      */
     public String stop(String user, String voiceChannelId) {
         Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
         if (guild != null) {
             AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
             if (handler != null) {
-                String soundFileId = handler.getPlayer().getPlayingTrack().getIdentifier();
-                handler.getPlayer().stopTrack();
-                return soundFileId;
+                if (handler.getPlayer().getPlayingTrack() != null) {
+                    String soundFileId = handler.getPlayer().getPlayingTrack().getIdentifier();
+                    handler.getPlayer().stopTrack();
+
+                    playbackService.sendTrackEnd(soundFileId);
+
+                    return soundFileId;
+                }
             }
         }
 
@@ -497,8 +505,9 @@ public class SoundPlayer {
                             soundFilesFromPath.add(soundFile);
                         } else {
                             soundFile = soundService.initializeDateAdded(soundFile);
+                            soundFile.setSoundFileLocation(filePath.toString());
+                            soundFile.setCategory(parent);
                         }
-                        soundFile.setCategory(parent);
                         soundFile = soundService.save(soundFile);
                         soundFilesFromPath.add(soundFile);
                     }

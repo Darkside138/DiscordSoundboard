@@ -18,6 +18,8 @@ interface ContextMenuProps {
   soundId: string;
   displayName: string | null;
   category: string;
+  canEditSounds?: boolean;
+  canDeleteSounds?: boolean;
 }
 
 export function ContextMenu({
@@ -35,7 +37,9 @@ export function ContextMenu({
   volumeOffset,
   soundId,
   displayName,
-  category
+  category,
+  canEditSounds = true,
+  canDeleteSounds = true
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [localVolumeOffset, setLocalVolumeOffset] = useState(volumeOffset ?? 0);
@@ -362,105 +366,132 @@ export function ContextMenu({
             </span>
           </div>
 
-          <div className="py-1.5">
-            <div className="flex items-center gap-3 mb-2">
-              <Volume2 className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">
-                Volume: <span className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} font-medium`}>
-                  {localVolumeOffset > 0 ? '+' : ''}{localVolumeOffset}%
+          {/* Volume Offset - Only visible with edit-sounds permission */}
+          {canEditSounds && (
+            <div className="py-1.5">
+              <div className="flex items-center gap-3 mb-2">
+                <Volume2 className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">
+                  Volume: <span className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} font-medium`}>
+                    {localVolumeOffset > 0 ? '+' : ''}{localVolumeOffset}%
+                  </span>
+                  {isUpdating && <span className="ml-2 text-xs">(saving...)</span>}
                 </span>
-                {isUpdating && <span className="ml-2 text-xs">(saving...)</span>}
-              </span>
-            </div>
-            <div className="pl-7">
-              <input
-                type="range"
-                min="-100"
-                max="100"
-                value={localVolumeOffset}
-                onChange={handleVolumeChange}
-                onMouseUp={handleVolumeRelease}
-                onTouchEnd={handleVolumeRelease}
-                disabled={isUpdating}
-                className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-gray-600 accent-blue-500'
-                    : 'bg-gray-300 accent-blue-600'
-                }`}
-                style={{
-                  background: theme === 'dark'
-                    ? `linear-gradient(to right, #4b5563 0%, #4b5563 ${(localVolumeOffset + 100) / 2}%, #6b7280 ${(localVolumeOffset + 100) / 2}%, #6b7280 100%)`
-                    : `linear-gradient(to right, #9333ea 0%, #9333ea ${(localVolumeOffset + 100) / 2}%, #d1d5db ${(localVolumeOffset + 100) / 2}%, #d1d5db 100%)`
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="py-1.5">
-            <div className="flex items-center gap-3 mb-2">
-              <Edit3 className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm flex-1">
-                Display Name:
-                {isUpdatingName && <span className="ml-2 text-xs">(saving...)</span>}
-              </span>
-            </div>
-            <div className="pl-7">
-              {isEditingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={editedDisplayName}
-                    onChange={(e) => setEditedDisplayName(e.target.value)}
-                    onKeyDown={handleNameKeyDown}
-                    disabled={isUpdatingName}
-                    className={`flex-1 px-2 py-1 rounded border text-sm ${
-                      theme === 'dark'
-                        ? 'bg-gray-700 border-gray-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-900'
-                    }`}
-                    placeholder="Enter display name"
-                  />
-                  <button
-                    onClick={handleSaveDisplayName}
-                    disabled={isUpdatingName}
-                    className={`p-1 rounded transition-colors ${
-                      theme === 'dark'
-                        ? 'hover:bg-gray-700 text-green-400'
-                        : 'hover:bg-gray-100 text-green-600'
-                    }`}
-                    title="Save"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleCancelEditName}
-                    disabled={isUpdatingName}
-                    className={`p-1 rounded transition-colors ${
-                      theme === 'dark'
-                        ? 'hover:bg-gray-700 text-red-400'
-                        : 'hover:bg-gray-100 text-red-600'
-                    }`}
-                    title="Cancel"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => setIsEditingName(true)}
-                  className={`px-2 py-1 rounded cursor-pointer transition-colors text-sm ${
+              </div>
+              <div className="pl-7">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={localVolumeOffset}
+                  onChange={handleVolumeChange}
+                  onMouseUp={handleVolumeRelease}
+                  onTouchEnd={handleVolumeRelease}
+                  disabled={isUpdating}
+                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
                     theme === 'dark'
-                      ? 'hover:bg-gray-700 text-white'
-                      : 'hover:bg-gray-100 text-gray-900'
+                      ? 'bg-gray-600 accent-blue-500'
+                      : 'bg-gray-300 accent-blue-600'
                   }`}
-                >
-                  {currentDisplayName || <span className="italic opacity-50">Click to set name</span>}
-                </div>
-              )}
+                  style={{
+                    background: theme === 'dark'
+                      ? `linear-gradient(to right, #4b5563 0%, #4b5563 ${(localVolumeOffset + 100) / 2}%, #6b7280 ${(localVolumeOffset + 100) / 2}%, #6b7280 100%)`
+                      : `linear-gradient(to right, #9333ea 0%, #9333ea ${(localVolumeOffset + 100) / 2}%, #d1d5db ${(localVolumeOffset + 100) / 2}%, #d1d5db 100%)`
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Display Name - Only visible with edit-sounds permission */}
+          {canEditSounds && (
+            <div className="py-1.5">
+              <div className="flex items-center gap-3 mb-2">
+                <Edit3 className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm flex-1">
+                  Display Name:
+                  {isUpdatingName && <span className="ml-2 text-xs">(saving...)</span>}
+                </span>
+              </div>
+              <div className="pl-7">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={editedDisplayName}
+                      onChange={(e) => setEditedDisplayName(e.target.value)}
+                      onKeyDown={handleNameKeyDown}
+                      disabled={isUpdatingName}
+                      className={`flex-1 px-2 py-1 rounded border text-sm ${
+                        theme === 'dark'
+                          ? 'bg-gray-700 border-gray-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                      placeholder="Enter display name"
+                    />
+                    <button
+                      onClick={handleSaveDisplayName}
+                      disabled={isUpdatingName}
+                      className={`p-1 rounded transition-colors ${
+                        theme === 'dark'
+                          ? 'hover:bg-gray-700 text-green-400'
+                          : 'hover:bg-gray-100 text-green-600'
+                      }`}
+                      title="Save"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleCancelEditName}
+                      disabled={isUpdatingName}
+                      className={`p-1 rounded transition-colors ${
+                        theme === 'dark'
+                          ? 'hover:bg-gray-700 text-red-400'
+                          : 'hover:bg-gray-100 text-red-600'
+                      }`}
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setIsEditingName(true)}
+                    className={`px-2 py-1 rounded cursor-pointer transition-colors text-sm ${
+                      theme === 'dark'
+                        ? 'hover:bg-gray-700 text-white'
+                        : 'hover:bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    {currentDisplayName || <span className="italic opacity-50">Click to set name</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Delete Button - Only visible with delete-sounds permission */}
+        {canDeleteSounds && (
+          <>
+            <div className={`my-1 h-px ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`} />
+            <button
+              onClick={() => {
+                onDelete();
+                onClose();
+              }}
+              className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
+                theme === 'dark'
+                  ? 'hover:bg-red-900/30 text-red-400'
+                  : 'hover:bg-red-50 text-red-600'
+              }`}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete Sound
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

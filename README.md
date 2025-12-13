@@ -11,6 +11,58 @@ choose the sound from the web UI. You will need to create a bot account that the
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
+## 4.* Releases
+**If you're updating from any version prior to 4.0 you will need to delete your old DB file.** The release of 4.* updates
+the JDA library to 6.1.1 and some updates to the legacy UI. In 4.1.* and above, I added a new UI available at {BASE_URL}/indexV2.html.
+The new UI allows OAuth through Discord. The UI should work fine without configuring OAuth but will give extra functionality
+if you do configure it for users you grant roles to (Admin, Moderator, or DJ). To configure, you'll need to go to the [Discord
+developer portal](https://discord.com/developers/applications/), click your application, select OAuth2. From this screen
+you'll need your Client ID and Client Secret, add a Redirect (https://your_soundboard_url/login/oauth2/code/discord). Please
+use https if you don't, it will not be secure. Take the Client Id and Client Secret and find these entries in your
+application.properties file and replace the values with your own:
+
+spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id
+spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret
+
+Then you just need to generate a JWT secret. Go to this URL https://jwtgenerator.com/tools/jwt-generator and click
+"Generate New Secret". Take that value and replace the placeholder, again in application.properties, with the secret you just generated:
+
+jwt.secret=your-secret-key-here-change-this-in-production
+
+Then find this entry in application.properties:
+
+adminUserList=somediscordid
+
+Replace the value with a comma-separated list of discord user ids that you want to have an admin role. 
+
+For reference, here is a list of roles and the permissions given to those roles:
+
+      admin:
+        - upload
+        - delete-sounds
+        - edit-sounds
+        - manage-users
+        - play-sounds
+        - download-sounds
+      dj:
+        - upload
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      moderator:
+        - delete-sounds
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      user:
+        - play-sounds
+        - download-sounds
+
+      # Default permissions for unauthenticated users
+      default-permissions:
+        - play-sounds
+        - download-sounds
+
 ## 3.0 Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 
@@ -28,7 +80,7 @@ configurable in the application.properties). Put all the clips you
 want to play in the sounds directory. In the app.properties file you should fill in the login information for 
 your bot (you should create a new discord BOT account for your soundboard). Once you've created your new bot you must invite 
 it to any server you want to use it on. The property "username_to_join_channel" is your username on discord. 
-When you click a sound file to play in the soundboard the app will look for this username and join the voice 
+When you click a sound file to play in the soundboard, the app will look for this username and join the voice 
 channel that user is in. If you don't have this configured properly the bot will not work. Also, the bot can 
 respond to text channel commands. See below for information on those commands. Once this is complete execute 
 the .jar file, or the .bat file. You should see a bunch of logging and eventually something like 

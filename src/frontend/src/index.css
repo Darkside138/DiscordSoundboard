@@ -57,10 +57,12 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --color-red-50: oklch(.971 .013 17.38);
     --color-red-400: oklch(.704 .191 22.216);
     --color-red-500: oklch(.637 .237 25.331);
     --color-red-600: oklch(.577 .245 27.325);
     --color-red-700: oklch(.505 .213 27.518);
+    --color-red-900: oklch(.396 .141 25.723);
     --color-orange-600: oklch(.646 .222 41.116);
     --color-amber-500: oklch(.769 .188 70.08);
     --color-yellow-500: oklch(.795 .184 86.047);
@@ -443,6 +445,10 @@
 @layer utilities {
   .invisible {
     visibility: hidden;
+  }
+
+  .visible {
+    visibility: visible;
   }
 
   .absolute {
@@ -872,6 +878,10 @@
 
   .border-t-transparent {
     border-top-color: #0000;
+  }
+
+  .bg-\[\#5865F2\] {
+    background-color: #5865f2;
   }
 
   .bg-black {
@@ -1336,6 +1346,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-\[\#4752C4\]:hover {
+      background-color: #4752c4;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-blue-600:hover {
       background-color: var(--color-blue-600);
     }
@@ -1390,6 +1406,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-red-50:hover {
+      background-color: var(--color-red-50);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-red-600:hover {
       background-color: var(--color-red-600);
     }
@@ -1398,6 +1420,18 @@
   @media (hover: hover) {
     .hover\:bg-red-700:hover {
       background-color: var(--color-red-700);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-red-900\/30:hover {
+      background-color: color-mix(in srgb, oklch(.396 .141 25.723) 30%, transparent);
+    }
+
+    @supports (color: color-mix(in lab, red, red)) {
+      .hover\:bg-red-900\/30:hover {
+        background-color: color-mix(in oklab, var(--color-red-900) 30%, transparent);
+      }
     }
   }
 
@@ -1487,6 +1521,18 @@
   .focus\:outline-none:focus {
     --tw-outline-style: none;
     outline-style: none;
+  }
+
+  @media (width >= 40rem) {
+    .sm\:block {
+      display: block;
+    }
+  }
+
+  @media (width >= 40rem) {
+    .sm\:hidden {
+      display: none;
+    }
   }
 
   @media (width >= 40rem) {

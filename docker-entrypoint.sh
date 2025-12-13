@@ -15,6 +15,10 @@ cd /etc/DiscordSoundboard/config
 sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
 sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
 sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
+sed -i 's/admin_user_list=?/admin_user_list='adminuserlist'/g' application.properties
+sed -i 's/spring.security.oauth2.client.registration.discord.client-id=?/spring.security.oauth2.client.registration.discord.client-id='discordclientid'/g' application.properties
+sed -i 's/spring.security.oauth2.client.registration.discord.client-secret=?/spring.security.oauth2.client.registration.discord.client-secret='discordclientsecret'/g' application.properties
+sed -i 's/jwt.secret=?/jwt.secret='jwtsecret'/g' application.properties
 
 echo "changing working directory to /etc/DiscordSoundboard/bin"
 

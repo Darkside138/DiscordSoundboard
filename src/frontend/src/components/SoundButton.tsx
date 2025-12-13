@@ -7,6 +7,7 @@ interface Sound {
   category: string;
   url: string;
   displayName?: string | null;
+  dateAdded?: string;
 }
 
 interface SoundButtonProps {
@@ -64,7 +65,10 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
       )}
 
       {isRecentlyAdded && (
-        <div className="absolute -top-1.5 -right-1.5 z-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full p-1 shadow-lg">
+        <div
+          className="absolute -top-1.5 -right-1.5 z-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full p-1 shadow-lg"
+          title={sound.dateAdded ? `Recently Added: ${new Date(sound.dateAdded).toLocaleDateString()}` : 'Recently Added'}
+        >
           <Sparkles className="w-2.5 h-2.5 fill-white text-white" />
         </div>
       )}

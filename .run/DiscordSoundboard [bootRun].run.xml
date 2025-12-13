@@ -3,6 +3,9 @@
     <ExternalSystemSettings>
       <option name="env">
         <map>
+          <entry key="DISCORD_CLIENT_ID" value="170310071811571714" />
+          <entry key="DISCORD_CLIENT_SECRET" value="589WCz8V_A27c1PHRzSMibaht90BsyRV" />
+          <entry key="JWT_SECRET" value="760cea298b19d941ef6508e9625b709cb3563e4a3b28c6a3bae0708e523ae1ba3b2e09328e1f7d0d529432078a769e046f464760c71f1c2bad3e587784f467db" />
           <entry key="SPRING_PROFILES_ACTIVE" value="local" />
         </map>
       </option>
@@ -22,8 +25,11 @@
     </ExternalSystemSettings>
     <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
     <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
     <DebugAllEnabled>false</DebugAllEnabled>
     <RunAsTest>false</RunAsTest>
+    <GradleProfilingDisabled>false</GradleProfilingDisabled>
+    <GradleCoverageDisabled>false</GradleCoverageDisabled>
     <method v="2" />
   </configuration>
 </component>

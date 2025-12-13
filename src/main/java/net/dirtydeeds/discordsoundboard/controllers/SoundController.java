@@ -5,6 +5,8 @@ import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
+import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +43,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class SoundController {
 
+    @Autowired
+    private final UserRoleConfig userRoleConfig;
     private SoundPlayer soundPlayer;
     private final SoundService soundService;
 
@@ -62,8 +67,9 @@ public class SoundController {
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     @Inject
-    public SoundController (SoundService soundService) {
+    public SoundController (SoundService soundService, UserRoleConfig userRoleConfig) {
         this.soundService = soundService;
+        this.userRoleConfig = userRoleConfig;
     }
 
     @GetMapping("/findAll")
@@ -78,6 +84,35 @@ public class SoundController {
         return soundMap.values().stream()
                 .map(SoundFile::getCategory)
                 .collect(Collectors.toSet());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteSoundFile(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        try {
+
+            String userId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (userId == null || !userRoleConfig.hasPermission(userId, "delete-sounds")) {
+                return ResponseEntity.status(403).body("You don't have permission to delete sounds");
+            }
+
+            // Delete the sound file
+            try {
+                soundService.delete(soundService.findOneBySoundFileIdIgnoreCase(id));
+
+                return ResponseEntity.ok()
+                        .body(Map.of("message", "Sound file deleted successfully", "id", id));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Sound file not found with ID: " + id);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting sound file: " + e.getMessage());
+        }
     }
 
     @GetMapping(value = "/download/{soundId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -119,7 +154,16 @@ public class SoundController {
     }
 
     @PatchMapping(value = "/{soundId}")
-    public ResponseEntity<Void> patchSoundFile(@PathVariable String soundId, @RequestParam(defaultValue = "0") Integer volumeOffsetPercentage, @RequestParam String displayName) {
+    public ResponseEntity<Void> patchSoundFile(
+            @PathVariable String soundId,
+            @RequestParam(defaultValue = "0") Integer volumeOffsetPercentage,
+            @RequestParam String displayName,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        String userId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (userId == null || !userRoleConfig.hasPermission(userId, "edit-sounds")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
 
@@ -200,8 +244,16 @@ public class SoundController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
+
+            String userId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (userId == null || !userRoleConfig.hasPermission(userId, "upload")) {
+                return ResponseEntity.status(403).body("You don't have permission to upload sounds");
+            }
+
             if (file.isEmpty() || file.getOriginalFilename() == null) {
                 return ResponseEntity.badRequest().body("File is empty");
             }

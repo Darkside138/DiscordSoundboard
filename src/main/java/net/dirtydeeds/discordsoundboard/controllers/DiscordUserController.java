@@ -3,11 +3,13 @@ package net.dirtydeeds.discordsoundboard.controllers;
 import io.swagger.v3.oas.annotations.Hidden;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
+import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +25,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @SuppressWarnings("unused")
 public class DiscordUserController {
 
+    @Autowired
+    private final UserRoleConfig userRoleConfig;
+
     private final DiscordUserService discordUserService;
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
     @Autowired
-    public DiscordUserController(DiscordUserService discordUserService) {
+    public DiscordUserController(DiscordUserService discordUserService, UserRoleConfig userRoleConfig) {
         this.discordUserService = discordUserService;
+        this.userRoleConfig = userRoleConfig;
     }
 
     @GetMapping()
@@ -57,8 +63,15 @@ public class DiscordUserController {
     public ResponseEntity<DiscordUser> updateUserSounds(
             @PathVariable String userId,
             @RequestParam(required = false) String entranceSound,
-            @RequestParam(required = false) String leaveSound
+            @RequestParam(required = false) String leaveSound,
+            @RequestHeader(value = "Authorization", required = false) String authorization
     ) {
+
+        String authId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (userId == null || !userRoleConfig.hasPermission(userId, "manage-users")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         // Update the user's entrance and leave sounds in your database
         try {
             DiscordUser user = discordUserService.updateSounds(userId, entranceSound, leaveSound);

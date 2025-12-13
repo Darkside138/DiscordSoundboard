@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 interface SettingsMenuProps {
   x: number;
@@ -9,6 +10,7 @@ interface SettingsMenuProps {
   recentCount: number;
   onPopularCountChange: (count: number) => void;
   onRecentCountChange: (count: number) => void;
+  onThemeChange: (theme: 'light' | 'dark') => void;
 }
 
 export function SettingsMenu({
@@ -20,6 +22,7 @@ export function SettingsMenu({
   recentCount,
   onPopularCountChange,
   onRecentCountChange,
+  onThemeChange,
 }: SettingsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -69,10 +72,11 @@ export function SettingsMenu({
 
       {/* Popular Count */}
       <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <label for="popularCount" className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
           Popular Sounds Count
         </label>
         <input
+          id="popularCount"
           type="number"
           min="1"
           max="100"
@@ -96,10 +100,11 @@ export function SettingsMenu({
 
       {/* Recent Count */}
       <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`} for="recentlyAddedCount">
           Recently Added Count
         </label>
         <input
+          id="recentlyAddedCount"
           type="number"
           min="1"
           max="100"
@@ -119,6 +124,39 @@ export function SettingsMenu({
         <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
           Number of sounds to mark as recently added (1-100)
         </p>
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="mb-4">
+        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          Theme
+        </label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => onThemeChange('light')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              theme === 'light'
+                ? 'bg-blue-600 text-white'
+                : theme === 'dark'
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <Sun className="w-5 h-5" />
+            Light
+          </button>
+          <button
+            onClick={() => onThemeChange('dark')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              theme === 'dark'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <Moon className="w-5 h-5" />
+            Dark
+          </button>
+        </div>
       </div>
 
       {/* Close Button */}
