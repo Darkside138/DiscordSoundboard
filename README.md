@@ -63,6 +63,18 @@ For reference, here is a list of roles and the permissions given to those roles:
         - play-sounds
         - download-sounds
 
+## Unraid OAuth Setup For Previously Installed
+Add these new container variables:
+```
+<Config Name="Admin Role User ID List" Target="adminuserlist" Default="" Mode="" Description="List of discord user id's you like to have admin role. Comma-separated" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Discord Client ID" Target="discordclientid" Default="replace_with_your_discord_client_id" Mode="" Description="https://discord.com/developers/applications&#13;&#10;Select your application and go to OAuth2 in the menu. This is where you get client id and client secret. Add a redirect to your soundboardURL/login/oauth2/code/discord" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Discord Client Secret" Target="discordclientsecret" Default="replace_with_your_discord_secret" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false">-</Config>
+<Config Name="JWT Secret" Target="jwtsecret" Default="your-secret-key-here-change-this-in-production" Mode="" Description="Set this to a unique value. You can generate one here:&#13;&#10;https://jwtgenerator.com/tools/jwt-generator" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Moderator Role User ID List" Target="moderatoruserlist" Default="" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"/>
+<Config Name="DJ Role User ID List" Target="djuserlist" Default="" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"/>
+<Config Name="Front End URL" Target="frontendurl" Default="http://localhost:8080" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+```
+
 ## 3.0 Release
 Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 

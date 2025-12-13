@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Dave Furrer
@@ -29,9 +29,12 @@ public class BotLeaveListener extends ListenerAdapter {
 
     private boolean isAlone(Guild guild) {
         if (guild.getAudioManager().getConnectedChannel() == null) return false;
-        return guild.getAudioManager().getConnectedChannel().getMembers().stream()
-                .noneMatch(x ->
-                        !Objects.requireNonNull(x.getVoiceState()).isDeafened()
-                                && (!x.getUser().isBot() || !x.getUser().isSystem()));
+        AtomicBoolean isAlone = new AtomicBoolean(true);
+        guild.getAudioManager().getConnectedChannel().getMembers().forEach( member -> {
+            if (!member.getUser().isBot() && !member.getUser().isSystem()) {
+                isAlone.set(false);
+            }
+        });
+        return isAlone.get();
     }
 }
