@@ -73,6 +73,24 @@ function transformPermissions(backendPermissions: any): DiscordUser['permissions
   return transformed;
 }
 
+/**
+ * Decode JWT token to extract payload
+ */
+function decodeJWT(token: string): any {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return null;
+    }
+    const payload = parts[1];
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+}
+
 export function saveAuth(authState: AuthState): void {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
 }
@@ -133,6 +151,21 @@ async function fetchUserInfo(accessToken: string): Promise<DiscordUser | null> {
     console.log('Raw user data from backend:', userData);
     console.log('Raw permissions:', userData.permissions);
     console.log('Permissions is array?', Array.isArray(userData.permissions));
+
+    // Try to decode JWT to get permissions directly if backend is missing them
+    const jwtPayload = decodeJWT(accessToken);
+    console.log('JWT payload:', jwtPayload);
+
+    if (jwtPayload && jwtPayload.permissions) {
+      console.log('Using permissions from JWT token:', jwtPayload.permissions);
+      // Prefer JWT permissions over backend response since JWT is authoritative
+      userData.permissions = jwtPayload.permissions;
+
+      // Also get roles from JWT if available
+      if (jwtPayload.roles) {
+        userData.roles = jwtPayload.roles;
+      }
+    }
 
     if (userData.permissions) {
       const transformed = transformPermissions(userData.permissions);

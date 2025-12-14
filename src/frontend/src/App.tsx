@@ -744,6 +744,7 @@ export default function App() {
           mode: 'cors',
           headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders()
           }
         }
       );
