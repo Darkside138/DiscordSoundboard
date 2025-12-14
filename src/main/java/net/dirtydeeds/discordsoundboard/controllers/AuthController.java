@@ -57,6 +57,7 @@ public class AuthController {
             permissions.put("editSounds", permissionsList.contains("edit-sounds"));
             permissions.put("playSounds", permissionsList.contains("play-sounds"));
             permissions.put("downloadSounds", permissionsList.contains("download-sounds"));
+            permissions.put("updateVolume", permissionsList.contains("update-volume"));
 
             userResponse.put("permissions", permissions);
 

@@ -42,6 +42,7 @@ app:
         - manage-users
         - play-sounds
         - download-sounds
+        - update-volume
       dj:
         - upload
         - edit-sounds
@@ -52,6 +53,7 @@ app:
         - edit-sounds
         - play-sounds
         - download-sounds
+        - update-volume
       user:
         - play-sounds
         - download-sounds

@@ -1290,7 +1290,8 @@ export default function App() {
                       style={{
                         background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} 0%, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} 100%)`
                       }}
-                      disabled={!selectedUserId || !isPlaybackEnabled}
+                      disabled={!selectedUserId || !isPlaybackEnabled || !authUser?.permissions?.updateVolume}
+                      title={!authUser?.permissions?.updateVolume ? 'You do not have permission to change volume' : ''}
                     />
                     <span className={`min-w-[3rem] text-right ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                       {volume}%
