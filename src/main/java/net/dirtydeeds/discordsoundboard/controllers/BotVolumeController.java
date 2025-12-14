@@ -3,6 +3,8 @@ package net.dirtydeeds.discordsoundboard.controllers;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
+import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +20,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class BotVolumeController {
 
     private final SoundPlayer soundPlayer;
+    private final UserRoleConfig userRoleConfig;
 
     @Inject
-    private BotVolumeController (SoundPlayer soundPlayer) {
+    private BotVolumeController (SoundPlayer soundPlayer, UserRoleConfig userRoleConfig) {
         this.soundPlayer = soundPlayer;
+        this.userRoleConfig = userRoleConfig;
     }
 
     // Store all active SSE connections
@@ -29,7 +33,14 @@ public class BotVolumeController {
 
     @PostMapping(value = "")
     public ResponseEntity<Void> setVolume(@RequestParam Integer volume, @RequestParam String username,
-                                          @RequestParam(defaultValue = "") String voiceChannelId) {
+                                          @RequestParam(defaultValue = "") String voiceChannelId,
+                                          @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        String userId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (userId == null || !userRoleConfig.hasPermission(userId, "edit-sounds")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         soundPlayer.setGlobalVolume(volume, username, null);
         broadcastUpdate(username);
         return ResponseEntity.ok().build();
