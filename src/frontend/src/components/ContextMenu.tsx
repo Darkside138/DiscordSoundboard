@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Star, Trash2, Download, Clock, Calendar, Volume2, Edit3, Check, X, FileText, FolderOpen, Play } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Heart, Download, Play, Clock, Calendar, Volume2, Edit2, Check, X, Trash2, FolderOpen, FileText } from 'lucide-react';
 import { API_BASE_URL } from '../config';
+import { fetchWithAuth } from '../utils/api';
+import { toast } from 'sonner@2.0.3';
 
 interface ContextMenuProps {
   x: number;
@@ -96,7 +98,7 @@ export function ContextMenu({
       url.searchParams.append('volumeOffsetPercentage', newValue.toString());
       url.searchParams.append('displayName', displayName || '');
 
-      const response = await fetch(url.toString(), {
+      const response = await fetchWithAuth(url.toString(), {
         method: 'PATCH',
         mode: 'cors',
         headers: {
@@ -108,13 +110,16 @@ export function ContextMenu({
         console.error('Failed to update volume offset:', response.status, response.statusText);
         // Revert to original value on error
         setLocalVolumeOffset(volumeOffset ?? 0);
+        toast.error('Failed to update volume offset');
       } else {
         lastSentValueRef.current = newValue;
+        toast.success('Volume offset updated');
       }
     } catch (error) {
       console.error('Error updating volume offset:', error);
       // Revert to original value on error
       setLocalVolumeOffset(volumeOffset ?? 0);
+      toast.error('Failed to update volume offset');
     } finally {
       setIsUpdating(false);
     }
@@ -145,7 +150,7 @@ export function ContextMenu({
       url.searchParams.append('displayName', newName);
       url.searchParams.append('volumeOffsetPercentage', localVolumeOffset.toString());
 
-      const response = await fetch(url.toString(), {
+      const response = await fetchWithAuth(url.toString(), {
         method: 'PATCH',
         mode: 'cors',
         headers: {
@@ -157,14 +162,17 @@ export function ContextMenu({
         console.error('Failed to update display name:', response.status, response.statusText);
         // Revert to original value on error
         setEditedDisplayName(displayName || '');
+        toast.error('Failed to update display name');
       } else {
         console.log('Display name updated successfully');
         setSavedDisplayName(newName);
+        toast.success('Display name updated');
       }
     } catch (error) {
       console.error('Error updating display name:', error);
       // Revert to original value on error
       setEditedDisplayName(displayName || '');
+      toast.error('Failed to update display name');
     } finally {
       setIsUpdatingName(false);
       setIsEditingName(false);
@@ -296,7 +304,7 @@ export function ContextMenu({
               : 'hover:bg-gray-100 text-gray-700'
           }`}
         >
-          <Star
+          <Heart
             className={`w-4 h-4 ${
               isFavorite ? 'fill-yellow-500 text-yellow-500' : ''
             }`}
@@ -407,7 +415,7 @@ export function ContextMenu({
           {canEditSounds && (
             <div className="py-1.5">
               <div className="flex items-center gap-3 mb-2">
-                <Edit3 className="w-4 h-4 flex-shrink-0" />
+                <Edit2 className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm flex-1">
                   Display Name:
                   {isUpdatingName && <span className="ml-2 text-xs">(saving...)</span>}
