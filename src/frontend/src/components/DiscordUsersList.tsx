@@ -36,56 +36,105 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   const [users, setUsers] = useState<DiscordUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const previousSelectedUserIdRef = useRef<string | null>(null);
+  const previousVolumeRef = useRef<number | null>(null);
+  const previousInVoiceRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     // Prevent double SSE connections in StrictMode
     let eventSource: EventSource | null = null;
     let isMounted = true;
     const abortController = new AbortController();
-    
+
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        
+
         console.log('📡 Fetching initial Discord users...');
-        
+
         // Fetch users who are in voice or selected from dedicated endpoint
         const response = await fetch(`${API_BASE_URL}/api/discordUsers/invoiceorselected`, {
           signal: abortController.signal
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }
 
         const data: DiscordUsersResponse = await response.json();
-        
+
         console.log('✅ Discord users fetched successfully:', data.content.length);
-        
+
         // Sort users: selected user first, then the rest
         const sortedUsers = [...data.content].sort((a, b) => {
           if (a.selected && !b.selected) return -1;
           if (!a.selected && b.selected) return 1;
           return 0;
         });
-        
+
         setUsers(sortedUsers);
-        
-        // Automatically select the user that has selected=true and update volume
-        const selectedUser = sortedUsers.find(user => user.selected);
-        if (selectedUser && selectedUser.selected) {
-          onUserSelect(selectedUser.id);
-          // Update global volume with the selected user's volume (default to 100 if not set)
-          const userVolume = selectedUser.volume ?? 100;
-          console.log('🔊 Updating global volume to:', userVolume);
-          onVolumeUpdate(userVolume);
-          // Update playback enabled state (enabled only if user is in voice)
-          onPlaybackEnabledChange(selectedUser.inVoice);
+
+        // Check if there's a currently selected user (from App.tsx state, not backend flag)
+        // If selectedUserId is set, find that user in the list and check their status
+        let shouldEnablePlayback = false;
+        let currentVolume = 100;
+
+        if (selectedUserId) {
+          const currentUser = sortedUsers.find(user => user.id === selectedUserId);
+          if (currentUser) {
+            // User is still in the list, check if they're in voice
+            shouldEnablePlayback = currentUser.inVoice;
+            currentVolume = currentUser.volume ?? 100;
+
+            const userIdChanged = previousSelectedUserIdRef.current !== currentUser.id;
+            const volumeChanged = previousVolumeRef.current !== currentVolume;
+            const inVoiceChanged = previousInVoiceRef.current !== currentUser.inVoice;
+
+            // Only update volume if it changed OR if the user changed (new user might have different volume)
+            if (volumeChanged || userIdChanged) {
+              console.log('🔊 Volume or user changed, updating volume to:', currentVolume);
+              onVolumeUpdate(currentVolume);
+              previousVolumeRef.current = currentVolume;
+            }
+
+            // Update playback enabled state (enabled only if user is in voice)
+            if (inVoiceChanged || userIdChanged) {
+              console.log('🎤 In Voice status changed, updating playback enabled to:', currentUser.inVoice);
+              onPlaybackEnabledChange(currentUser.inVoice);
+              previousInVoiceRef.current = currentUser.inVoice;
+            }
+
+            previousSelectedUserIdRef.current = currentUser.id;
+          } else {
+            // Selected user is no longer in the list, disable playback
+            console.log('❌ Selected user not found in updated list, disabling playback');
+            onPlaybackEnabledChange(false);
+            previousInVoiceRef.current = null;
+          }
         } else {
-          // No selected user, disable playback
-          onPlaybackEnabledChange(false);
+          // No user selected in App.tsx, check if backend marked someone as selected
+          const backendSelectedUser = sortedUsers.find(user => user.selected);
+          if (backendSelectedUser) {
+            // Backend wants us to select this user
+            console.log('👤 Backend selected user, updating selection:', backendSelectedUser.username);
+            onUserSelect(backendSelectedUser.id);
+            currentVolume = backendSelectedUser.volume ?? 100;
+            onVolumeUpdate(currentVolume);
+            onPlaybackEnabledChange(backendSelectedUser.inVoice);
+
+            previousSelectedUserIdRef.current = backendSelectedUser.id;
+            previousVolumeRef.current = currentVolume;
+            previousInVoiceRef.current = backendSelectedUser.inVoice;
+          } else {
+            // No selected user anywhere, ensure playback is disabled
+            if (previousInVoiceRef.current !== null) {
+              console.log('❌ No selected user, disabling playback');
+              onPlaybackEnabledChange(false);
+              previousInVoiceRef.current = null;
+            }
+          }
         }
-        
+
         setError(null);
         setLoading(false);
       } catch (err) {
@@ -108,7 +157,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
       try {
         console.log('📡 Connecting to Discord Users SSE endpoint:', API_ENDPOINTS.DISCORD_USERS_STREAM);
         eventSource = new EventSource(API_ENDPOINTS.DISCORD_USERS_STREAM);
-        
+
         eventSource.onopen = () => {
           console.log('✅ Discord Users SSE connection established');
         };
@@ -127,31 +176,77 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
             const data = JSON.parse(event.data);
             // Handle both array and paginated responses
             const usersData = Array.isArray(data) ? data : (data.content || []);
-            
+
             console.log('📥 Discord Users SSE - Total users received:', usersData.length);
-            
+
             // Sort users: selected user first, then the rest
             const sortedUsers = [...usersData].sort((a, b) => {
               if (a.selected && !b.selected) return -1;
               if (!a.selected && b.selected) return 1;
               return 0;
             });
-            
+
             setUsers(sortedUsers);
-            
-            // Automatically select the user that has selected=true and update volume
-            const selectedUser = sortedUsers.find(user => user.selected);
-            if (selectedUser && selectedUser.selected) {
-              onUserSelect(selectedUser.id);
-              // Update global volume with the selected user's volume (default to 100 if not set)
-              const userVolume = selectedUser.volume ?? 100;
-              console.log('🔊 Updating global volume to:', userVolume);
-              onVolumeUpdate(userVolume);
-              // Update playback enabled state (enabled only if user is in voice)
-              onPlaybackEnabledChange(selectedUser.inVoice);
+
+            // Check if there's a currently selected user (from App.tsx state, not backend flag)
+            // If selectedUserId is set, find that user in the list and check their status
+            let shouldEnablePlayback = false;
+            let currentVolume = 100;
+
+            if (selectedUserId) {
+              const currentUser = sortedUsers.find(user => user.id === selectedUserId);
+              if (currentUser) {
+                // User is still in the list, check if they're in voice
+                shouldEnablePlayback = currentUser.inVoice;
+                currentVolume = currentUser.volume ?? 100;
+
+                const userIdChanged = previousSelectedUserIdRef.current !== currentUser.id;
+                const volumeChanged = previousVolumeRef.current !== currentVolume;
+                const inVoiceChanged = previousInVoiceRef.current !== currentUser.inVoice;
+
+                // Only update volume if it changed OR if the user changed (new user might have different volume)
+                if (volumeChanged || userIdChanged) {
+                  console.log('🔊 Volume or user changed, updating volume to:', currentVolume);
+                  onVolumeUpdate(currentVolume);
+                  previousVolumeRef.current = currentVolume;
+                }
+
+                // Update playback enabled state (enabled only if user is in voice)
+                if (inVoiceChanged || userIdChanged) {
+                  console.log('🎤 In Voice status changed, updating playback enabled to:', currentUser.inVoice);
+                  onPlaybackEnabledChange(currentUser.inVoice);
+                  previousInVoiceRef.current = currentUser.inVoice;
+                }
+
+                previousSelectedUserIdRef.current = currentUser.id;
+              } else {
+                // Selected user is no longer in the list, disable playback
+                console.log('❌ Selected user not found in updated list, disabling playback');
+                onPlaybackEnabledChange(false);
+                previousInVoiceRef.current = null;
+              }
             } else {
-              // No selected user, disable playback
-              onPlaybackEnabledChange(false);
+              // No user selected in App.tsx, check if backend marked someone as selected
+              const backendSelectedUser = sortedUsers.find(user => user.selected);
+              if (backendSelectedUser) {
+                // Backend wants us to select this user
+                console.log('👤 Backend selected user, updating selection:', backendSelectedUser.username);
+                onUserSelect(backendSelectedUser.id);
+                currentVolume = backendSelectedUser.volume ?? 100;
+                onVolumeUpdate(currentVolume);
+                onPlaybackEnabledChange(backendSelectedUser.inVoice);
+
+                previousSelectedUserIdRef.current = backendSelectedUser.id;
+                previousVolumeRef.current = currentVolume;
+                previousInVoiceRef.current = backendSelectedUser.inVoice;
+              } else {
+                // No selected user anywhere, ensure playback is disabled
+                if (previousInVoiceRef.current !== null) {
+                  console.log('❌ No selected user, disabling playback');
+                  onPlaybackEnabledChange(false);
+                  previousInVoiceRef.current = null;
+                }
+              }
             }
           } catch (error) {
             console.error('Error parsing Discord Users SSE data:', error);
@@ -161,7 +256,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
         console.error('Failed to create Discord Users SSE connection:', error);
       }
     });
-    
+
     // Cleanup function
     return () => {
       console.log('🧹 Cleaning up Discord Users component');
@@ -172,7 +267,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
         console.log('✅ Discord Users SSE connection closed');
       }
     };
-  }, [onUserSelect, onVolumeUpdate, onPlaybackEnabledChange]);
+  }, [onUserSelect, onVolumeUpdate, onPlaybackEnabledChange, selectedUserId]);
 
   const getStatusColor = (user: DiscordUser) => {
     if (user.inVoice) {
