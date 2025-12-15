@@ -112,7 +112,7 @@ tasks.register("buildFrontend", NpmTask) {
 // Task to copy built files to Spring Boot static directory
 tasks.register("copyFrontend", Copy) {
     description = 'Copy built frontend files to Spring Boot static resources'
-    dependsOn: buildFrontend
+    dependsOn buildFrontend
     from "${project.projectDir}/src/frontend/build"
     into "${layout.buildDirectory.get().asFile}/resources/main/static"
     rename { String fileName ->
