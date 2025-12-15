@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Users, CheckCircle, Mic } from 'lucide-react';
 import { API_BASE_URL, API_ENDPOINTS } from '../config';
+import { getAuthHeaders } from '../utils/api';
 
 interface DiscordUser {
   id: string;
@@ -54,7 +55,8 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
 
         // Fetch users who are in voice or selected from dedicated endpoint
         const response = await fetch(`${API_BASE_URL}/api/discordUsers/invoiceorselected`, {
-          signal: abortController.signal
+          signal: abortController.signal,
+          headers: getAuthHeaders()
         });
 
         if (!response.ok) {
@@ -348,7 +350,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
         </div>
       </div>
 
-      <div className="max-h-[180px] overflow-y-auto">
+      <div className="max-h-[229px] overflow-y-auto">
         {users.length === 0 ? (
           <div className="p-4 text-center">
             <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>

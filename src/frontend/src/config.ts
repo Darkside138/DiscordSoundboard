@@ -28,4 +28,6 @@ export const API_ENDPOINTS = {
   AUTH_USER: `${API_BASE_URL}/api/auth/user`,
   AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   OAUTH_LOGIN: `${API_BASE_URL}/oauth2/authorization/discord`,
+  // Bot version
+  BOT_VERSION: `${API_BASE_URL}/bot/version`,
 };

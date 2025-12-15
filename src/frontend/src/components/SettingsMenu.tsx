@@ -1,5 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
+import { API_ENDPOINTS } from '../config';
+import { getAuthHeaders } from '../utils/api';
 
 interface SettingsMenuProps {
   x: number;
@@ -25,6 +27,29 @@ export function SettingsMenu({
   onThemeChange,
 }: SettingsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const [botVersion, setBotVersion] = useState<string>('Loading...');
+
+  // Fetch bot version on mount
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.BOT_VERSION, {
+          headers: getAuthHeaders()
+        });
+        if (response.ok) {
+          const version = await response.text();
+          setBotVersion(version);
+        } else {
+          setBotVersion('Unknown');
+        }
+      } catch (error) {
+        console.error('Failed to fetch bot version:', error);
+        setBotVersion('Unknown');
+      }
+    };
+
+    fetchVersion();
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -72,11 +97,10 @@ export function SettingsMenu({
 
       {/* Popular Count */}
       <div className="mb-4">
-        <label for="popularCount" className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
           Popular Sounds Count
         </label>
         <input
-          id="popularCount"
           type="number"
           min="1"
           max="100"
@@ -100,11 +124,10 @@ export function SettingsMenu({
 
       {/* Recent Count */}
       <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`} for="recentlyAddedCount">
+        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
           Recently Added Count
         </label>
         <input
-          id="recentlyAddedCount"
           type="number"
           min="1"
           max="100"
@@ -157,6 +180,16 @@ export function SettingsMenu({
             Dark
           </button>
         </div>
+      </div>
+
+      {/* Bot Version */}
+      <div className="mb-4">
+        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          Bot Version
+        </label>
+        <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+          {botVersion}
+        </p>
       </div>
 
       {/* Close Button */}

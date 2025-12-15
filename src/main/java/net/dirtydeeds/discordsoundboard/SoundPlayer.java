@@ -329,7 +329,7 @@ public class SoundPlayer {
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId());
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), user);
                 soundController.broadcastUpdate();
 
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
@@ -678,5 +678,17 @@ public class SoundPlayer {
 
     public String getSoundsDirectory() {
         return botConfig.getSoundFileDir();
+    }
+
+    public String getVersion() {
+        Package thisPackage = getClass().getPackage();
+        String version = null;
+        if (thisPackage != null) {
+            version = getClass().getPackage().getImplementationVersion();
+        }
+        if (version == null) {
+            version = botConfig.getApplicationVersion();
+        }
+        return version;
     }
 }

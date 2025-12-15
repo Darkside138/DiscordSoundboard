@@ -354,7 +354,9 @@ export default function App() {
     const fetchInitialVolume = async () => {
       try {
         console.log('📥 Fetching initial volume for user:', selectedUserId);
-        const response = await fetch(`${API_ENDPOINTS.VOLUME}/${selectedUserId}`);
+        const response = await fetch(`${API_ENDPOINTS.VOLUME}/${selectedUserId}`, {
+          headers: getAuthHeaders()
+        });
         if (response.ok) {
           const volumeValue = await response.text();
           const parsedVolume = parseInt(volumeValue, 10);
@@ -687,6 +689,7 @@ export default function App() {
           mode: 'cors',
           headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders()
           }
         }
       );
@@ -828,7 +831,8 @@ export default function App() {
         `${API_ENDPOINTS.PLAY_FILE}?soundFileId=${soundId}&username=${selectedUserId}`,
         {
           method: 'POST',
-          mode: 'cors'
+          mode: 'cors',
+          headers: getAuthHeaders()
         }
       );
 
@@ -892,7 +896,8 @@ export default function App() {
         `${API_ENDPOINTS.RANDOM}?username=${selectedUserId}`,
         {
           method: 'POST',
-          mode: 'cors'
+          mode: 'cors',
+          headers: getAuthHeaders()
         }
       );
 
@@ -924,7 +929,8 @@ export default function App() {
         `${API_ENDPOINTS.STOP}?username=${selectedUserId}`,
         {
           method: 'POST',
-          mode: 'cors'
+          mode: 'cors',
+          headers: getAuthHeaders()
         }
       );
 

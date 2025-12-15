@@ -7,7 +7,7 @@ public interface PlaybackService {
 
     SseEmitter createEmitter();
 
-    void sendTrackStart(String soundFileId);
+    void sendTrackStart(String soundFileId, String user);
 
     void sendTrackEnd(String soundFileId);
 }

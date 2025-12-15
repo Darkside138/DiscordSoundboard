@@ -81,4 +81,9 @@ public class BotCommandController {
     public List<ChannelResponse> getVoiceChannels() {
         return soundPlayer.getVoiceChannels();
     }
+
+    @GetMapping(value = "/version")
+    public String getVersion() {
+        return soundPlayer.getVersion();
+    }
 }
