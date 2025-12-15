@@ -12,7 +12,7 @@ echo "changing to config directory to update application.properties file"
 cd /etc/DiscordSoundboard/config
 
 #Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
-sed -i 's/^bot_token=.*/bot_token='bottoken'/' application.properties
+sed -i 's/^bot_token=.*/bot_token='$bottoken'/' application.properties
 sed -i 's/^username_to_join_channel=.*/username_to_join_channel='$username'/' application.properties
 sed -i 's/^command_character=.*/command_character='$commandcharacter'/' application.properties
 sed -i 's/^admin_user_list=.*/admin_user_list='$adminuserlist'/' application.properties
