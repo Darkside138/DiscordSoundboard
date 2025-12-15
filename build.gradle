@@ -103,15 +103,16 @@ npm_install {
 }
 
 // Task to build the React app
-task buildFrontend(type: com.github.gradle.node.npm.task.NpmTask) {
+tasks.register("buildFrontend", NpmTask) {
     description = 'Build the frontend application'
     args = ['run', 'build']
     dependsOn npm_install  // Use the plugin's built-in task
 }
 
 // Task to copy built files to Spring Boot static directory
-task copyFrontend(type: Copy, dependsOn: buildFrontend) {
+tasks.register("copyFrontend", Copy) {
     description = 'Copy built frontend files to Spring Boot static resources'
+    dependsOn: buildFrontend
     from "${project.projectDir}/src/frontend/build"
     into "${layout.buildDirectory.get().asFile}/resources/main/static"
     rename { String fileName ->
@@ -124,7 +125,7 @@ task copyFrontend(type: Copy, dependsOn: buildFrontend) {
 processResources.dependsOn copyFrontend
 
 // Clean frontend build
-task cleanFrontend(type: Delete) {
+tasks.register("cleanFrontend", Delete) {
     delete "${project.projectDir}/src/frontend/build"
     delete "${project.projectDir}/src/frontend/node_modules"
 }
@@ -161,4 +162,45 @@ tasks.register("renameDist") {
     }
 }
 
+assembleBootDist.dependsOn test
+
 bootDistZip.finalizedBy renameDist
+
+tasks.register("bumpPatchVersion") {
+    def targetFile = file("gradle.properties")
+    def linePrefix = "projectVersion"
+
+    inputs.file targetFile
+    outputs.file targetFile
+
+    doLast {
+        if (!targetFile.exists()) {
+            throw new GradleException("File not found: $targetFile")
+        }
+
+        def updatedContent = targetFile.readLines().collect { line ->
+            if (line.startsWith(linePrefix)) {
+                def parts = line.split("\\s*=\\s*")
+                def matcher = (parts[1] =~ /(\d+)\.(\d+)\.(\d+)/)
+                if (!matcher.matches()) {
+                    throw new GradleException("Version format must be MAJOR.MINOR.PATCH, found: $version")
+                }
+
+                // Explicitly convert to String, then to int
+                def major = matcher[0][1].toString().toInteger()
+                def minor = matcher[0][2].toString().toInteger()
+                def patch = matcher[0][3].toString().toInteger() + 1
+
+                def newVersion = "projectVersion=$major.$minor.$patch"
+
+                newVersion
+            } else {
+                line
+            }
+        }.join(System.lineSeparator())
+
+        targetFile.text = updatedContent
+        println "Updated line starting with '$linePrefix' in $targetFile"
+    }
+}
+
