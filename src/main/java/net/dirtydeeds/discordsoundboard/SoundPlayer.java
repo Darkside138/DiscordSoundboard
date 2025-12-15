@@ -325,11 +325,13 @@ public class SoundPlayer {
         SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
 
         if (fileToPlay != null) {
+            stop(user, voiceChannelId);
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), user);
+                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(user, user);
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), discordUser.getUsername());
                 soundController.broadcastUpdate();
 
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
@@ -368,7 +370,8 @@ public class SoundPlayer {
                     String soundFileId = handler.getPlayer().getPlayingTrack().getIdentifier();
                     handler.getPlayer().stopTrack();
 
-                    playbackService.sendTrackEnd(soundFileId);
+                    File file = new File(soundFileId);
+                    playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')));
 
                     return soundFileId;
                 }

@@ -16,7 +16,8 @@ import {
   handleOAuthRedirect,
   type DiscordUser
 } from './utils/auth';
-import { getAuthHeaders } from './utils/api';
+import { getAuthHeaders, fetchWithAuth } from './utils/api';
+import { toast, Toaster } from 'sonner@2.0.3';
 
 interface Sound {
   id: string;
@@ -97,6 +98,19 @@ export default function App() {
   const currentLocalAudioRef = useRef<HTMLAudioElement | null>(null);
   const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [currentPlayback, setCurrentPlayback] = useState<{ soundFileId: string; user: string; displayName?: string | null } | null>(null);
+
+  // Format sound file ID to be human-readable (same logic as SoundButton)
+  const formatSoundFileId = (name: string) => {
+    return name
+      // Replace underscores and hyphens with spaces
+      .replace(/[_-]/g, ' ')
+      // Add space before capital letters in camelCase
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // Capitalize first letter of each word (but not after apostrophes)
+      .replace(/(^|\s)\w/g, char => char.toUpperCase())
+      .trim();
+  };
 
   // Handle Discord OAuth callback
   useEffect(() => {
@@ -551,6 +565,11 @@ export default function App() {
             console.log('🎵 Track started:', data);
             if (data.soundFileId) {
               setCurrentlyPlayingSoundId(data.soundFileId);
+              setCurrentPlayback({
+                soundFileId: data.soundFileId,
+                user: data.user || 'Unknown',
+                displayName: data.displayName
+              });
             }
           } catch (error) {
             console.error('Error parsing trackStart event:', error);
@@ -563,7 +582,19 @@ export default function App() {
           try {
             const data = JSON.parse(event.data);
             console.log('🎵 Track ended:', data);
-            setCurrentlyPlayingSoundId(null);
+            // Only clear if the ended track matches the currently playing track
+            setCurrentlyPlayingSoundId((currentId) => {
+              if (data.soundFileId && currentId === data.soundFileId) {
+                return null;
+              }
+              return currentId;
+            });
+            setCurrentPlayback((current) => {
+              if (current && data.soundFileId && current.soundFileId === data.soundFileId) {
+                return null;
+              }
+              return current;
+            });
           } catch (error) {
             console.error('Error parsing trackEnd event:', error);
           }
@@ -574,6 +605,10 @@ export default function App() {
           if (reconnectAttempts === 0) {
             console.warn('⚠️ Playback SSE connection interrupted, will attempt to reconnect...');
           }
+
+          // Clear playback state when stream errors
+          setCurrentlyPlayingSoundId(null);
+          setCurrentPlayback(null);
 
           // Close the connection
           if (playbackEventSource) {
@@ -857,14 +892,32 @@ export default function App() {
     }
   };
 
-  const deleteSound = (soundId: string) => {
-    setSounds(prev => prev.filter(s => s.id !== soundId));
-    // Also remove from favorites if it was favorited
-    setFavorites(prev => {
-      const newFavorites = new Set(prev);
-      newFavorites.delete(soundId);
-      return newFavorites;
-    });
+  const deleteSound = async (soundId: string) => {
+    try {
+      const response = await fetchWithAuth(`${API_ENDPOINTS.SOUND_FILE}/${soundId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        console.error('Failed to delete sound:', response.status, response.statusText);
+        toast.error('Failed to delete sound', { duration: 3000 });
+        return;
+      }
+
+      // Only update UI if API call was successful
+      setSounds(prev => prev.filter(s => s.id !== soundId));
+      // Also remove from favorites if it was favorited
+      setFavorites(prev => {
+        const newFavorites = new Set(prev);
+        newFavorites.delete(soundId);
+        return newFavorites;
+      });
+
+      toast.success('Sound deleted successfully', { duration: 3000 });
+    } catch (error) {
+      console.error('Error deleting sound:', error);
+      toast.error('Failed to delete sound', { duration: 3000 });
+    }
   };
 
   const downloadSound = (sound: Sound) => {
@@ -959,7 +1012,7 @@ export default function App() {
     // Validate file type (audio files only)
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3', 'audio/webm', 'audio/flac'];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|webm|flac)$/i)) {
-      alert('Please upload a valid audio file (MP3, WAV, OGG, WEBM, or FLAC)');
+      toast.error('Please upload a valid audio file (MP3, WAV, OGG, WEBM, or FLAC)', { duration: 3000 });
       event.target.value = ''; // Reset file input
       return;
     }
@@ -967,7 +1020,7 @@ export default function App() {
     // Optional: Check file size (e.g., max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      alert('File size must be less than 10MB');
+      toast.error('File size must be less than 10MB', { duration: 3000 });
       event.target.value = ''; // Reset file input
       return;
     }
@@ -990,7 +1043,7 @@ export default function App() {
       });
 
       if (response.status === 403) {
-        alert('Permission denied: You do not have permission to upload sounds.');
+        toast.error('Permission denied: You do not have permission to upload sounds.', { duration: 3000 });
         event.target.value = '';
         return;
       }
@@ -1002,16 +1055,16 @@ export default function App() {
       }
 
       console.log('✅ File uploaded successfully');
-      alert(`File "${file.name}" uploaded successfully!`);
+      toast.success(`File "${file.name}" uploaded successfully!`, { duration: 3000 });
 
       // Reset file input so the same file can be uploaded again if needed
       event.target.value = '';
     } catch (error) {
       console.error('Error uploading file:', error);
       if (error instanceof TypeError) {
-        alert('Failed to upload file. Please make sure the backend is running');
+        toast.error('Failed to upload file. Please make sure the backend is running', { duration: 3000 });
       } else if (error instanceof Error) {
-        alert(`Failed to upload file: ${error.message}`);
+        toast.error(`Failed to upload file: ${error.message}`, { duration: 3000 });
       }
       event.target.value = ''; // Reset file input
     }
@@ -1191,8 +1244,8 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Category Filter */}
-                <div className="mb-4 flex items-center gap-3">
+                {/* Category Filter and Playback Info */}
+                <div className="mb-4 flex items-center gap-3 flex-wrap">
                   <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>Category</label>
                   <select
                     value={selectedCategory}
@@ -1215,6 +1268,34 @@ export default function App() {
                       </option>
                     ))}
                   </select>
+
+                  {/* Current Playback Info */}
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border w-[320px] ${
+                    currentPlayback
+                      ? theme === 'dark'
+                        ? 'bg-blue-900/30 border-blue-700 text-blue-300'
+                        : 'bg-blue-50 border-blue-300 text-blue-800'
+                      : theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700 text-gray-500'
+                      : 'bg-gray-50 border-gray-300 text-gray-500'
+                  }`}>
+                    <div className="text-sm flex items-center gap-1 overflow-hidden min-w-0 flex-1">
+                      {currentPlayback ? (
+                        <>
+                          <span className="shrink-0">🎵</span>
+                          <span className="font-semibold truncate">
+                            {currentPlayback.displayName && currentPlayback.displayName.trim() !== ''
+                              ? currentPlayback.displayName
+                              : formatSoundFileId(currentPlayback.soundFileId)}
+                          </span>
+                          <span className={`shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>by</span>
+                          <span className="font-semibold truncate">{currentPlayback.user}</span>
+                        </>
+                      ) : (
+                        <span>No playback active</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Filter Buttons and Action Buttons Row - All on one line when possible */}
@@ -1395,7 +1476,10 @@ export default function App() {
                 await toggleFavorite(contextMenu.soundId);
                 setContextMenu(null);
               }}
-              onDelete={() => deleteSound(contextMenu.soundId)}
+              onDelete={async () => {
+                await deleteSound(contextMenu.soundId);
+                setContextMenu(null);
+              }}
               onDownload={() => downloadSound(sound)}
               onPlayLocally={() => playLocalSound(contextMenu.soundId)}
               isFavorite={favorites.has(contextMenu.soundId)}
@@ -1435,6 +1519,9 @@ export default function App() {
           />
         )}
       </div>
+
+      {/* Toast notifications */}
+      <Toaster theme={theme} position="bottom-right" />
     </div>
   );
 }

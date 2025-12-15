@@ -9,7 +9,7 @@ interface ContextMenuProps {
   y: number;
   onClose: () => void;
   onFavorite: () => void | Promise<void>;
-  onDelete: () => void;
+  onDelete: () => void | Promise<void>;
   onDownload: () => void;
   onPlayLocally: () => void;
   isFavorite: boolean;

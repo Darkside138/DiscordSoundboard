@@ -6,3 +6,4 @@ build
 /src/frontend/node_modules/
 /src/main/resources/application-local.properties
 /src/frontend/coverage/
+/.gitattributes

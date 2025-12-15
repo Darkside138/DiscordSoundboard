@@ -12,11 +12,13 @@ public class PlaybackEvent {
     private String soundFileId;
     private Instant timestamp;
     private String user;
+    private String displayName;
 
-    public PlaybackEvent(String soundFileId, String user) {
+    public PlaybackEvent(String soundFileId, String displayName, String user) {
         this.soundFileId = soundFileId;
         this.timestamp = Instant.now();
         this.user = user;
+        this.displayName = displayName;
     }
 
     public PlaybackEvent(String soundFileId) {

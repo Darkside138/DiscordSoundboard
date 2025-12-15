@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.relational.core.sql.In;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -60,7 +61,8 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
             audioPlayer.playTrack(track.makeClone());
         }
         audioPlayer.setVolume(getGlobalVolume());
-        playbackService.sendTrackEnd(track.getIdentifier());
+        File file = new File(track.getIdentifier());
+        playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')));
     }
 
     @Override

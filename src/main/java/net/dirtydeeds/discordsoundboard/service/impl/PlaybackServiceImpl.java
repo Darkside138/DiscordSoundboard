@@ -33,8 +33,8 @@ public class PlaybackServiceImpl implements PlaybackService {
     }
 
     @Override
-    public void sendTrackStart(String soundFileId, String user) {
-        PlaybackEvent event = new PlaybackEvent(soundFileId, user);
+    public void sendTrackStart(String soundFileId, String displayName, String user) {
+        PlaybackEvent event = new PlaybackEvent(soundFileId, displayName, user);
         sendEventToAll("trackStart", event);
     }
 
