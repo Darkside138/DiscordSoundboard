@@ -56,13 +56,13 @@ class MovedChannelListenerTest {
         listenerEnabled.onGuildVoiceUpdate(event);
 
         verify(discordUserController, times(1)).broadcastUpdate();
-        verify(bot, times(1)).playFileInChannel("global", joined);
+        verify(bot, times(1)).playFileInChannel(eq("global"), eq(joined), any());
     }
 
     @Test
     void does_nothing_when_disabled() {
         listenerDisabled.onGuildVoiceUpdate(event);
-        verify(bot, never()).playFileInChannel(any(), any());
+        verify(bot, never()).playFileInChannel(any(), any(), any());
     }
 
     @Test
@@ -77,7 +77,7 @@ class MovedChannelListenerTest {
 
         listenerEnabled.onGuildVoiceUpdate(event);
 
-        verify(bot, times(1)).playFileInChannel("bye", left);
-        verify(bot, never()).playFileInChannel(eq("bye"), eq(joined));
+        verify(bot, times(1)).playFileInChannel("bye", left, du);
+        verify(bot, never()).playFileInChannel(eq("bye"), eq(joined), eq(du));
     }
 }

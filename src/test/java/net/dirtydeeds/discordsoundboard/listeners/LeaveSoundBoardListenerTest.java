@@ -54,7 +54,7 @@ class LeaveSoundBoardListenerTest {
         listener.onGuildVoiceUpdate(event);
 
         verify(discordUserController, times(1)).broadcastUpdate();
-        verify(bot, times(1)).playFileInChannel("bye", leftChannel);
+        verify(bot, times(1)).playFileInChannel("bye", leftChannel, du);
     }
 
     @Test
@@ -69,7 +69,7 @@ class LeaveSoundBoardListenerTest {
 
         listener.onGuildVoiceUpdate(event);
 
-        verify(bot, times(1)).playFileInChannel("alice_leave", leftChannel);
+        verify(bot, times(1)).playFileInChannel("alice_leave", leftChannel, du);
     }
 
     @Test
@@ -81,6 +81,6 @@ class LeaveSoundBoardListenerTest {
 
         listener.onGuildVoiceUpdate(event);
 
-        verify(bot, never()).playFileInChannel(any(), any());
+        verify(bot, never()).playFileInChannel(any(), any(), any());
     }
 }

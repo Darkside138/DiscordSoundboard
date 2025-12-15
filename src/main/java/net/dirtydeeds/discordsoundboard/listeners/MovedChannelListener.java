@@ -81,13 +81,13 @@ public class MovedChannelListener extends ListenerAdapter {
 
                 if (StringUtils.hasText(entranceFile)) {
                     try {
-                        bot.playFileInChannel(entranceFile, event.getChannelJoined());
+                        bot.playFileInChannel(entranceFile, event.getChannelJoined(), users);
                     } catch (Exception e) {
                         LOG.error("Could not play file for entrance of {}", users);
                     }
                 } else if (StringUtils.hasText(disconnectFile)) {
                     try {
-                        bot.playFileInChannel(disconnectFile, event.getChannelLeft());
+                        bot.playFileInChannel(disconnectFile, event.getChannelLeft(), users);
                     } catch (Exception e) {
                         LOG.error("Could not play file for disconnection of {}", users);
                     }

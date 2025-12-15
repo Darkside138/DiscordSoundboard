@@ -280,12 +280,12 @@ public class SoundPlayer {
      * @param fileName - The name of the file to play.
      * @param channel  -  The channel to play the file in
      */
-    public void playFileInChannel(String fileName, AudioChannel channel) {
+    public void playFileInChannel(String fileName, AudioChannel channel, DiscordUser user) {
         if (channel == null) return;
         moveToChannel(channel, channel.getGuild());
         LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
 
-        playFile(fileName, channel.getGuild(), 1, fileName, channel.getName());
+        playFile(fileName, channel.getGuild(), 1, user.getUsername(), channel.getName());
         if (botConfig.isLeaveAfterPlayback()) {
             disconnectFromChannel(channel.getGuild());
         }

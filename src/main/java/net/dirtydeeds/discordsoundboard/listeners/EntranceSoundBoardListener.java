@@ -56,16 +56,16 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     if (StringUtils.hasText(discordUser.getEntranceSound())) {
                         String entranceSound = discordUser.getEntranceSound();
                         LOG.info(String.format("Playing entrance sound %s", entranceSound));
-                        bot.playFileInChannel(entranceSound, event.getChannelJoined());
+                        bot.playFileInChannel(entranceSound, event.getChannelJoined(), discordUser);
                     } else if (StringUtils.hasText(botConfig.getEntranceForAll())) {
                         LOG.info(String.format("Playing entrance for all sound %s", botConfig.getEntranceForAll()));
-                        bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined());
+                        bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined(), discordUser);
                     } else {
                         //If DB doesn't have an entrance sound check for a file with the same name as the user
                         SoundFile entranceFile = soundService.findOneBySoundFileIdIgnoreCase(discordUser.getUsername());
                         if (entranceFile != null) {
                             try {
-                                bot.playFileInChannel(entranceFile.getSoundFileId(), event.getChannelJoined());
+                                bot.playFileInChannel(entranceFile.getSoundFileId(), event.getChannelJoined(), discordUser);
                                 LOG.info(String.format("Playing entrance sound %s", entranceFile.getSoundFileId()));
                             } catch (Exception e) {
                                 LOG.error("Could not play file for entrance of {}", userJoined);

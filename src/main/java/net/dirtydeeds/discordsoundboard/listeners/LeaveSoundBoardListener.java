@@ -46,14 +46,14 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
             DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userIdDisconnected, userNameDisconnected);
             if (discordUser != null) {
                 if (StringUtils.hasText(discordUser.getLeaveSound())) {
-                    bot.playFileInChannel(discordUser.getLeaveSound(), event.getChannelLeft());
+                    bot.playFileInChannel(discordUser.getLeaveSound(), event.getChannelLeft(), discordUser);
                 } else {
                     //If DB doesn't have a leave sound check for a file named with the userName + leave suffix
                     SoundFile leaveFile = soundService.findOneBySoundFileIdIgnoreCase(
                             discordUser.getUsername() + botConfig.getLeaveSuffix());
                     if (leaveFile != null) {
                         try {
-                            bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft());
+                            bot.playFileInChannel(leaveFile.getSoundFileId(), event.getChannelLeft(), discordUser);
                         } catch (Exception e) {
                             LOG.error("Could not play file for disconnection of {}", userNameDisconnected);
                         }

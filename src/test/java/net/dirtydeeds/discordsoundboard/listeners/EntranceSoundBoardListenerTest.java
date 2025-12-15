@@ -56,7 +56,7 @@ class EntranceSoundBoardListenerTest {
         listener.onGuildVoiceUpdate(event);
 
         verify(discordUserController, times(1)).broadcastUpdate();
-        verify(bot, times(1)).playFileInChannel("hello", joinedChannel);
+        verify(bot, times(1)).playFileInChannel("hello", joinedChannel, du);
     }
 
     @Test
@@ -68,7 +68,7 @@ class EntranceSoundBoardListenerTest {
 
         listener.onGuildVoiceUpdate(event);
 
-        verify(bot, times(1)).playFileInChannel("global", joinedChannel);
+        verify(bot, times(1)).playFileInChannel("global", joinedChannel, du);
     }
 
     @Test
@@ -83,13 +83,13 @@ class EntranceSoundBoardListenerTest {
 
         listener.onGuildVoiceUpdate(event);
 
-        verify(bot, times(1)).playFileInChannel("alice", joinedChannel);
+        verify(bot, times(1)).playFileInChannel("alice", joinedChannel, du);
     }
 
     @Test
     void ignores_bots() {
         when(user.isBot()).thenReturn(true);
         listener.onGuildVoiceUpdate(event);
-        verify(bot, never()).playFileInChannel(any(), any());
+        verify(bot, never()).playFileInChannel(any(), any(), any());
     }
 }
