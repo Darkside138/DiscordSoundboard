@@ -12,16 +12,16 @@ echo "changing to config directory to update application.properties file"
 cd /etc/DiscordSoundboard/config
 
 #Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
-sed -i 's/bot_token=SOME_TOKEN_YOU_GOT_FROM_DISCORD/bot_token='$bottoken'/g' application.properties
-sed -i 's/username_to_join_channel=YourUserName/username_to_join_channel='$username'/g' application.properties
-sed -i 's/command_character=?/command_character='$commandcharacter'/g' application.properties
-sed -i 's/admin_user_list=/admin_user_list='$adminuserlist'/g' application.properties
-sed -i 's/moderator_user_list=/moderator_user_list='$moderatoruserlist'/g' application.properties
-sed -i 's/dj_user_list=/dj_user_list='$djuserlist'/g' application.properties
-sed -i 's/spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id/spring.security.oauth2.client.registration.discord.client-id='$discordclientid'/g' application.properties
-sed -i 's/spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret/spring.security.oauth2.client.registration.discord.client-secret='$discordclientsecret'/g' application.properties
-sed -i 's/jwt.secret=your-secret-key-here-change-this-in-production/jwt.secret='$jwtsecret'/g' application.properties
-sed -i 's~app.frontend-url=http://localhost:8080~app.frontend-url='$frontendurl'~g' application.properties
+sed -i 's/^bot_token=.*/bot_token='$username'/' application.properties
+sed -i 's/^username_to_join_channel=.*/username_to_join_channel='$username'/' application.properties
+sed -i 's/^command_character=.*/command_character='$commandcharacter'/' application.properties
+sed -i 's/^admin_user_list=.*/admin_user_list='$adminuserlist'/' application.properties
+sed -i 's/^moderator_user_list=.*/moderator_user_list='$moderatoruserlist'/' application.properties
+sed -i 's/^dj_user_list=.*/dj_user_list='$djuserlist'/' application.properties
+sed -i 's/^spring.security.oauth2.client.registration.discord.client-id=.*/spring.security.oauth2.client.registration.discord.client-id='$discordclientid'/' application.properties
+sed -i 's/^spring.security.oauth2.client.registration.discord.client-secret=.*/spring.security.oauth2.client.registration.discord.client-secret='$discordclientsecret'/' application.properties
+sed -i 's/^jwt.secret=.*/jwt.secret='$jwtsecret'/' application.properties
+sed -i 's~^app.frontend-url=.*~app.frontend-url='$frontendurl'~' application.properties
 
 echo "changing working directory to /etc/DiscordSoundboard/bin"
 
