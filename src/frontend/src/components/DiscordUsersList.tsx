@@ -127,6 +127,18 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
             previousSelectedUserIdRef.current = backendSelectedUser.id;
             previousVolumeRef.current = currentVolume;
             previousInVoiceRef.current = backendSelectedUser.inVoice;
+          } else if (sortedUsers.length > 0) {
+            // No selected user anywhere, but there are users in the list - auto-select the first one
+            const firstUser = sortedUsers[0];
+            console.log('👤 Auto-selecting first user:', firstUser.username);
+            onUserSelect(firstUser.id);
+            currentVolume = firstUser.volume ?? 100;
+            onVolumeUpdate(currentVolume);
+            onPlaybackEnabledChange(firstUser.inVoice);
+
+            previousSelectedUserIdRef.current = firstUser.id;
+            previousVolumeRef.current = currentVolume;
+            previousInVoiceRef.current = firstUser.inVoice;
           } else {
             // No selected user anywhere, ensure playback is disabled
             if (previousInVoiceRef.current !== null) {
@@ -241,6 +253,18 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                 previousSelectedUserIdRef.current = backendSelectedUser.id;
                 previousVolumeRef.current = currentVolume;
                 previousInVoiceRef.current = backendSelectedUser.inVoice;
+              } else if (sortedUsers.length > 0) {
+                // No selected user anywhere, but there are users in the list - auto-select the first one
+                const firstUser = sortedUsers[0];
+                console.log('👤 Auto-selecting first user:', firstUser.username);
+                onUserSelect(firstUser.id);
+                currentVolume = firstUser.volume ?? 100;
+                onVolumeUpdate(currentVolume);
+                onPlaybackEnabledChange(firstUser.inVoice);
+
+                previousSelectedUserIdRef.current = firstUser.id;
+                previousVolumeRef.current = currentVolume;
+                previousInVoiceRef.current = firstUser.inVoice;
               } else {
                 // No selected user anywhere, ensure playback is disabled
                 if (previousInVoiceRef.current !== null) {
