@@ -115,8 +115,6 @@ tasks.register("copyFrontend", Copy) {
     dependsOn buildFrontend
     from "${project.projectDir}/src/frontend/build"
     into "${layout.buildDirectory.get().asFile}/resources/main/static"
-    rename { String fileName ->
-        fileName.replace("index.html", "indexV2.html") }
     from "${project.projectDir}/public/favicon.png"
     into "${layout.buildDirectory.get().asFile}/resources/main/static"
 }
@@ -145,6 +143,8 @@ bootDistZip {
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
+        rename { String fileName ->
+            fileName.replace("index.html", "indexV2.html") }
         from ("${layout.buildDirectory.get()}/resources/main/static/")
     }
     into("DiscordSoundboard/bin/sounds") {

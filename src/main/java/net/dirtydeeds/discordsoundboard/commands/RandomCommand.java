@@ -21,7 +21,7 @@ public class RandomCommand extends Command {
     @Override
     protected void execute(CommandEvent event) {
         try {
-            soundPlayer.playRandomSoundFile(event.getRequestingUser(), event.getMessageReceivedEvent());
+            soundPlayer.playRandomSoundFile(event.getRequestingUser(), event.getMessageReceivedEvent(), event.getRequestingUser());
         } catch (SoundPlaybackException e) {
             event.replyByPrivateMessage("Problem playing random file:" + e);
         }

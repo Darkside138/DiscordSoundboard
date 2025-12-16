@@ -216,7 +216,7 @@ public class SoundPlayer {
         return 0;
     }
 
-    public SoundFile playRandomSoundFile(String requestingUser, MessageReceivedEvent event) throws SoundPlaybackException {
+    public SoundFile playRandomSoundFile(String User, MessageReceivedEvent event, String requestingUser) throws SoundPlaybackException {
         try {
             Map<String, SoundFile> sounds = getAvailableSoundFiles();
             List<String> keysAsArray = new ArrayList<>(sounds.keySet());
@@ -227,12 +227,12 @@ public class SoundPlayer {
             try {
                 if (event != null) {
                     if (event.getChannelType().equals(ChannelType.PRIVATE)) {
-                        playForUser(randomValue.getSoundFileId(), requestingUser, 1, null);
+                        playForUser(randomValue.getSoundFileId(), User, 1, null, requestingUser);
                     } else {
                         playFileForEvent(randomValue.getSoundFileId(), event);
                     }
                 } else {
-                    playForUser(randomValue.getSoundFileId(), requestingUser, 1, null);
+                    playForUser(randomValue.getSoundFileId(), User, 1, null, requestingUser);
                 }
 
                 if (botConfig.isLeaveAfterPlayback()) {
@@ -255,8 +255,9 @@ public class SoundPlayer {
      * @param fileName - The name of the file to play.
      * @param userName - The name of the user to lookup what VoiceChannel they are in.
      * @param voiceChannelId - The ID of the voice channel to play music in
+     * @param requestingUser - The name of the requestingUser
      */
-    public void playForUser(String fileName, String userName, Integer repeatTimes, String voiceChannelId) {
+    public void playForUser(String fileName, String userName, Integer repeatTimes, String voiceChannelId, String requestingUser) {
         if (userName == null || userName.isEmpty()) {
             userName = botConfig.getBotOwnerName();
         }
@@ -264,7 +265,7 @@ public class SoundPlayer {
             Guild guild = getGuildForUserOrChannelId(userName, voiceChannelId);
             joinUsersCurrentChannel(userName, voiceChannelId);
 
-            playFile(fileName, guild, repeatTimes, userName, voiceChannelId);
+            playFile(fileName, guild, repeatTimes, userName, voiceChannelId, requestingUser);
 
             if (botConfig.isLeaveAfterPlayback()) {
                 disconnectFromChannel(guild);
@@ -285,7 +286,7 @@ public class SoundPlayer {
         moveToChannel(channel, channel.getGuild());
         LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
 
-        playFile(fileName, channel.getGuild(), 1, user.getUsername(), channel.getName());
+        playFile(fileName, channel.getGuild(), 1, user.getUsername(), channel.getName(), user.getUsername());
         if (botConfig.isLeaveAfterPlayback()) {
             disconnectFromChannel(channel.getGuild());
         }
@@ -305,7 +306,7 @@ public class SoundPlayer {
             if (fileToPlay != null) {
                 moveToUserIdsChannel(event, guild);
 
-                playFile(fileName, guild, 1, event.getAuthor().getName(), findUsersChannel(event, guild).getName());
+                playFile(fileName, guild, 1, event.getAuthor().getName(), findUsersChannel(event, guild).getName(), event.getAuthor().getName());
 
                 if (botConfig.isLeaveAfterPlayback()) {
                     disconnectFromChannel(event.getGuild());
@@ -321,7 +322,7 @@ public class SoundPlayer {
      *
      * @param fileName - fileName to play.
      */
-    private void playFile(String fileName, Guild guild, Integer repeatTimes, String user, String voiceChannelId) {
+    private void playFile(String fileName, Guild guild, Integer repeatTimes, String user, String voiceChannelId, String requestingUser) {
         SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
 
         if (fileToPlay != null) {
@@ -331,7 +332,7 @@ public class SoundPlayer {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
                 DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(user, user);
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), discordUser.getUsername());
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUser);
                 soundController.broadcastUpdate();
 
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);

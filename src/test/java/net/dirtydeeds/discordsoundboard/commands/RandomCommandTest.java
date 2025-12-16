@@ -25,7 +25,7 @@ class RandomCommandTest {
 
         cmd.execute(event);
 
-        verify(soundPlayer).playRandomSoundFile(eq("Tester"), any());
+        verify(soundPlayer).playRandomSoundFile(eq("Tester"), any(), eq("Tester"));
     }
 
     @Test
@@ -34,7 +34,7 @@ class RandomCommandTest {
         RandomCommand cmd = new RandomCommand(soundPlayer);
 
         doThrow(new SoundPlaybackException("bad"))
-                .when(soundPlayer).playRandomSoundFile(eq("Tester"), any());
+                .when(soundPlayer).playRandomSoundFile(eq("Tester"), any(), eq("Tester"));
 
         cmd.execute(event);
 

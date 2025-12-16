@@ -100,10 +100,17 @@ public class SoundController {
 
             // Delete the sound file
             try {
-                soundService.delete(soundService.findOneBySoundFileIdIgnoreCase(id));
+                SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(id);
+                File soundFileToDelete = new File(soundFile.getSoundFileLocation());
+                if (soundFileToDelete.delete()) {
+                    soundService.delete(soundFile);
 
-                return ResponseEntity.ok()
-                        .body(Map.of("message", "Sound file deleted successfully", "id", id));
+                    return ResponseEntity.ok()
+                            .body(Map.of("message", "Sound file deleted successfully", "id", id));
+                } else {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Error deleting sound file: " + soundFileToDelete.getAbsolutePath());
+                }
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Sound file not found with ID: " + id);

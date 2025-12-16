@@ -353,12 +353,12 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   }
 
   return (
-    <div className={`rounded-lg border ${
+    <div className={`rounded-lg border max-h-[229px] flex flex-col ${
       theme === 'dark'
         ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     }`}>
-      <div className={`p-4 border-b ${
+      <div className={`p-4 border-b flex-shrink-0 ${
         theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
       }`}>
         <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
         </div>
       </div>
 
-      <div className="max-h-[229px] overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {users.length === 0 ? (
           <div className="p-4 text-center">
             <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>

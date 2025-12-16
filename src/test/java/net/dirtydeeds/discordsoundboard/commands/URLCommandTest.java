@@ -18,7 +18,7 @@ class URLCommandTest {
         URLCommand cmd = new URLCommand(sp);
         cmd.execute(event);
 
-        verify(sp).playForUser("http://example", "Tester", 1, null);
+        verify(sp).playForUser("http://example", "Tester", 1, null, "Tester");
     }
 
     @Test

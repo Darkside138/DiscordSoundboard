@@ -34,7 +34,7 @@ class PlayCommandTest {
 
         playCommand.execute(event);
 
-        verify(soundPlayer).playForUser("beep", "Tester", 3, null);
+        verify(soundPlayer).playForUser("beep", "Tester", 3, null, "Tester");
     }
 
     @Test
@@ -44,6 +44,6 @@ class PlayCommandTest {
 
         playCommand.execute(event);
 
-        verify(soundPlayer).playForUser("boop", "Tester", 1, null);
+        verify(soundPlayer).playForUser("boop", "Tester", 1, null, "Tester");
     }
 }

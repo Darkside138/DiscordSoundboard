@@ -40,7 +40,7 @@ public class PlayCommand extends Command {
             }
             LOG.info("Attempting to play file: {} {} times. Requested by {}.", fileNameRequested, repeatNumber, event.getRequestingUser());
 
-            soundPlayer.playForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber, null);
+            soundPlayer.playForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber, null, event.getAuthor().getName());
         } catch (Exception e) {
             e.printStackTrace();
         }

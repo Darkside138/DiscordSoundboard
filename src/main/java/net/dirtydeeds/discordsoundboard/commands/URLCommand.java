@@ -21,7 +21,7 @@ public class URLCommand extends Command {
     @Override
     protected void execute(CommandEvent event) {
         if (!event.getArguments().isEmpty()) {
-            soundPlayer.playForUser(event.getArguments().getFirst(), event.getRequestingUser(), 1, null);
+            soundPlayer.playForUser(event.getArguments().getFirst(), event.getRequestingUser(), 1, null, event.getRequestingUser());
         }
     }
 }
