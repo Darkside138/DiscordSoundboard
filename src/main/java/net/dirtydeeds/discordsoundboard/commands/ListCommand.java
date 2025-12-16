@@ -22,6 +22,11 @@ public class ListCommand extends Command {
     private final SoundPlayer soundPlayer;
     private final BotConfig botConfig;
 
+    private static final int MAX_SOUNDS_PER_ROW = 5;
+    private static final int MAX_SOUNDS_ROWS = 4;
+
+    private static final int MAX_SOUNDS_PER_PAGE = MAX_SOUNDS_ROWS * MAX_SOUNDS_PER_ROW;
+
     public ListCommand(SoundPlayer soundPlayer, BotConfig botConfig) {
         this.botConfig = botConfig;
         this.soundPlayer = soundPlayer;
@@ -81,7 +86,7 @@ public class ListCommand extends Command {
             output.append(word);
             lineLen += word.length();
         }
-        if (output.length() > 0) {
+        if (!output.isEmpty()) {
             output.append("```");
         }
         soundFiles.add(output.toString());
@@ -93,7 +98,7 @@ public class ListCommand extends Command {
 
         Set<Map.Entry<String, SoundFile>> entrySet = soundPlayer.getAvailableSoundFiles().entrySet();
 
-        if (entrySet.size() > 0) {
+        if (!entrySet.isEmpty()) {
             entrySet.forEach(entry -> sb.append(event.getPrefix()).append(entry.getKey()).append("\n"));
         }
         return sb;

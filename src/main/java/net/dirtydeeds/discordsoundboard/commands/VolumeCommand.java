@@ -23,7 +23,7 @@ public class VolumeCommand extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        if (event.getArguments().size() > 0) {
+        if (!event.getArguments().isEmpty()) {
             int volume = Integer.parseInt(event.getArguments().getFirst());
 
             if (volume >= 1 && volume <= 100) {

@@ -2,7 +2,6 @@ package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.jsonwebtoken.Claims;
 import net.dirtydeeds.discordsoundboard.util.JwtUtil;
-import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,9 +19,6 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private UserRoleConfig userRoleConfig;
-
     @GetMapping("/user")
     public ResponseEntity<Map<String, Object>> getUser(@RequestHeader("Authorization") String authorization) {
         try {
@@ -34,7 +30,7 @@ public class AuthController {
 
             Claims claims = jwtUtil.getClaimsFromToken(token);
 
-            // Get permissions from token
+            // Get permissions from the token
             List<String> permissionsList = claims.get("permissions", List.class);
             if (permissionsList == null) {
                 permissionsList = new ArrayList<>();
@@ -49,7 +45,7 @@ public class AuthController {
             userResponse.put("globalName", claims.get("globalName"));
             userResponse.put("roles", claims.get("roles", List.class));
 
-            // Convert permissions list to boolean map
+            // Convert the permissions list to a boolean map
             Map<String, Boolean> permissions = new HashMap<>();
             permissions.put("upload", permissionsList.contains("upload"));
             permissions.put("delete", permissionsList.contains("delete-sounds"));

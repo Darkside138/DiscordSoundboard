@@ -42,7 +42,7 @@ public class PlayCommand extends Command {
 
             soundPlayer.playForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber, null, event.getAuthor().getName());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Could not play requested sound: {}", event.getCommandString());
         }
     }
 }

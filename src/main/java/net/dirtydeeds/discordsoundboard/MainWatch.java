@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.nio.file.*;
 
 /**
- * MainWatch monitors the sound file directory for changes (create/modify/delete) and updates the file lis if one
+ * MainWatch monitors the sound file directory for changes (create/modify/delete) and updates the file list if one
  * of those events happen.
  *
  * @author dfurrer.
@@ -43,9 +43,7 @@ public class MainWatch {
                     StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
 
             while (!shutdown) {
-                watchKey.pollEvents().forEach(event -> {
-                    soundPlayer.updateFileList();
-                });
+                watchKey.pollEvents().forEach(event -> soundPlayer.updateFileList());
 
                 // Reset the watch key everytime for continuing to use it for further event polling
                 boolean valid = watchKey.reset();

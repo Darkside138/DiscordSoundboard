@@ -17,11 +17,12 @@ public class CommandEvent {
     private static final Logger LOG = LoggerFactory.getLogger(CommandEvent.class);
 
     private final MessageReceivedEvent messageReceivedEvent;
-    private LinkedList<String> arguments = new LinkedList<>();
+    private final LinkedList<String> arguments = new LinkedList<>();
     private String commandString = "";
     private String prefix = "";
 
     public CommandEvent(MessageReceivedEvent messageReceivedEvent) {
+        LOG.debug("Message received: {}", messageReceivedEvent.getMessage().getContentRaw());
         this.messageReceivedEvent = messageReceivedEvent;
         String input = messageReceivedEvent.getMessage().getContentRaw();
         if (!input.isEmpty()) {
@@ -31,15 +32,11 @@ public class CommandEvent {
             while (m.find()) {
                 this.arguments.add(m.group(1).replace("\"", "")); // Add .replace("\"", "") to remove surrounding quotes.
             }
-            if (this.arguments.size() > 0) {
+            if (!this.arguments.isEmpty()) {
                 commandString = this.arguments.get(0);
                 this.arguments.remove(0);
             }
         }
-    }
-
-    public String getCommandString() {
-        return this.commandString;
     }
 
     public String getMessage() {

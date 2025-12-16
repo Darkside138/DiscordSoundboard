@@ -2,6 +2,7 @@ package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.inject.Inject;
+import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
@@ -15,7 +16,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +45,7 @@ public class SoundController {
 
     @Autowired
     private final UserRoleConfig userRoleConfig;
+    @Setter
     private SoundPlayer soundPlayer;
     private final SoundService soundService;
 
@@ -255,7 +256,6 @@ public class SoundController {
             @RequestParam("file") MultipartFile file,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
-
             String userId = userRoleConfig.getUserIdFromAuth(authorization);
             if (userId == null || !userRoleConfig.hasPermission(userId, "upload")) {
                 return ResponseEntity.status(403).body("You don't have permission to upload sounds");
@@ -305,10 +305,6 @@ public class SoundController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to upload file: " + e.getMessage());
         }
-    }
-
-    public void setSoundPlayer(SoundPlayer soundPlayer) {
-        this.soundPlayer = soundPlayer;
     }
 
     private String getFileExtension(String filename) {

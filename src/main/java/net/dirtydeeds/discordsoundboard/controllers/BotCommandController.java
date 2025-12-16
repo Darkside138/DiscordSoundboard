@@ -1,17 +1,13 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlaybackException;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
-import net.dirtydeeds.discordsoundboard.service.PlaybackService;
-import net.dirtydeeds.discordsoundboard.util.JwtUtil;
 import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

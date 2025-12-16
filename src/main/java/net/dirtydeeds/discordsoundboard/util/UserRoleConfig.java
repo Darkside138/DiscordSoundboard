@@ -72,7 +72,7 @@ public class UserRoleConfig {
     }
 
     /**
-     * Check if user has a specific permission
+     * Check if the user has a specific permission
      */
     public boolean hasPermission(String userId, String permission) {
         Set<String> userPermissions = getUserPermissions(userId);
@@ -80,7 +80,7 @@ public class UserRoleConfig {
     }
 
     /**
-     * Check if user has a specific role
+     * Check if the user has a specific role
      */
     public boolean hasRole(String userId, String role) {
         List<String> userRoles = getUserRoles(userId);

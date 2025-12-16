@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.service.impl;
 
+import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.repository.DiscordUserRepository;
@@ -9,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,16 +19,12 @@ public class DiscordUserServiceImpl implements DiscordUserService {
     @Autowired
     private DiscordUserRepository discordUserRepository;
 
+    @Setter
     private SoundPlayer soundPlayer;
 
     @Override
     public Optional<DiscordUser> findById(String id) {
         return discordUserRepository.findById(id);
-    }
-
-    @Override
-    public Iterable<DiscordUser> saveAll(List<DiscordUser> users) {
-        return discordUserRepository.saveAll(users);
     }
 
     @Override
@@ -57,10 +53,6 @@ public class DiscordUserServiceImpl implements DiscordUserService {
     @Override
     public void updateUsersInDb() {
         soundPlayer.updateUsersInDb();
-    }
-
-    public void setSoundPlayer(SoundPlayer soundPlayer) {
-        this.soundPlayer = soundPlayer;
     }
 
     @Override

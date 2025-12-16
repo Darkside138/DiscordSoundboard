@@ -121,6 +121,7 @@ public class SoundPlayer {
                 botConfig.isPlayEntranceOnMove(), botConfig, discordUserController));
         bot.addEventListener(new BotLeaveListener(botConfig));
         bot.addEventListener(new FileAttachmentListener(botConfig));
+        bot.addEventListener(new UserEventListener(this, discordUserController));
 
         ConnectorNativeLibLoader.loadConnectorLibrary();
 
@@ -223,7 +224,7 @@ public class SoundPlayer {
             Random r = new Random();
             SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
 
-            LOG.info("Attempting to play random file: " + randomValue.getSoundFileId() + ", requested by : " + requestingUser);
+            LOG.info("Attempting to play random file: {}, requested by : {}", randomValue.getSoundFileId(), requestingUser);
             try {
                 if (event != null) {
                     if (event.getChannelType().equals(ChannelType.PRIVATE)) {
@@ -242,7 +243,7 @@ public class SoundPlayer {
                 }
                 return randomValue;
             } catch (Exception e) {
-                LOG.error("Could not play random file: " + randomValue.getSoundFileId());
+                LOG.error("Could not play random file: {}", randomValue.getSoundFileId());
                 throw new SoundPlaybackException("Problem playing random file.");
             }
         } catch (Exception e) {
@@ -279,12 +280,12 @@ public class SoundPlayer {
      * Plays the fileName requested in the requested channel.
      *
      * @param fileName - The name of the file to play.
-     * @param channel  -  The channel to play the file in
+     * @param channel  - The channel to play the file in
      */
     public void playFileInChannel(String fileName, AudioChannel channel, DiscordUser user) {
         if (channel == null) return;
         moveToChannel(channel, channel.getGuild());
-        LOG.info("Playing file for user: " + fileName + " in channel: " + channel.getName());
+        LOG.info("Playing file for user: {} in channel: {}", fileName, channel.getName());
 
         playFile(fileName, channel.getGuild(), 1, user.getUsername(), channel.getName(), user.getUsername());
         if (botConfig.isLeaveAfterPlayback()) {
@@ -296,7 +297,7 @@ public class SoundPlayer {
      * Plays the fileName requested.
      *
      * @param fileName     - The name of the file to play.
-     * @param event        -  The event that triggered the sound playing request. The event is used to find the channel to play
+     * @param event        - The event that triggered the sound playing request. The event is used to find the channel to play
      *                     the sound back in.
      */
     private void playFileForEvent(String fileName, MessageReceivedEvent event) {
@@ -331,8 +332,8 @@ public class SoundPlayer {
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
-                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(user, user);
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUser);
+                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUser, requestingUser);
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), discordUser.getUsername());
                 soundController.broadcastUpdate();
 
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
@@ -359,7 +360,7 @@ public class SoundPlayer {
     /**
      * Stops sound playback and returns true or false depending on if playback was stopped.
      *
-     * @return String representing whether playback was stopped the id of the stopped track. If no track was stopped
+     * @return String representing whether playback was stopped the id of the stopped track. If no track was stopped,
      * return soundFileId of the track that was stopped. Null if nothing was playing.
      */
     public String stop(String user, String voiceChannelId) {
@@ -405,7 +406,7 @@ public class SoundPlayer {
                 }
 
                 //Bot Member is already in the database. Update the user unless it's a bot or a system user
-                //If the DB already has en entry for a bot then delete that entry, they should not have been added
+                //If the DB already has en entry for a bot, then delete that entry. They should not have been added
                 if (optionalUser.isPresent()) {
                     if (member.getUser().isBot() || member.getUser().isSystem()) {
                         discordUserService.delete(optionalUser.get());
@@ -416,6 +417,7 @@ public class SoundPlayer {
                         user.setOnlineStatus(member.getOnlineStatus());
 
                         user.setInVoice(inAudioChannel);
+                        user.setAvatarUrl(member.getEffectiveAvatarUrl());
                         DiscordUser discordUser = discordUserService.save(user);
                         usersFromBot.add(discordUser);
                     }
@@ -424,6 +426,8 @@ public class SoundPlayer {
                     if (!member.getUser().isBot() && !member.getUser().isSystem()) {
                         DiscordUser discordUser = new DiscordUser(member.getId(), username, selected,
                                 member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel);
+
+                        discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
                         discordUser = discordUserService.save(discordUser);
                         usersFromBot.add(discordUser);
                     }
@@ -465,7 +469,7 @@ public class SoundPlayer {
 
     /**
      * This method loads the files. This checks if you are running from a .jar file and loads from the /sounds dir relative
-     * to the jar file. If not it assumes you are running from code and loads relative to your resource dir.
+     * to the jar file. If not, it assumes you are running from code and loads relative to your resource dir.
      */
     public void updateFileList() {
         try {
@@ -473,7 +477,7 @@ public class SoundPlayer {
             if (StringUtils.isBlank(soundFileDir)) {
                 soundFileDir = System.getProperty("user.dir") + "/sounds";
             }
-            LOG.info("Loading from " + soundFileDir);
+            LOG.info("Loading from {}", soundFileDir);
             Path soundFilePath = Paths.get(soundFileDir);
 
             if (!soundFilePath.toFile().exists()) {
@@ -483,10 +487,10 @@ public class SoundPlayer {
                 try {
                     result = soundFilePath.toFile().mkdir();
                 } catch (SecurityException se) {
-                    LOG.error("Could not create directory: " + soundFilePath.toFile());
+                    LOG.error("Could not create directory: {}", soundFilePath.toFile());
                 }
                 if (result) {
-                    LOG.info("DIR: " + soundFilePath.toFile() + " created.");
+                    LOG.info("DIR: {} created.", soundFilePath.toFile());
                 }
             }
 
@@ -539,7 +543,7 @@ public class SoundPlayer {
      *
      * @param userName - The username to look for.
      * @param voiceChannelId - The voice channel to return the guild for.
-     * @return The voice channel the user is connected to. If user is not connected to a voice channel will return null.
+     * @return The voice channel the user is connected to. If the user is not connected to a voice channel will return null.
      */
     private Guild getGuildForUserOrChannelId(String userName, String voiceChannelId) {
         if (!botConfig.isControlByChannel() || StringUtils.isBlank(voiceChannelId)
@@ -573,14 +577,14 @@ public class SoundPlayer {
         if (channel == null) {
             event.getAuthor().openPrivateChannel().complete()
                     .sendMessage("Hello @" + event.getAuthor().getName() + "! I can not find you in any Voice Channel. Are you sure you are connected to voice?.").queue();
-            LOG.warn("Problem moving to requested users channel. Maybe user, " + event.getAuthor().getName() + " is not connected to Voice?");
+            LOG.warn("Problem moving to requested users channel. Maybe user, {} is not connected to Voice?", event.getAuthor().getName());
         } else {
             moveToChannel(channel, guild);
         }
     }
 
     /**
-     * Join the users current channel.
+     * Join the user's current channel.
      */
     private void joinUsersCurrentChannel(String userName, String voiceChannelId) {
         if (botConfig.isControlByChannel() && !StringUtils.isBlank(voiceChannelId)) {
@@ -631,9 +635,9 @@ public class SoundPlayer {
     }
 
     /**
-     * Finds a users voice channel based on event and what guild to look in.
+     * Finds a users voice channel based on the event and what guild to look in.
      *
-     * @param event - The event that triggered this search. This is used to get th events author.
+     * @param event - The event that triggered this search. This is used to get the events author.
      * @param guild - The guild (discord server) to look in for the author.
      * @return The VoiceChannel if one is found. Otherwise, return null.
      */

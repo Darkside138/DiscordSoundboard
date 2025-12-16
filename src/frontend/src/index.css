@@ -1098,6 +1098,10 @@
     fill: var(--color-yellow-500);
   }
 
+  .object-cover {
+    object-fit: cover;
+  }
+
   .p-1 {
     padding: calc(var(--spacing) * 1);
   }

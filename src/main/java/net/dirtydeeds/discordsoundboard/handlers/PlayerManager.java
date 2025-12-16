@@ -5,7 +5,6 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 import lombok.Getter;
-import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.JDABot;
 import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.entities.Guild;

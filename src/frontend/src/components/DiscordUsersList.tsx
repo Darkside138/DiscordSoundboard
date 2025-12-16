@@ -13,6 +13,7 @@ interface DiscordUser {
   onlineStatus: string;
   inVoice: boolean;
   volume?: number;
+  avatarUrl?: string;
 }
 
 interface DiscordUsersResponse {
@@ -414,9 +415,25 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                 >
                   {/* Online Status Indicator */}
                   <div className="relative">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                    }`}>
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.username}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                      }`}
+                      style={{ display: user.avatarUrl ? 'none' : 'flex' }}
+                    >
                       <Users className="w-4 h-4" />
                     </div>
                     <div
