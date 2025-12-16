@@ -143,8 +143,6 @@ bootDistZip {
     }
     into("DiscordSoundboard/bin/static") {
         from('src/main/webapp')
-        rename { String fileName ->
-            fileName.replace("index.html", "indexV2.html") }
         from ("${layout.buildDirectory.get()}/resources/main/static/")
     }
     into("DiscordSoundboard/bin/sounds") {
