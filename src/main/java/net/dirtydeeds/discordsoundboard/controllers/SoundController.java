@@ -67,6 +67,9 @@ public class SoundController {
     // Max file size (10 MB)
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+    // Store all active SSE connections
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
     @Inject
     public SoundController (SoundService soundService, UserRoleConfig userRoleConfig) {
         this.soundService = soundService;
@@ -93,7 +96,6 @@ public class SoundController {
             @RequestHeader(value = "Authorization", required = false) String authorization) {
 
         try {
-
             String userId = userRoleConfig.getUserIdFromAuth(authorization);
             if (userId == null || !userRoleConfig.hasPermission(userId, "delete-sounds")) {
                 return ResponseEntity.status(403).body("You don't have permission to delete sounds");
@@ -187,70 +189,6 @@ public class SoundController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/{soundFileId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<Resource> getAudioFile(@PathVariable String soundFileId) throws IOException {
-        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileId);
-        Path filePath = Paths.get(soundFile.getSoundFileLocation());
-        Resource resource = new UrlResource(filePath.toUri());
-
-        if (resource.exists() || resource.isReadable()) {
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                    .contentType(MediaType.parseMediaType(Files.probeContentType(filePath)))
-                    .body(resource);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Store all active SSE connections
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
-
-    // SSE endpoint for real-time updates
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamSounds() {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-
-        // Add emitter to the list
-        emitters.add(emitter);
-
-        // Remove emitter when completed or timed out
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((e) -> emitters.remove(emitter));
-
-        // Send initial data immediately
-        try {
-            Page<SoundFile> sounds = soundService.findAll(Pageable.unpaged());
-            emitter.send(SseEmitter.event()
-                    .name("sounds")
-                    .data(sounds));
-        } catch (IOException e) {
-            emitter.completeWithError(e);
-        }
-
-        return emitter;
-    }
-
-    // Helper method to broadcast updates to all connected clients
-    public void broadcastUpdate() {
-        Page<SoundFile> sounds = soundService.findAll(Pageable.unpaged());
-
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        emitters.forEach(emitter -> {
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("sounds")
-                        .data(sounds));
-            } catch (IOException e) {
-                deadEmitters.add(emitter);
-            }
-        });
-
-        // Remove dead emitters
-        emitters.removeAll(deadEmitters);
-    }
-
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(
             @RequestParam("file") MultipartFile file,
@@ -305,6 +243,67 @@ public class SoundController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to upload file: " + e.getMessage());
         }
+    }
+
+    @GetMapping(value = "/{soundFileId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Resource> getAudioFile(@PathVariable String soundFileId) throws IOException {
+        SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileId);
+        Path filePath = Paths.get(soundFile.getSoundFileLocation());
+        Resource resource = new UrlResource(filePath.toUri());
+
+        if (resource.exists() || resource.isReadable()) {
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .contentType(MediaType.parseMediaType(Files.probeContentType(filePath)))
+                    .body(resource);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // SSE endpoint for real-time updates
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamSounds() {
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+
+        // Add emitter to the list
+        emitters.add(emitter);
+
+        // Remove emitter when completed or timed out
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
+        emitter.onError((e) -> emitters.remove(emitter));
+
+        // Send initial data immediately
+        try {
+            Page<SoundFile> sounds = soundService.findAll(Pageable.unpaged());
+            emitter.send(SseEmitter.event()
+                    .name("sounds")
+                    .data(sounds));
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
+
+        return emitter;
+    }
+
+    // Helper method to broadcast updates to all connected clients
+    public void broadcastUpdate() {
+        Page<SoundFile> sounds = soundService.findAll(Pageable.unpaged());
+
+        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("sounds")
+                        .data(sounds));
+            } catch (IOException e) {
+                deadEmitters.add(emitter);
+            }
+        });
+
+        // Remove dead emitters
+        emitters.removeAll(deadEmitters);
     }
 
     private String getFileExtension(String filename) {

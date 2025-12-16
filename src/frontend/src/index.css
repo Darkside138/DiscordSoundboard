@@ -672,6 +672,10 @@
     max-width: var(--container-5xl);
   }
 
+  .max-w-\[80px\] {
+    max-width: 80px;
+  }
+
   .min-w-0 {
     min-width: calc(var(--spacing) * 0);
   }

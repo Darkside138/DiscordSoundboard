@@ -332,8 +332,12 @@ public class SoundPlayer {
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
-                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUser, requestingUser);
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), discordUser.getUsername());
+                DiscordUser requestingDiscordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUser, requestingUser);
+                String requestingUserName = "anonymous";
+                if (requestingDiscordUser != null) {
+                    requestingUserName = requestingDiscordUser.getUsername();
+                }
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUserName);
                 soundController.broadcastUpdate();
 
                 fileToPlay = soundService.updateSoundPlayed(fileToPlay);
@@ -401,8 +405,12 @@ public class SoundPlayer {
                 }
                 Optional<DiscordUser> optionalUser = discordUserService.findById(member.getId());
                 Boolean inAudioChannel = null;
+                String channelName = null;
                 if (member.getVoiceState() != null) {
                     inAudioChannel = member.getVoiceState().inAudioChannel();
+                    if (member.getVoiceState().getChannel() != null) {
+                        channelName = member.getVoiceState().getChannel().getName();
+                    }
                 }
 
                 //Bot Member is already in the database. Update the user unless it's a bot or a system user
@@ -411,14 +419,15 @@ public class SoundPlayer {
                     if (member.getUser().isBot() || member.getUser().isSystem()) {
                         discordUserService.delete(optionalUser.get());
                     } else {
-                        DiscordUser user = optionalUser.get();
-                        user.setUsername(username);
-                        user.setSelected(selected);
-                        user.setOnlineStatus(member.getOnlineStatus());
+                        DiscordUser discordUser = optionalUser.get();
+                        discordUser.setUsername(username);
+                        discordUser.setSelected(selected);
+                        discordUser.setOnlineStatus(member.getOnlineStatus());
 
-                        user.setInVoice(inAudioChannel);
-                        user.setAvatarUrl(member.getEffectiveAvatarUrl());
-                        DiscordUser discordUser = discordUserService.save(user);
+                        discordUser.setInVoice(inAudioChannel);
+                        discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
+                        discordUser.setChannelName(channelName);
+                        discordUser = discordUserService.save(discordUser);
                         usersFromBot.add(discordUser);
                     }
                 } else {
@@ -428,6 +437,7 @@ public class SoundPlayer {
                                 member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel);
 
                         discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
+                        discordUser.setChannelName(channelName);
                         discordUser = discordUserService.save(discordUser);
                         usersFromBot.add(discordUser);
                     }

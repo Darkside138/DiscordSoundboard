@@ -14,6 +14,7 @@ interface DiscordUser {
   inVoice: boolean;
   volume?: number;
   avatarUrl?: string;
+  channelName?: string;
 }
 
 interface DiscordUsersResponse {
@@ -484,17 +485,17 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                         <CheckCircle className="w-3 h-3" />
                       </div>
                     )}
-                    {user.inVoice && (
+                    {user.inVoice && user.channelName && (
                       <div
                         className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
                           theme === 'dark'
                             ? 'bg-green-900/50 text-green-400'
                             : 'bg-green-100 text-green-700'
                         }`}
-                        title="In Voice Channel"
+                        title={`In Voice Channel: ${user.channelName}`}
                       >
                         <Mic className="w-3 h-3" />
-                        Voice
+                        <span className="truncate max-w-[80px]">{user.channelName}</span>
                       </div>
                     )}
                   </div>
