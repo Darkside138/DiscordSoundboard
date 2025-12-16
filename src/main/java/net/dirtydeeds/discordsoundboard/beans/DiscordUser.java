@@ -35,6 +35,8 @@ public class DiscordUser {
     private Boolean inVoice;
     private String avatarUrl;
     private String channelName;
+    private String guildInAudioName;
+    private String guildInAudioId;
 
     public DiscordUser(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus) {
         this.id = id;

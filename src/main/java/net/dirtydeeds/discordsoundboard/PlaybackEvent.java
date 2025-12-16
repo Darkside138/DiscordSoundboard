@@ -13,16 +13,19 @@ public class PlaybackEvent {
     private Instant timestamp;
     private String user;
     private String displayName;
+    private String guildId;
 
-    public PlaybackEvent(String soundFileId, String displayName, String user) {
+    public PlaybackEvent(String soundFileId, String displayName, String user, String guildId) {
         this.soundFileId = soundFileId;
         this.timestamp = Instant.now();
         this.user = user;
         this.displayName = displayName;
+        this.guildId = guildId;
     }
 
-    public PlaybackEvent(String soundFileId) {
+    public PlaybackEvent(String soundFileId, String guildId) {
         this.soundFileId = soundFileId;
+        this.guildId = guildId;
         this.timestamp = Instant.now();
     }
 }

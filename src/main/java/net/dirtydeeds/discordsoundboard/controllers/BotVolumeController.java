@@ -1,8 +1,11 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api/volume")
 public class BotVolumeController {
+
+    private static final long EMITTER_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
 
     private final SoundPlayer soundPlayer;
     private final UserRoleConfig userRoleConfig;
@@ -44,7 +49,7 @@ public class BotVolumeController {
         // Send a heartbeat every 25 seconds (tweak as needed)
         sseHeartbeatExecutor.scheduleAtFixedRate(
                 this::broadcastHeartbeatSafely,
-                90, 90, TimeUnit.SECONDS
+                25, 25, TimeUnit.SECONDS
         );
     }
 
@@ -70,16 +75,26 @@ public class BotVolumeController {
 
     // SSE endpoint for real-time updates
     @GetMapping(value = "/stream/{username}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamSounds(@PathVariable String username) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+    public SseEmitter streamSounds(@PathVariable String username, HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
+        response.setHeader("X-Accel-Buffering", "no");
+
+        SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MILLIS);
 
         // Add emitter to the list
         emitters.add(emitter);
 
         // Remove emitter when completed or timed out
         emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((e) -> emitters.remove(emitter));
+        emitter.onTimeout(() -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
+        emitter.onError((e) -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
 
         // Send initial data immediately
         try {
@@ -102,8 +117,13 @@ public class BotVolumeController {
                 emitter.send(SseEmitter.event()
                         .name("globalVolume")
                         .data(soundPlayer.getGlobalVolume(username, null)));
-            } catch (IOException e) {
+            } catch (IOException | IllegalStateException ex) {
                 deadEmitters.add(emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
         });
 
@@ -121,12 +141,13 @@ public class BotVolumeController {
                 emitter.send(SseEmitter.event()
                         .name("heartbeat")
                         .data("ping"));
-            } catch (IOException ex) {
+            } catch (IOException | IllegalStateException ex) {
                 deadEmitters.add(emitter);
-                emitter.complete();
-            } catch (IllegalStateException ex) {
-                // Can happen if emitter is already completed
-                deadEmitters.add(emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
         });
 

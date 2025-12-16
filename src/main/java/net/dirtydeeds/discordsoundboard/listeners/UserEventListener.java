@@ -2,6 +2,12 @@ package net.dirtydeeds.discordsoundboard.listeners;
 
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
+import net.dv8tion.jda.api.events.guild.GuildBanEvent;
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.user.update.*;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
@@ -49,7 +55,34 @@ public class UserEventListener extends ListenerAdapter {
 
     @Override
     public void onUserUpdateOnlineStatus(UserUpdateOnlineStatusEvent event) {
+        LOG.debug("User online status for {}", event.getJDA().getSelfUser().getName());
         soundPlayer.updateUsersInDb();
         discordUserController.broadcastUpdate();
     }
+
+    @Override
+    public void onGuildJoin(GuildJoinEvent event) {
+        LOG.debug("User {} joined guild", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();
+    }
+    @Override
+    public void onGuildLeave(GuildLeaveEvent event) {
+        LOG.debug("User {} left guild", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();}
+    @Override
+    public void onGuildBan(GuildBanEvent event) {
+        LOG.debug("User {} banned from guild", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();}
+    @Override
+    public void onGuildUnban(GuildUnbanEvent event) {
+        LOG.debug("User {} unbanned from guild", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();}
+    @Override
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
+        LOG.debug("User {} removed from guild", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();}
+    @Override
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        LOG.debug("User {} guild member joined", event.getJDA().getSelfUser().getName());
+        soundPlayer.updateUsersInDb();}
 }

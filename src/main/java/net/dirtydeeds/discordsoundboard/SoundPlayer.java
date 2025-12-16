@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
@@ -33,6 +34,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -116,10 +118,10 @@ public class SoundPlayer {
         bot.addEventListener(commandListener);
         bot.addEventListener(new EntranceSoundBoardListener(this, discordUserService, soundService,
                 botConfig.isPlayEntranceOnJoin(), botConfig, discordUserController));
-        bot.addEventListener(new LeaveSoundBoardListener(this, discordUserService, soundService, botConfig, discordUserController));
+        bot.addEventListener(new LeaveSoundBoardListener(this, discordUserService, soundService, botConfig,
+                discordUserController, this));
         bot.addEventListener(new MovedChannelListener(this, discordUserService, soundService,
                 botConfig.isPlayEntranceOnMove(), botConfig, discordUserController));
-        bot.addEventListener(new BotLeaveListener(botConfig));
         bot.addEventListener(new FileAttachmentListener(botConfig));
         bot.addEventListener(new UserEventListener(this, discordUserController));
 
@@ -130,7 +132,7 @@ public class SoundPlayer {
 
     @PreDestroy
     public void onShutdown() {
-        System.out.println("Cleaning up resources...");
+        LOG.info("Cleaning up resources...");
         bot.shutdown();
     }
 
@@ -200,23 +202,6 @@ public class SoundPlayer {
         }
     }
 
-    /**
-     * Returns the current volume
-     *
-     * @return float representing the current volume.
-     */
-    public float getSoundPlayerVolume(String user, String voiceChannelId) {
-        Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
-        if (guild != null) {
-            AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
-            if (handler != null) {
-                return handler.getPlayer().getVolume();
-
-            }
-        }
-        return 0;
-    }
-
     public SoundFile playRandomSoundFile(String User, MessageReceivedEvent event, String requestingUser) throws SoundPlaybackException {
         try {
             Map<String, SoundFile> sounds = getAvailableSoundFiles();
@@ -247,6 +232,7 @@ public class SoundPlayer {
                 throw new SoundPlaybackException("Problem playing random file.");
             }
         } catch (Exception e) {
+            LOG.error("Exception during random playback: {}", e.getMessage());
             throw new SoundPlaybackException("Problem playing random file.");
         }
     }
@@ -272,7 +258,8 @@ public class SoundPlayer {
                 disconnectFromChannel(guild);
             }
         } catch (Exception e) {
-            LOG.warn("Could not find requested filename {}", fileName);
+            LOG.warn("Playback request failed. fileName={}, userName={}, voiceChannelId={}",
+                    fileName, userName, voiceChannelId, e);
         }
     }
 
@@ -327,23 +314,26 @@ public class SoundPlayer {
         SoundFile fileToPlay = soundService.findOneBySoundFileIdIgnoreCase(fileName);
 
         if (fileToPlay != null) {
-            stop(user, voiceChannelId);
+
             File soundFile = new File(fileToPlay.getSoundFileLocation());
             if (guild == null) {
                 LOG.error("Guild is null or you're not in a voice channel the bot has permission to access. Have you added your bot to a guild? https://discord.com/developers/docs/topics/oauth2");
             } else {
+                AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
+                if (audioHandler != null && audioHandler.getPlayer().getPlayingTrack() != null) {
+                    stop(user, voiceChannelId);
+                }
                 DiscordUser requestingDiscordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUser, requestingUser);
                 String requestingUserName = "anonymous";
                 if (requestingDiscordUser != null) {
                     requestingUserName = requestingDiscordUser.getUsername();
                 }
-                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUserName);
+                playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUserName, guild.getId());
                 soundController.broadcastUpdate();
 
                 try {
                     fileToPlay = soundService.updateSoundPlayed(fileToPlay);
                     soundService.save(fileToPlay);
-                    AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
                     int globalVolume = 75;
                     int volumeOffset = 0;
                     if (audioHandler != null) {
@@ -358,7 +348,7 @@ public class SoundPlayer {
                     jdaBot.getPlayerManager().loadItem(soundFile.getAbsolutePath(), new FileLoadResultHandler(guild, repeatTimes));
                 } catch (Exception e) {
                     LOG.error("Exception when attempting to play file: {}", fileName);
-                    playbackService.sendTrackEnd(fileToPlay.getSoundFileId());
+                    playbackService.sendTrackEnd(fileToPlay.getSoundFileId(), guild.getId());
                     soundController.broadcastUpdate();
                 }
             }
@@ -375,6 +365,14 @@ public class SoundPlayer {
      */
     public String stop(String user, String voiceChannelId) {
         Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
+        String soundFileId = stopPlayback(guild);
+        if (soundFileId != null) return soundFileId;
+
+        return null;
+    }
+
+    @Nullable
+    private String stopPlayback(Guild guild) {
         if (guild != null) {
             AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
             if (handler != null) {
@@ -383,13 +381,12 @@ public class SoundPlayer {
                     handler.getPlayer().stopTrack();
 
                     File file = new File(soundFileId);
-                    playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')));
+                    playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')), guild.getId());
 
                     return soundFileId;
                 }
             }
         }
-
         return null;
     }
 
@@ -400,55 +397,67 @@ public class SoundPlayer {
     public void updateUsersInDb() {
         String userNameToSelect = botConfig.getBotOwnerName();
         List<DiscordUser> usersFromBot = new ArrayList<>();
+        Set<Member> members = bot.getGuilds().stream().flatMap(guild -> guild.getMembers().stream()).collect(Collectors.toSet());
 
-        bot.getGuilds().forEach( guild -> {
-            List<Member> members = guild.getMembers();
-            members.forEach( member -> {
-                boolean selected = false;
-                String username = member.getEffectiveName();
-                if (userNameToSelect != null && (userNameToSelect.equals(username) || userNameToSelect.equals(member.getId()))) {
-                    selected = true;
-                }
-                Optional<DiscordUser> optionalUser = discordUserService.findById(member.getId());
-                Boolean inAudioChannel = null;
-                String channelName = null;
-                if (member.getVoiceState() != null) {
-                    inAudioChannel = member.getVoiceState().inAudioChannel();
-                    if (member.getVoiceState().getChannel() != null) {
-                        channelName = member.getVoiceState().getChannel().getName();
-                    }
-                }
+        members.forEach( member -> {
+            boolean selected = false;
+            String username = member.getEffectiveName();
+            if (userNameToSelect != null && (userNameToSelect.equals(username) || userNameToSelect.equals(member.getId()))) {
+                selected = true;
+            }
+            Optional<DiscordUser> optionalUser = discordUserService.findById(member.getId());
+            AtomicReference<Boolean> inAudioChannel = new AtomicReference<>(false);
+            AtomicReference<String> channelName = new AtomicReference<>(null);
+            AtomicReference<String> guildInAudioName = new AtomicReference<>(null);
+            AtomicReference<String> guildInAudioId = new AtomicReference<>(null);
 
-                //Bot Member is already in the database. Update the user unless it's a bot or a system user
-                //If the DB already has en entry for a bot, then delete that entry. They should not have been added
-                if (optionalUser.isPresent()) {
-                    if (member.getUser().isBot() || member.getUser().isSystem()) {
-                        discordUserService.delete(optionalUser.get());
-                    } else {
-                        DiscordUser discordUser = optionalUser.get();
-                        discordUser.setUsername(username);
-                        discordUser.setSelected(selected);
-                        discordUser.setOnlineStatus(member.getOnlineStatus());
-
-                        discordUser.setInVoice(inAudioChannel);
-                        discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
-                        discordUser.setChannelName(channelName);
-                        discordUser = discordUserService.save(discordUser);
-                        usersFromBot.add(discordUser);
-                    }
-                } else {
-                    //JDABot is returning a user that is not in the DB let's add them unless they are a bot
-                    if (!member.getUser().isBot() && !member.getUser().isSystem()) {
-                        DiscordUser discordUser = new DiscordUser(member.getId(), username, selected,
-                                member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel);
-
-                        discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
-                        discordUser.setChannelName(channelName);
-                        discordUser = discordUserService.save(discordUser);
-                        usersFromBot.add(discordUser);
+            bot.getGuilds().forEach( guild -> {
+                Member guildMember = guild.getMember(member);
+                if (guildMember != null && guildMember.getVoiceState() != null) {
+                    if (guildMember.getVoiceState().inAudioChannel()) {
+                        inAudioChannel.set(guildMember.getVoiceState().inAudioChannel());
+                        guildInAudioName.set(guild.getName());
+                        guildInAudioId.set(guild.getId());
+                        if (guildMember.getVoiceState().getChannel() != null) {
+                            channelName.set(guildMember.getVoiceState().getChannel().getName());
+                        }
                     }
                 }
             });
+
+            //Bot Member is already in the database. Update the user unless it's a bot or a system user
+            //If the DB already has en entry for a bot, then delete that entry. They should not have been added
+            if (optionalUser.isPresent()) {
+                if (member.getUser().isBot() || member.getUser().isSystem()) {
+                    discordUserService.delete(optionalUser.get());
+                } else {
+                    DiscordUser discordUser = optionalUser.get();
+                    discordUser.setUsername(username);
+                    discordUser.setSelected(selected);
+                    discordUser.setOnlineStatus(member.getOnlineStatus());
+
+                    discordUser.setInVoice(inAudioChannel.get());
+                    discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
+                    discordUser.setChannelName(channelName.get());
+                    discordUser.setGuildInAudioName(guildInAudioName.get());
+                    discordUser.setGuildInAudioId(guildInAudioId.get());
+                    discordUser = discordUserService.save(discordUser);
+                    usersFromBot.add(discordUser);
+                }
+            } else {
+                //JDABot is returning a user that is not in the DB let's add them unless they are a bot
+                if (!member.getUser().isBot() && !member.getUser().isSystem()) {
+                    DiscordUser discordUser = new DiscordUser(member.getId(), username, selected,
+                            member.getJDA().getStatus(), member.getOnlineStatus(), inAudioChannel.get());
+
+                    discordUser.setAvatarUrl(member.getEffectiveAvatarUrl());
+                    discordUser.setChannelName(channelName.get());
+                    discordUser.setGuildInAudioName(guildInAudioName.get());
+                    discordUser.setGuildInAudioId(guildInAudioId.get());
+                    discordUser = discordUserService.save(discordUser);
+                    usersFromBot.add(discordUser);
+                }
+            }
         });
 
         Iterable<DiscordUser> discordUsers = discordUserService.findAll(Pageable.unpaged());
@@ -497,7 +506,7 @@ public class SoundPlayer {
             Path soundFilePath = Paths.get(soundFileDir);
 
             if (!soundFilePath.toFile().exists()) {
-                System.out.println("creating directory: " + soundFilePath.toFile());
+                LOG.info("creating directory: {} ", soundFilePath.toFile());
                 boolean result = false;
 
                 try {
@@ -687,15 +696,16 @@ public class SoundPlayer {
 
     public void disconnectFromChannel(Guild guild) {
         if (guild != null) {
+            stopPlayback(guild);
             guild.getAudioManager().closeAudioConnection();
-            LOG.info("Disconnecting from channel.");
+            LOG.debug("Disconnecting from channel.");
         }
     }
 
     @PreDestroy
     @SuppressWarnings("unused")
     public void cleanUp() {
-        System.out.println("SoundPlayer is shutting down. Cleaning up.");
+        LOG.info("SoundPlayer is shutting down. Cleaning up.");
         bot.shutdown();
         mainWatch.shutdown();
     }

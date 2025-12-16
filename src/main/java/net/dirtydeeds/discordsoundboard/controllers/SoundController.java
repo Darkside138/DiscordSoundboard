@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard.controllers;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
@@ -47,6 +48,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class SoundController {
 
+    private static final long EMITTER_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
     @Autowired
     private final UserRoleConfig userRoleConfig;
     @Setter
@@ -89,30 +92,8 @@ public class SoundController {
         // Send a heartbeat every 25 seconds (tweak as needed)
         sseHeartbeatExecutor.scheduleAtFixedRate(
                 this::broadcastHeartbeatSafely,
-                90, 90, TimeUnit.SECONDS
+                25, 25, TimeUnit.SECONDS
         );
-    }
-
-    private void broadcastHeartbeatSafely() {
-        if (emitters.isEmpty()) return;
-
-        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        emitters.forEach(emitter -> {
-            try {
-                // Keep the payload tiny; event name can be anything
-                emitter.send(SseEmitter.event()
-                        .name("heartbeat")
-                        .data("ping"));
-            } catch (IOException ex) {
-                deadEmitters.add(emitter);
-                emitter.complete();
-            } catch (IllegalStateException ex) {
-                // Can happen if emitter is already completed
-                deadEmitters.add(emitter);
-            }
-        });
-
-        emitters.removeAll(deadEmitters);
     }
 
     @GetMapping("/findAll")
@@ -302,16 +283,26 @@ public class SoundController {
 
     // SSE endpoint for real-time updates
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamSounds() {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+    public SseEmitter streamSounds(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
+        response.setHeader("X-Accel-Buffering", "no");
+
+        SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MILLIS);
 
         // Add emitter to the list
         emitters.add(emitter);
 
         // Remove emitter when completed or timed out
         emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((e) -> emitters.remove(emitter));
+        emitter.onTimeout(() -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
+        emitter.onError((e) -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
 
         // Send initial data immediately
         try {
@@ -336,13 +327,23 @@ public class SoundController {
                 emitter.send(SseEmitter.event()
                         .name("sounds")
                         .data(sounds));
-            } catch (IOException e) {
+            } catch (IOException | IllegalStateException ex) {
                 deadEmitters.add(emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
         });
 
         // Remove dead emitters
         emitters.removeAll(deadEmitters);
+    }
+
+    @PreDestroy
+    public void shutdownHeartbeat() {
+        sseHeartbeatExecutor.shutdownNow();
     }
 
     private String getFileExtension(String filename) {
@@ -371,8 +372,26 @@ public class SoundController {
         return header[0] == 'O' && header[1] == 'g' && header[2] == 'g' && header[3] == 'S';
     }
 
-    @PreDestroy
-    public void shutdownHeartbeat() {
-        sseHeartbeatExecutor.shutdownNow();
+    private void broadcastHeartbeatSafely() {
+        if (emitters.isEmpty()) return;
+
+        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        emitters.forEach(emitter -> {
+            try {
+                // Keep the payload tiny; event name can be anything
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("ping"));
+            } catch (IOException | IllegalStateException ex) {
+                deadEmitters.add(emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
+            }
+        });
+
+        emitters.removeAll(deadEmitters);
     }
 }

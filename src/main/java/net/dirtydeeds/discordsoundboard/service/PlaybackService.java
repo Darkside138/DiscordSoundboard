@@ -6,7 +6,7 @@ public interface PlaybackService {
 
     SseEmitter createEmitter();
 
-    void sendTrackStart(String soundFileId, String displayName, String user);
+    void sendTrackStart(String soundFileId, String displayName, String user, String guildId);
 
-    void sendTrackEnd(String soundFileId);
+    void sendTrackEnd(String soundFileId, String guildId);
 }

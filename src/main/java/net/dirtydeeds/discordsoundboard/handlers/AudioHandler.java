@@ -21,7 +21,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
 
     private final PlayerManager manager;
     private final AudioPlayer audioPlayer;
-    private final long guildId;
+    private final String guildId;
     private AudioFrame lastFrame;
     @Setter
     private Integer globalVolume;
@@ -31,7 +31,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
     {
         this.manager = manager;
         this.audioPlayer = player;
-        this.guildId = guild.getIdLong();
+        this.guildId = guild.getId();
         this.playbackService = playbackService;
     }
 
@@ -62,7 +62,7 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
         }
         audioPlayer.setVolume(getGlobalVolume());
         File file = new File(track.getIdentifier());
-        playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')));
+        playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')), guildId);
     }
 
     @Override

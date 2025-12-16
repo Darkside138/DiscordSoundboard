@@ -21,8 +21,6 @@ public interface DiscordUserService {
 
     Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable);
 
-    void updateUsersInDb();
-
     void setSoundPlayer(SoundPlayer soundPlayer);
 
     DiscordUser updateSounds(String userId, String entranceSound, String leaveSound) throws Exception;

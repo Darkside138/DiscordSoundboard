@@ -7,10 +7,12 @@ import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.managers.AudioManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -31,6 +33,9 @@ class MovedChannelListenerTest {
     @Mock private User user;
     @Mock private AudioChannelUnion joined;
     @Mock private AudioChannelUnion left;
+    @Mock private Guild guild;
+    @Mock private AudioManager audioManager;
+    @Mock private AudioChannelUnion joinedChannel;
 
     private MovedChannelListener listenerEnabled;
     private MovedChannelListener listenerDisabled;
@@ -40,6 +45,7 @@ class MovedChannelListenerTest {
         openMocks(this);
         listenerEnabled = new MovedChannelListener(bot, discordUserService, soundService, true, botConfig, discordUserController);
         listenerDisabled = new MovedChannelListener(bot, discordUserService, soundService, false, botConfig, discordUserController);
+        when(event.getGuild()).thenReturn(guild);
         when(event.getMember()).thenReturn(member);
         when(member.getUser()).thenReturn(user);
         when(user.isBot()).thenReturn(false);
@@ -47,6 +53,9 @@ class MovedChannelListenerTest {
         when(event.getChannelJoined()).thenReturn(joined);
         when(member.getEffectiveName()).thenReturn("alice");
         when(member.getId()).thenReturn("u1");
+        when(guild.getAudioManager()).thenReturn(audioManager);
+        when(guild.getAudioManager().getConnectedChannel()).thenReturn(joinedChannel);
+
     }
 
     @Test

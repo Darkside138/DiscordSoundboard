@@ -23,20 +23,20 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntranceSoundBoardListener.class);
 
-    private final SoundPlayer bot;
+    private final SoundPlayer soundPlayer;
     private final DiscordUserService discordUserService;
     private final boolean playEntranceOnJoin;
     private final BotConfig botConfig;
     private final SoundService soundService;
     private final DiscordUserController discordUserController;
 
-    public EntranceSoundBoardListener(SoundPlayer bot, DiscordUserService discordUserService,
+    public EntranceSoundBoardListener(SoundPlayer soundPlayer, DiscordUserService discordUserService,
                                         SoundService soundService,
                                         boolean playEntranceOnJoin,
                                         BotConfig botConfig,
                                         DiscordUserController discordUserController) {
         this.soundService = soundService;
-        this.bot = bot;
+        this.soundPlayer = soundPlayer;
         this.discordUserService = discordUserService;
         this.playEntranceOnJoin = playEntranceOnJoin;
         this.botConfig = botConfig;
@@ -46,6 +46,7 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
         if (event.getChannelLeft() == null && event.getChannelJoined() != null) {
+            soundPlayer.updateUsersInDb();
             discordUserController.broadcastUpdate();
             if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
                 String userJoined = event.getMember().getEffectiveName();
@@ -56,16 +57,16 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     if (StringUtils.hasText(discordUser.getEntranceSound())) {
                         String entranceSound = discordUser.getEntranceSound();
                         LOG.info("Playing entrance sound {}", entranceSound);
-                        bot.playFileInChannel(entranceSound, event.getChannelJoined(), discordUser);
+                        soundPlayer.playFileInChannel(entranceSound, event.getChannelJoined(), discordUser);
                     } else if (StringUtils.hasText(botConfig.getEntranceForAll())) {
                         LOG.info("Playing entrance for all sound {}", botConfig.getEntranceForAll());
-                        bot.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined(), discordUser);
+                        soundPlayer.playFileInChannel(botConfig.getEntranceForAll(), event.getChannelJoined(), discordUser);
                     } else {
                         //If DB doesn't have an entrance sound check for a file with the same name as the user
                         SoundFile entranceFile = soundService.findOneBySoundFileIdIgnoreCase(discordUser.getUsername());
                         if (entranceFile != null) {
                             try {
-                                bot.playFileInChannel(entranceFile.getSoundFileId(), event.getChannelJoined(), discordUser);
+                                soundPlayer.playFileInChannel(entranceFile.getSoundFileId(), event.getChannelJoined(), discordUser);
                                 LOG.info("Playing entrance sound {}", entranceFile.getSoundFileId());
                             } catch (Exception e) {
                                 LOG.error("Could not play file for entrance of {}", userJoined);

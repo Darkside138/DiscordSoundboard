@@ -2,6 +2,7 @@ package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.PreDestroy;
+import jakarta.servlet.http.HttpServletResponse;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
@@ -29,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("unused")
 public class DiscordUserController {
 
+    private static final long EMITTER_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
     @Autowired
     private final UserRoleConfig userRoleConfig;
 
@@ -50,7 +53,7 @@ public class DiscordUserController {
         // Send a heartbeat every 25 seconds (tweak as needed)
         sseHeartbeatExecutor.scheduleAtFixedRate(
                 this::broadcastHeartbeatSafely,
-                90, 90, TimeUnit.SECONDS
+                25, 25, TimeUnit.SECONDS
         );
     }
 
@@ -59,8 +62,6 @@ public class DiscordUserController {
                                     @RequestParam(defaultValue = "20") int size,
                                     @RequestParam(defaultValue = "username") String sortBy,
                                     @RequestParam(defaultValue = "asc") String sortDir) {
-        //Need to call this to refresh the list of users.
-        discordUserService.updateUsersInDb();
         Sort.Order sortOrder = Sort.Order.asc(sortBy);
         if (sortDir.equalsIgnoreCase("desc")) {
             sortOrder = Sort.Order.desc(sortBy);
@@ -71,8 +72,6 @@ public class DiscordUserController {
     @GetMapping("/invoiceorselected")
     public Page<DiscordUser> getInvoiceOrSelected(@RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "200") int size) {
-        //Need to call this to refresh the list of users.
-        discordUserService.updateUsersInDb();
         return discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(Pageable.ofSize(size).withPage(page));
     }
 
@@ -102,19 +101,26 @@ public class DiscordUserController {
     }
 
     @GetMapping(value = "/invoiceorselected/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamInvoiceOrSelected() {
-        //Need to call this to refresh the list of users.
-        discordUserService.updateUsersInDb();
+    public SseEmitter streamInvoiceOrSelected(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Connection", "keep-alive");
+        response.setHeader("X-Accel-Buffering", "no");
 
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MILLIS);
 
         // Add emitter to the list
         emitters.add(emitter);
 
         // Remove emitter when completed or timed out
         emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError((e) -> emitters.remove(emitter));
+        emitter.onTimeout(() -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
+        emitter.onError((e) -> {
+            emitters.remove(emitter);
+            emitter.complete();
+        });
 
         // Send initial data immediately
         try {
@@ -132,8 +138,6 @@ public class DiscordUserController {
 
     // Helper method to broadcast updates to all connected clients
     public void broadcastUpdate() {
-        discordUserService.updateUsersInDb();
-
         List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
         Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(
                 Pageable.ofSize(200).withPage(0));
@@ -142,9 +146,13 @@ public class DiscordUserController {
                 emitter.send(SseEmitter.event()
                         .name("discordUsers")
                         .data(discordUsers));
-            } catch (IOException e) {
+            } catch (IOException | IllegalStateException ex) {
                 deadEmitters.add(emitter);
-                emitter.complete();
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
         });
 
@@ -162,12 +170,13 @@ public class DiscordUserController {
                 emitter.send(SseEmitter.event()
                         .name("heartbeat")
                         .data("ping"));
-            } catch (IOException ex) {
+            } catch (IOException | IllegalStateException ex) {
                 deadEmitters.add(emitter);
-                emitter.complete();
-            } catch (IllegalStateException ex) {
-                // Can happen if emitter is already completed
-                deadEmitters.add(emitter);
+                try {
+                    emitter.complete();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
         });
 

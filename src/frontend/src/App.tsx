@@ -99,6 +99,7 @@ export default function App() {
   const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [currentPlayback, setCurrentPlayback] = useState<{ soundFileId: string; user: string; displayName?: string | null } | null>(null);
+  const [selectedUserGuildId, setSelectedUserGuildId] = useState<string | null>(null);
 
   // Format sound file ID to be human-readable (same logic as SoundButton)
   const formatSoundFileId = (name: string) => {
@@ -181,115 +182,59 @@ export default function App() {
     // Prevent double SSE connections in StrictMode
     let eventSource: EventSource | null = null;
     let isMounted = true;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 10;
-    const BASE_RECONNECT_DELAY = 1000; // 1 second
-    const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
-    const connectToSounds = () => {
-      // Close existing connection if any
-      if (eventSource) {
-        eventSource.close();
-        eventSource = null;
-      }
+    const handleSoundsUpdate = (data: any) => {
+      // Handle both array and paginated responses
+      const apiSounds = Array.isArray(data) ? data : (data.content || []);
+      const transformedSounds = transformApiSounds(apiSounds);
+      setSounds(transformedSounds);
 
-      try {
-        console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
-        eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
-
-        eventSource.onopen = () => {
-          if (!isMounted) return;
-          console.log('✅ SSE connection established');
-          setConnectionStatus('connected');
-          reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-        };
-
-        eventSource.onerror = (error) => {
-          // Only log errors if we've exceeded max attempts or if it's the first error
-          if (reconnectAttempts === 0) {
-            console.warn('⚠️ SSE connection interrupted, will attempt to reconnect...');
-          }
-
-          setConnectionStatus('error');
-
-          // Close the connection
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-
-          // Attempt to reconnect if not unmounted and haven't exceeded max attempts
-          if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            const delay = Math.min(
-              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
-              MAX_RECONNECT_DELAY
-            );
-
-            reconnectTimeout = setTimeout(() => {
-              if (isMounted) {
-                connectToSounds();
-              }
-            }, delay);
-          } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.error('❌ Max reconnection attempts reached for sounds SSE. Connection failed.');
-            setConnectionStatus('error');
-          }
-        };
-
-        eventSource.addEventListener('sounds', (event) => {
-          if (!isMounted) return;
-          try {
-            const data = JSON.parse(event.data);
-            // Handle both array and paginated responses
-            const apiSounds = Array.isArray(data) ? data : (data.content || []);
-            const transformedSounds = transformApiSounds(apiSounds);
-            setSounds(transformedSounds);
-
-            // Update favorites based on sounds with favorite=true from backend
-            const newFavorites = new Set<string>();
-            transformedSounds.forEach(sound => {
-              if (sound.favorite) {
-                newFavorites.add(sound.id);
-              }
-            });
-
-            console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
-            console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
-            console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
-
-            setFavorites(newFavorites);
-
-            setLoading(false);
-            setConnectionStatus('connected');
-          } catch (error) {
-            console.error('Error parsing SSE data:', error);
-          }
-        });
-      } catch (error) {
-        console.error('Failed to create SSE connection:', error);
-        setConnectionStatus('error');
-
-        // Try to reconnect on exception as well
-        if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          reconnectAttempts++;
-          const delay = Math.min(
-            BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
-            MAX_RECONNECT_DELAY
-          );
-
-          reconnectTimeout = setTimeout(() => {
-            if (isMounted) {
-              connectToSounds();
-            }
-          }, delay);
+      // Update favorites based on sounds with favorite=true from backend
+      const newFavorites = new Set<string>();
+      transformedSounds.forEach(sound => {
+        if (sound.favorite) {
+          newFavorites.add(sound.id);
         }
-      }
+      });
+
+      console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
+      console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
+      console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
+
+      setFavorites(newFavorites);
+
+      setLoading(false);
+      setConnectionStatus('connected');
     };
 
-    // Initial connection
-    connectToSounds();
+    try {
+      console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
+      eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
+
+      eventSource.onopen = () => {
+        if (!isMounted) return;
+        console.log('✅ SSE connection established');
+        setConnectionStatus('connected');
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('❌ Sounds SSE error:', error);
+        // Let EventSource auto-reconnect; don't aggressively close/recreate here.
+      };
+
+      eventSource.addEventListener('sounds', (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          handleSoundsUpdate(data);
+        } catch (error) {
+          console.error('Error parsing SSE data:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create SSE connection:', error);
+      setConnectionStatus('error');
+    }
 
     // Load favorites from localStorage
     const savedFavorites = localStorage.getItem('soundboard-favorites');
@@ -323,9 +268,6 @@ export default function App() {
     // Cleanup: close the SSE connection when component unmounts
     return () => {
       isMounted = false;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
       if (eventSource) {
         eventSource.close();
       }
@@ -356,18 +298,29 @@ export default function App() {
   // SSE connection for volume updates based on selected user
   useEffect(() => {
     if (!selectedUserId) {
-      console.log('No user selected, skipping volume SSE connection');
       return; // No user selected, don't connect
     }
-
-    console.log('🚀 Setting up volume SSE connection for user:', selectedUserId);
     let volumeEventSource: EventSource | null = null;
     let isMounted = true;
+
+    const handleVolumeUpdate = (volumeData: string) => {
+      const volumeValue = parseInt(volumeData, 10);
+      if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 100) {
+        setVolume(volumeValue);
+      }
+    };
+
+    const handleGlobalVolumeUpdate = (volumeData: string) => {
+      const volumeValue = parseFloat(volumeData);
+      const volumePercentage = Math.round(volumeValue);
+      if (!isNaN(volumePercentage) && volumePercentage >= 0 && volumePercentage <= 100) {
+        setVolume(volumePercentage);
+      }
+    };
 
     // First, fetch the current volume for this user
     const fetchInitialVolume = async () => {
       try {
-        console.log('📥 Fetching initial volume for user:', selectedUserId);
         const response = await fetch(`${API_ENDPOINTS.VOLUME}/${selectedUserId}`, {
           headers: getAuthHeaders()
         });
@@ -375,13 +328,8 @@ export default function App() {
           const volumeValue = await response.text();
           const parsedVolume = parseInt(volumeValue, 10);
           if (!isNaN(parsedVolume) && parsedVolume >= 0 && parsedVolume <= 100) {
-            console.log('✅ Initial volume fetched:', parsedVolume);
             setVolume(parsedVolume);
-          } else {
-            console.warn('Invalid initial volume value:', volumeValue);
           }
-        } else {
-          console.warn('Failed to fetch initial volume:', response.status);
         }
       } catch (error) {
         console.error('Error fetching initial volume:', error);
@@ -396,73 +344,21 @@ export default function App() {
 
       try {
         const sseUrl = `${API_ENDPOINTS.VOLUME_STREAM}/${selectedUserId}`;
-        console.log('🔌 Creating EventSource for:', sseUrl);
         volumeEventSource = new EventSource(sseUrl);
 
-        // CATCH ALL - Log absolutely everything
-        const originalDispatchEvent = volumeEventSource.dispatchEvent.bind(volumeEventSource);
-        volumeEventSource.dispatchEvent = function(event: Event) {
-          console.log('🌊 RAW EVENT DISPATCHED:', event.type, event);
-          return originalDispatchEvent(event);
-        };
-
-        // Log all possible event types
         volumeEventSource.onopen = () => {
-          if (!isMounted) return;
-          console.log('✅ Volume SSE connection OPENED successfully for user:', selectedUserId);
-          console.log('📊 Volume SSE readyState:', volumeEventSource?.readyState, '(0=CONNECTING, 1=OPEN, 2=CLOSED)');
+          // Connected
         };
 
         volumeEventSource.onmessage = (event) => {
-          console.log('🔔 Volume SSE onmessage fired!');
-          console.log('📦 Raw event object:', event);
-          console.log('📦 Event type:', event.type);
-          console.log('📦 Event data:', event.data);
-          console.log('📦 Event lastEventId:', event.lastEventId);
-
-          if (!isMounted) {
-            console.log('⚠️ Component unmounted, ignoring message');
-            return;
-          }
-          try {
-            console.log('Processing volume SSE message:', event.data);
-            const volumeValue = parseInt(event.data, 10);
-            console.log('Parsed volume value:', volumeValue);
-            if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 100) {
-              console.log('✅ VALID volume value, calling setVolume with:', volumeValue);
-              setVolume(volumeValue);
-              console.log('✅ setVolume called successfully');
-            } else {
-              console.warn('❌ Invalid volume value received:', event.data);
-            }
-          } catch (error) {
-            console.error('Error parsing volume SSE data:', error);
-          }
+          if (!isMounted) return;
+          handleVolumeUpdate(event.data);
         };
 
         // Listen for named 'volume' events
         volumeEventSource.addEventListener('volume', (event) => {
-          console.log('🔔 Volume SSE NAMED EVENT received!');
-          console.log('📦 Named event data:', event.data);
-
-          if (!isMounted) {
-            console.log('⚠️ Component unmounted, ignoring named event');
-            return;
-          }
-          try {
-            console.log('Processing volume SSE named event:', event.data);
-            const volumeValue = parseInt(event.data, 10);
-            console.log('Parsed named event volume:', volumeValue);
-            if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 100) {
-              console.log('✅ VALID named event volume, calling setVolume with:', volumeValue);
-              setVolume(volumeValue);
-              console.log('✅ setVolume called successfully from named event');
-            } else {
-              console.warn('❌ Invalid volume value from named event:', event.data);
-            }
-          } catch (error) {
-            console.error('Error parsing volume SSE named event data:', error);
-          }
+          if (!isMounted) return;
+          handleVolumeUpdate(event.data);
         });
 
         // Listen for 'globalVolume' events from backend
@@ -532,135 +428,88 @@ export default function App() {
   }, [selectedUserId]);
 
   // SSE connection for playback status tracking
+  const selectedUserGuildIdRef = useRef<string | null>(selectedUserGuildId);
+
+  useEffect(() => {
+    selectedUserGuildIdRef.current = selectedUserGuildId;
+  }, [selectedUserGuildId]);
+
   useEffect(() => {
     let playbackEventSource: EventSource | null = null;
     let isMounted = true;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 10;
-    const BASE_RECONNECT_DELAY = 1000; // 1 second
-    const MAX_RECONNECT_DELAY = 30000; // 30 seconds
 
-    const connectToPlayback = () => {
-      // Close existing connection if any
-      if (playbackEventSource) {
-        playbackEventSource.close();
-        playbackEventSource = null;
-      }
-
-      try {
-        console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
-        playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
-
-        playbackEventSource.onopen = () => {
-          console.log('✅ Playback SSE connection established');
-          reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-        };
-
-        // Listen for track start event
-        playbackEventSource.addEventListener('trackStart', (event) => {
-          if (!isMounted) return;
-          try {
-            const data = JSON.parse(event.data);
-            console.log('🎵 Track started:', data);
-            if (data.soundFileId) {
-              setCurrentlyPlayingSoundId(data.soundFileId);
-              setCurrentPlayback({
-                soundFileId: data.soundFileId,
-                user: data.user || 'Unknown',
-                displayName: data.displayName
-              });
-            }
-          } catch (error) {
-            console.error('Error parsing trackStart event:', error);
-          }
+    const handleTrackStart = (data: any) => {
+      // Only show playback if guildId matches the selected user's guild
+      if (data.soundFileId && data.guildId === selectedUserGuildIdRef.current) {
+        setCurrentlyPlayingSoundId(data.soundFileId);
+        setCurrentPlayback({
+          soundFileId: data.soundFileId,
+          user: data.user || 'Unknown',
+          displayName: data.displayName
         });
-
-        // Listen for track end event
-        playbackEventSource.addEventListener('trackEnd', (event) => {
-          if (!isMounted) return;
-          try {
-            const data = JSON.parse(event.data);
-            console.log('🎵 Track ended:', data);
-            // Only clear if the ended track matches the currently playing track
-            setCurrentlyPlayingSoundId((currentId) => {
-              if (data.soundFileId && currentId === data.soundFileId) {
-                return null;
-              }
-              return currentId;
-            });
-            setCurrentPlayback((current) => {
-              if (current && data.soundFileId && current.soundFileId === data.soundFileId) {
-                return null;
-              }
-              return current;
-            });
-          } catch (error) {
-            console.error('Error parsing trackEnd event:', error);
-          }
-        });
-
-        playbackEventSource.onerror = (error) => {
-          // Only log errors if it's the first error or we've exceeded max attempts
-          if (reconnectAttempts === 0) {
-            console.warn('⚠️ Playback SSE connection interrupted, will attempt to reconnect...');
-          }
-
-          // Clear playback state when stream errors
-          setCurrentlyPlayingSoundId(null);
-          setCurrentPlayback(null);
-
-          // Close the connection
-          if (playbackEventSource) {
-            playbackEventSource.close();
-            playbackEventSource = null;
-          }
-
-          // Attempt to reconnect if not unmounted and haven't exceeded max attempts
-          if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            const delay = Math.min(
-              BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
-              MAX_RECONNECT_DELAY
-            );
-
-            reconnectTimeout = setTimeout(() => {
-              if (isMounted) {
-                connectToPlayback();
-              }
-            }, delay);
-          } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.error('❌ Max reconnection attempts reached for playback SSE. Connection failed.');
-          }
-        };
-      } catch (error) {
-        console.error('Failed to create playback SSE connection:', error);
-
-        // Try to reconnect on exception as well
-        if (isMounted && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          reconnectAttempts++;
-          const delay = Math.min(
-            BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
-            MAX_RECONNECT_DELAY
-          );
-
-          reconnectTimeout = setTimeout(() => {
-            if (isMounted) {
-              connectToPlayback();
-            }
-          }, delay);
-        }
       }
     };
 
-    // Initial connection
-    connectToPlayback();
+    const handleTrackEnd = (data: any) => {
+      // Only clear if guildId matches and the ended track matches the currently playing track
+      if (data.guildId === selectedUserGuildIdRef.current) {
+        setCurrentlyPlayingSoundId((currentId) => {
+          if (data.soundFileId && currentId === data.soundFileId) {
+            return null;
+          }
+          return currentId;
+        });
+        setCurrentPlayback((current) => {
+          if (current && data.soundFileId && current.soundFileId === data.soundFileId) {
+            return null;
+          }
+          return current;
+        });
+      }
+    };
+
+    try {
+      console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
+      playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
+
+      playbackEventSource.onopen = () => {
+        console.log('✅ Playback SSE connection established');
+      };
+
+      playbackEventSource.onerror = (error) => {
+        console.error('❌ Playback SSE error:', error);
+        // Let EventSource auto-reconnect; don't aggressively close/recreate here.
+      };
+
+      // Listen for track start event
+      playbackEventSource.addEventListener('trackStart', (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          console.log('🎵 Track started:', data);
+          handleTrackStart(data);
+        } catch (error) {
+          console.error('Error parsing trackStart event:', error);
+        }
+      });
+
+      // Listen for track end event
+      playbackEventSource.addEventListener('trackEnd', (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          console.log('🎵 Track ended:', data);
+          handleTrackEnd(data);
+        } catch (error) {
+          console.error('Error parsing trackEnd event:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create playback SSE connection:', error);
+    }
 
     return () => {
       isMounted = false;
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
       if (playbackEventSource) {
         console.log('🧹 Closing playback SSE connection');
         playbackEventSource.close();
@@ -1430,6 +1279,7 @@ export default function App() {
                   selectedUserId={selectedUserId}
                   onVolumeUpdate={setVolume}
                   onPlaybackEnabledChange={setIsPlaybackEnabled}
+                  onGuildIdChange={setSelectedUserGuildId}
                 />
               </div>
             </div>

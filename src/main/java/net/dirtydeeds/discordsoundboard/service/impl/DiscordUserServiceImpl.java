@@ -51,11 +51,6 @@ public class DiscordUserServiceImpl implements DiscordUserService {
     }
 
     @Override
-    public void updateUsersInDb() {
-        soundPlayer.updateUsersInDb();
-    }
-
-    @Override
     public DiscordUser updateSounds(String userId, String entranceSound, String leaveSound) throws Exception {
         Optional<DiscordUser> optionalDiscordUser = discordUserRepository.findById(userId);
 
