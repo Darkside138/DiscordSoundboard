@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
@@ -13,6 +14,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Hidden
 @RestController
@@ -22,14 +26,27 @@ public class BotVolumeController {
     private final SoundPlayer soundPlayer;
     private final UserRoleConfig userRoleConfig;
 
+    // Store all active SSE connections
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    private final ScheduledExecutorService sseHeartbeatExecutor =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "sse-heartbeat");
+                t.setDaemon(true);
+                return t;
+            });
+
     @Inject
     private BotVolumeController (SoundPlayer soundPlayer, UserRoleConfig userRoleConfig) {
         this.soundPlayer = soundPlayer;
         this.userRoleConfig = userRoleConfig;
-    }
 
-    // Store all active SSE connections
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+        // Send a heartbeat every 25 seconds (tweak as needed)
+        sseHeartbeatExecutor.scheduleAtFixedRate(
+                this::broadcastHeartbeatSafely,
+                90, 90, TimeUnit.SECONDS
+        );
+    }
 
     @PostMapping(value = "")
     public ResponseEntity<Void> setVolume(@RequestParam Integer volume, @RequestParam String username,
@@ -71,7 +88,7 @@ public class BotVolumeController {
                     .name("globalVolume")
                     .data(globalVolume));
         } catch (IOException e) {
-            emitter.completeWithError(e);
+            emitter.complete();
         }
 
         return emitter;
@@ -92,5 +109,32 @@ public class BotVolumeController {
 
         // Remove dead emitters
         emitters.removeAll(deadEmitters);
+    }
+
+    private void broadcastHeartbeatSafely() {
+        if (emitters.isEmpty()) return;
+
+        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        emitters.forEach(emitter -> {
+            try {
+                // Keep the payload tiny; event name can be anything
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("ping"));
+            } catch (IOException ex) {
+                deadEmitters.add(emitter);
+                emitter.complete();
+            } catch (IllegalStateException ex) {
+                // Can happen if emitter is already completed
+                deadEmitters.add(emitter);
+            }
+        });
+
+        emitters.removeAll(deadEmitters);
+    }
+
+    @PreDestroy
+    public void shutdownHeartbeat() {
+        sseHeartbeatExecutor.shutdownNow();
     }
 }

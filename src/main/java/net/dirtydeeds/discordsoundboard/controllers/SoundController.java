@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
@@ -30,6 +31,9 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -70,10 +74,45 @@ public class SoundController {
     // Store all active SSE connections
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
+    private final ScheduledExecutorService sseHeartbeatExecutor =
+        Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "sse-heartbeat");
+            t.setDaemon(true);
+            return t;
+        });
+
     @Inject
     public SoundController (SoundService soundService, UserRoleConfig userRoleConfig) {
         this.soundService = soundService;
         this.userRoleConfig = userRoleConfig;
+
+        // Send a heartbeat every 25 seconds (tweak as needed)
+        sseHeartbeatExecutor.scheduleAtFixedRate(
+                this::broadcastHeartbeatSafely,
+                90, 90, TimeUnit.SECONDS
+        );
+    }
+
+    private void broadcastHeartbeatSafely() {
+        if (emitters.isEmpty()) return;
+
+        List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
+        emitters.forEach(emitter -> {
+            try {
+                // Keep the payload tiny; event name can be anything
+                emitter.send(SseEmitter.event()
+                        .name("heartbeat")
+                        .data("ping"));
+            } catch (IOException ex) {
+                deadEmitters.add(emitter);
+                emitter.complete();
+            } catch (IllegalStateException ex) {
+                // Can happen if emitter is already completed
+                deadEmitters.add(emitter);
+            }
+        });
+
+        emitters.removeAll(deadEmitters);
     }
 
     @GetMapping("/findAll")
@@ -330,5 +369,10 @@ public class SoundController {
 
         // OGG: starts with "OggS"
         return header[0] == 'O' && header[1] == 'g' && header[2] == 'g' && header[3] == 'S';
+    }
+
+    @PreDestroy
+    public void shutdownHeartbeat() {
+        sseHeartbeatExecutor.shutdownNow();
     }
 }

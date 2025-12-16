@@ -340,21 +340,27 @@ public class SoundPlayer {
                 playbackService.sendTrackStart(fileToPlay.getSoundFileId(), fileToPlay.getDisplayName(), requestingUserName);
                 soundController.broadcastUpdate();
 
-                fileToPlay = soundService.updateSoundPlayed(fileToPlay);
-                soundService.save(fileToPlay);
-                AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
-                int globalVolume = 75;
-                int volumeOffset = 0;
-                if (audioHandler != null) {
-                    globalVolume = audioHandler.getGlobalVolume();
-                }
-                if (fileToPlay.getVolumeOffsetPercentage() != null) {
-                    volumeOffset = fileToPlay.getVolumeOffsetPercentage();
-                }
+                try {
+                    fileToPlay = soundService.updateSoundPlayed(fileToPlay);
+                    soundService.save(fileToPlay);
+                    AudioHandler audioHandler = (AudioHandler) guild.getAudioManager().getSendingHandler();
+                    int globalVolume = 75;
+                    int volumeOffset = 0;
+                    if (audioHandler != null) {
+                        globalVolume = audioHandler.getGlobalVolume();
+                    }
+                    if (fileToPlay.getVolumeOffsetPercentage() != null) {
+                        volumeOffset = fileToPlay.getVolumeOffsetPercentage();
+                    }
 
-                setSoundPlayerVolume((int) (globalVolume + (globalVolume * ((float) volumeOffset / 100))), user, voiceChannelId);
+                    setSoundPlayerVolume((int) (globalVolume + (globalVolume * ((float) volumeOffset / 100))), user, voiceChannelId);
 
-                jdaBot.getPlayerManager().loadItem(soundFile.getAbsolutePath(), new FileLoadResultHandler(guild, repeatTimes));
+                    jdaBot.getPlayerManager().loadItem(soundFile.getAbsolutePath(), new FileLoadResultHandler(guild, repeatTimes));
+                } catch (Exception e) {
+                    LOG.error("Exception when attempting to play file: {}", fileName);
+                    playbackService.sendTrackEnd(fileToPlay.getSoundFileId());
+                    soundController.broadcastUpdate();
+                }
             }
         } else {
             jdaBot.getPlayerManager().loadItem(fileName, new FileLoadResultHandler(guild, repeatTimes));

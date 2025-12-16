@@ -62,3 +62,20 @@ app:
       default-permissions:
         - play-sounds
         - download-sounds
+logging:
+  level:
+    org.springframework.web.servlet.mvc.method.annotation.SseEmitter: error
+    org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitterReturnValueHandler: error
+
+    # Async request lifecycle tends to log client disconnects
+    org.springframework.web.context.request.async: error
+    org.springframework.web.context.request.async.StandardServletAsyncWebRequest: error
+
+    # Tomcat write/flush path that often logs "connection was aborted"
+    org.apache.catalina.connector.CoyoteAdapter: error
+    org.apache.catalina.connector.OutputBuffer: error
+    org.apache.coyote.http11.Http11OutputBuffer: error
+    org.apache.tomcat.util.net.NioEndpoint: error
+
+    # This appears in your stack; can be noisy on disconnect
+    org.springframework.security.web.util.OnCommittedResponseWrapper: error
