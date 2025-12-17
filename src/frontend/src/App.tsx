@@ -221,8 +221,7 @@ export default function App() {
       };
 
       eventSource.onerror = (error) => {
-        console.error('❌ Sounds SSE error:', error);
-        // Let EventSource auto-reconnect; don't aggressively close/recreate here.
+        // Let EventSource auto-reconnect silently
       };
 
       eventSource.addEventListener('sounds', (event) => {
@@ -401,15 +400,7 @@ export default function App() {
         });
 
         volumeEventSource.onerror = (error) => {
-          console.error('❌ Volume SSE connection ERROR:', error);
-          console.log('📊 Volume SSE readyState:', volumeEventSource?.readyState, '(0=CONNECTING, 1=OPEN, 2=CLOSED)');
-          console.log('🔗 Volume SSE url:', volumeEventSource?.url);
-
-          if (volumeEventSource?.readyState === EventSource.CLOSED) {
-            console.error('🚫 SSE connection is CLOSED - will not receive updates');
-          } else if (volumeEventSource?.readyState === EventSource.CONNECTING) {
-            console.log('🔄 SSE connection is CONNECTING - retrying...');
-          }
+          // Let EventSource auto-reconnect silently
         };
 
         console.log('✅ EventSource created, waiting for events...');
@@ -480,8 +471,7 @@ export default function App() {
       };
 
       playbackEventSource.onerror = (error) => {
-        console.error('❌ Playback SSE error:', error);
-        // Let EventSource auto-reconnect; don't aggressively close/recreate here.
+        // Let EventSource auto-reconnect silently
       };
 
       // Listen for track start event
