@@ -36,13 +36,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * REST Controller.
  *
  * @author dfurrer.
  */
 @Hidden
+
+    private static final Logger log = LoggerFactory.getLogger(SoundController.class);
 @RestController
 @RequestMapping("/api/soundFiles")
 @SuppressWarnings("unused")
@@ -254,6 +257,7 @@ public class SoundController {
             file.transferTo(new File(filePath));
 
             soundService.save(new SoundFile(originalFilename, filePath, "", 0, ZonedDateTime.now(), false, null, 0));
+            log.error("Failed to upload file", e);
 
             broadcastUpdate();
 
@@ -261,7 +265,7 @@ public class SoundController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to upload file: " + e.getMessage());
+                    .body("Failed to upload file due to a server error.");
         }
     }
 
