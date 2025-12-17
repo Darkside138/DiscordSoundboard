@@ -1,4 +1,6 @@
 name: JDA611 Branch Publish
+permissions:
+  contents: read
 
 on:
   push:
