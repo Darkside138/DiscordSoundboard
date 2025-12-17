@@ -74,8 +74,6 @@
     --color-green-700: oklch(.527 .154 150.069);
     --color-green-900: oklch(.393 .095 152.535);
     --color-emerald-600: oklch(.596 .145 163.225);
-    --color-teal-600: oklch(.6 .118 184.704);
-    --color-teal-700: oklch(.511 .096 186.391);
     --color-blue-50: oklch(.97 .014 254.604);
     --color-blue-100: oklch(.932 .032 255.585);
     --color-blue-200: oklch(.882 .059 254.128);
@@ -522,6 +520,10 @@
 
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
+  }
+
+  .mr-2 {
+    margin-right: calc(var(--spacing) * 2);
   }
 
   .mb-2 {
@@ -1015,14 +1017,6 @@
     background-color: var(--color-red-700);
   }
 
-  .bg-teal-600 {
-    background-color: var(--color-teal-600);
-  }
-
-  .bg-teal-700 {
-    background-color: var(--color-teal-700);
-  }
-
   .bg-white {
     background-color: var(--color-white);
   }
@@ -1473,18 +1467,6 @@
       .hover\:bg-red-900\/30:hover {
         background-color: color-mix(in oklab, var(--color-red-900) 30%, transparent);
       }
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:bg-teal-600:hover {
-      background-color: var(--color-teal-600);
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:bg-teal-700:hover {
-      background-color: var(--color-teal-700);
     }
   }
 

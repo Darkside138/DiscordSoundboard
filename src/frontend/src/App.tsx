@@ -990,46 +990,16 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Upload Button - Only visible with upload permission */}
+            {/* Hidden file input for upload functionality */}
             {authUser?.permissions?.upload && (
-              <>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    theme === 'dark'
-                      ? 'bg-blue-700 text-white hover:bg-blue-600'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                  }`}
-                  aria-label="Upload sound file"
-                >
-                  <Upload className="w-5 h-5" />
-                  Upload
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="audio/*,.mp3,.wav,.ogg,.webm,.flac"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  aria-label="File upload input"
-                />
-              </>
-            )}
-
-            {/* Users Button - Only visible with manage-users permission */}
-            {authUser?.permissions?.manageUsers && (
-              <button
-                onClick={() => setShowUsersOverlay(true)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  theme === 'dark'
-                    ? 'bg-teal-700 text-white hover:bg-teal-600'
-                    : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md'
-                }`}
-                aria-label="Manage users"
-              >
-                <Users className="w-5 h-5" />
-                Users
-              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*,.mp3,.wav,.ogg,.webm,.flac"
+                onChange={handleFileUpload}
+                className="hidden"
+                aria-label="File upload input"
+              />
             )}
 
             {/* Auth Button */}
@@ -1369,6 +1339,16 @@ export default function App() {
             onPopularCountChange={setPopularCount}
             onRecentCountChange={setRecentCount}
             onThemeChange={setTheme}
+            canUpload={authUser?.permissions?.upload ?? false}
+            canManageUsers={authUser?.permissions?.manageUsers ?? false}
+            onUploadClick={() => {
+              setSettingsMenu(null);
+              fileInputRef.current?.click();
+            }}
+            onUsersClick={() => {
+              setSettingsMenu(null);
+              setShowUsersOverlay(true);
+            }}
           />
         )}
       </div>

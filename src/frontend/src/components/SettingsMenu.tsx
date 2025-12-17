@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Upload, Users } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 import { getAuthHeaders } from '../utils/api';
 
@@ -13,6 +13,10 @@ interface SettingsMenuProps {
   onPopularCountChange: (count: number) => void;
   onRecentCountChange: (count: number) => void;
   onThemeChange: (theme: 'light' | 'dark') => void;
+  canUpload?: boolean;
+  canManageUsers?: boolean;
+  onUploadClick?: () => void;
+  onUsersClick?: () => void;
 }
 
 export function SettingsMenu({
@@ -25,6 +29,10 @@ export function SettingsMenu({
   onPopularCountChange,
   onRecentCountChange,
   onThemeChange,
+  canUpload,
+  canManageUsers,
+  onUploadClick,
+  onUsersClick,
 }: SettingsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [botVersion, setBotVersion] = useState<string>('Loading...');
@@ -191,6 +199,36 @@ export function SettingsMenu({
           {botVersion}
         </p>
       </div>
+
+      {/* Upload Button */}
+      {canUpload && onUploadClick && (
+        <button
+          onClick={onUploadClick}
+          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
+            theme === 'dark'
+              ? 'bg-blue-700 text-white hover:bg-blue-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <Upload className="w-5 h-5 mr-2" />
+          Upload Sound
+        </button>
+      )}
+
+      {/* Manage Users Button */}
+      {canManageUsers && onUsersClick && (
+        <button
+          onClick={onUsersClick}
+          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
+            theme === 'dark'
+              ? 'bg-blue-700 text-white hover:bg-blue-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <Users className="w-5 h-5 mr-2" />
+          Manage Users
+        </button>
+      )}
 
       {/* Close Button */}
       <button
