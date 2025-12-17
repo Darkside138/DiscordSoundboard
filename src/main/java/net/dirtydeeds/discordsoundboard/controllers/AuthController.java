@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import net.dirtydeeds.discordsoundboard.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,6 +62,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @GetMapping("/csrf-token")
+    @ResponseBody
+    public CsrfToken csrfToken(CsrfToken token) {
+        return token;
     }
 
     @PostMapping("/logout")

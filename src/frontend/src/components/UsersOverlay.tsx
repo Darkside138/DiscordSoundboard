@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
+import { fetchWithAuth, getAuthHeaders } from '../utils/api';
 
 interface DiscordUser {
   id: string;
@@ -50,7 +51,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
         params.append('sortDir', sortDirection);
       }
 
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${API_ENDPOINTS.DISCORD_USERS}?${params.toString()}`,
         { mode: 'cors' }
       );
@@ -125,7 +126,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
       }
 
       // Call the Spring Boot PATCH endpoint with query parameters
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${API_ENDPOINTS.DISCORD_USERS}/${userId}?${params.toString()}`,
         {
           method: 'PATCH',

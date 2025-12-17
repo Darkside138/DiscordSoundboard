@@ -77,14 +77,13 @@ public class DiscordUserController {
 
     @PatchMapping("/{userId}")
     public ResponseEntity<DiscordUser> updateUserSounds(
-            @PathVariable String userId,
-            @RequestParam(required = false) String entranceSound,
-            @RequestParam(required = false) String leaveSound,
-            @RequestHeader(value = "Authorization", required = false) String authorization
-    ) {
+                        @PathVariable String userId,
+                        @RequestParam(required = false) String entranceSound,
+                        @RequestParam(required = false) String leaveSound,
+                        @RequestHeader(value = "Authorization", required = false) String authorization) {
 
         String authId = userRoleConfig.getUserIdFromAuth(authorization);
-        if (userId == null || !userRoleConfig.hasPermission(userId, "manage-users")) {
+        if (userId == null || !userRoleConfig.hasPermission(authId, "manage-users")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

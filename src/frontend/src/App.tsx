@@ -16,7 +16,7 @@ import {
   handleOAuthRedirect,
   type DiscordUser
 } from './utils/auth';
-import { getAuthHeaders, fetchWithAuth } from './utils/api';
+import { getAuthHeaders, fetchWithAuth, fetchCsrfToken, getAuthHeadersWithCsrf } from './utils/api';
 import { toast, Toaster } from 'sonner@2.0.3';
 
 interface Sound {
@@ -147,6 +147,9 @@ export default function App() {
         }
         setAuthLoading(false);
       }
+
+      // Fetch CSRF token
+      await fetchCsrfToken();
     };
 
     handleCallback();
@@ -573,7 +576,7 @@ export default function App() {
           mode: 'cors',
           headers: {
             'Content-Type': 'application/json',
-            ...getAuthHeaders()
+            ...getAuthHeadersWithCsrf()
           }
         }
       );
@@ -631,7 +634,7 @@ export default function App() {
           mode: 'cors',
           headers: {
             'Content-Type': 'application/json',
-            ...getAuthHeaders()
+            ...getAuthHeadersWithCsrf()
           }
         }
       );
@@ -716,7 +719,7 @@ export default function App() {
         {
           method: 'POST',
           mode: 'cors',
-          headers: getAuthHeaders()
+          headers: getAuthHeadersWithCsrf()
         }
       );
 
@@ -799,7 +802,7 @@ export default function App() {
         {
           method: 'POST',
           mode: 'cors',
-          headers: getAuthHeaders()
+          headers: getAuthHeadersWithCsrf()
         }
       );
 
@@ -832,7 +835,7 @@ export default function App() {
         {
           method: 'POST',
           mode: 'cors',
-          headers: getAuthHeaders()
+          headers: getAuthHeadersWithCsrf()
         }
       );
 
@@ -881,7 +884,7 @@ export default function App() {
       console.log('📤 Uploading file:', file.name);
 
       // Get auth headers
-      const authHeaders = getAuthHeaders();
+      const authHeaders = getAuthHeadersWithCsrf();
       console.log('📋 Auth headers:', authHeaders);
 
       const response = await fetch(API_ENDPOINTS.UPLOAD, {

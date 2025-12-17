@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.util.HtmlUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,14 +45,14 @@ import org.slf4j.LoggerFactory;
  * @author dfurrer.
  */
 @Hidden
-
-    private static final Logger log = LoggerFactory.getLogger(SoundController.class);
 @RestController
 @RequestMapping("/api/soundFiles")
 @SuppressWarnings("unused")
 public class SoundController {
 
     private static final long EMITTER_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
+    private static final Logger log = LoggerFactory.getLogger(SoundController.class);
 
     @Autowired
     private final UserRoleConfig userRoleConfig;
@@ -257,11 +258,11 @@ public class SoundController {
             file.transferTo(new File(filePath));
 
             soundService.save(new SoundFile(originalFilename, filePath, "", 0, ZonedDateTime.now(), false, null, 0));
-            log.error("Failed to upload file", e);
+            log.error("Failed to upload file");
 
             broadcastUpdate();
 
-            return ResponseEntity.ok("File uploaded successfully: " + originalFilename);
+            return ResponseEntity.ok("File uploaded successfully: " + HtmlUtils.htmlEscape(originalFilename));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

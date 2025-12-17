@@ -28,7 +28,6 @@ public class SecurityConfig {
                     .invalidateHttpSession(true)
                     .deleteCookies("JSESSIONID")
             )
-            .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
                         .requestMatchers("/**").permitAll().anyRequest().authenticated()

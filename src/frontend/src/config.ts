@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   AUTH_USER: `${API_BASE_URL}/api/auth/user`,
   AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   OAUTH_LOGIN: `${API_BASE_URL}/oauth2/authorization/discord`,
+  CSRF_TOKEN: `${API_BASE_URL}/api/auth/csrf-token`,
   // Bot version
   BOT_VERSION: `${API_BASE_URL}/bot/version`,
 };

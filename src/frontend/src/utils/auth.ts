@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from '../config';
+import { getCsrfToken } from './api';
 
 export interface DiscordUser {
   id: string;
@@ -188,11 +189,18 @@ export async function validateToken(accessToken: string): Promise<DiscordUser | 
 
 export async function logout(accessToken: string): Promise<void> {
   try {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${accessToken}`
+    };
+
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+
     await fetch(`${API_ENDPOINTS.AUTH_LOGOUT}`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+      headers
     });
   } catch {
     // Ignore errors during logout
