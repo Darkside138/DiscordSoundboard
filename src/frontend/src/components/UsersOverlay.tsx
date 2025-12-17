@@ -114,8 +114,6 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
 
     try {
       // editValue contains the sound.id from the selected dropdown option
-      console.log(`Updating user ${userId}: ${editingField} = ${editValue || 'null'}`);
-
       // Build query parameters - backend expects entranceSound/leaveSound as request parameters
       const params = new URLSearchParams();
       if (editValue) {
@@ -139,8 +137,6 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
         console.error(`Failed to update user: ${response.status} - ${errorText}`);
         throw new Error(`Failed to update user: ${response.status}`);
       }
-
-      console.log(`Successfully updated user ${userId} with ${editingField}=${editValue}`);
 
       // Update local state after successful API call
       setUsers(prev => prev.map(user =>
@@ -192,7 +188,11 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className={`flex-1 overflow-auto p-6 ${
+          theme === 'dark'
+            ? '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
+            : '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
+        }`}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>

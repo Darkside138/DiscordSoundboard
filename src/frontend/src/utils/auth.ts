@@ -149,16 +149,10 @@ async function fetchUserInfo(accessToken: string): Promise<DiscordUser | null> {
 
     const userData = await response.json();
 
-    console.log('Raw user data from backend:', userData);
-    console.log('Raw permissions:', userData.permissions);
-    console.log('Permissions is array?', Array.isArray(userData.permissions));
-
     // Try to decode JWT to get permissions directly if backend is missing them
     const jwtPayload = decodeJWT(accessToken);
-    console.log('JWT payload:', jwtPayload);
 
     if (jwtPayload && jwtPayload.permissions) {
-      console.log('Using permissions from JWT token:', jwtPayload.permissions);
       // Prefer JWT permissions over backend response since JWT is authoritative
       userData.permissions = jwtPayload.permissions;
 
@@ -170,11 +164,8 @@ async function fetchUserInfo(accessToken: string): Promise<DiscordUser | null> {
 
     if (userData.permissions) {
       const transformed = transformPermissions(userData.permissions);
-      console.log('Transformed permissions:', transformed);
       userData.permissions = transformed;
     }
-
-    console.log('Final user data:', userData);
 
     return userData;
   } catch (error) {

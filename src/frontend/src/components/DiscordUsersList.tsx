@@ -368,7 +368,11 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className={`flex-1 overflow-y-auto min-h-0 ${
+        theme === 'dark'
+          ? '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
+          : '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
+      }`}>
         {users.length === 0 ? (
           <div className="p-4 text-center">
             <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
@@ -376,7 +380,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-700">
+          <div className={`divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
             {users.map(user => {
               const isSelected = selectedUserId === user.id;
               return (

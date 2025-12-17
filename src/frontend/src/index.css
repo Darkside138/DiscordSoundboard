@@ -787,6 +787,10 @@
     border-bottom-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
   }
 
+  :where(.divide-gray-200 > :not(:last-child)) {
+    border-color: var(--color-gray-200);
+  }
+
   :where(.divide-gray-700 > :not(:last-child)) {
     border-color: var(--color-gray-700);
   }
@@ -1595,6 +1599,36 @@
   }
 
   .dark\:bg-gray-700:is(.dark *) {
+    background-color: var(--color-gray-700);
+  }
+
+  .\[\&\:\:-webkit-scrollbar\]\:w-2::-webkit-scrollbar {
+    width: calc(var(--spacing) * 2);
+  }
+
+  .\[\&\:\:-webkit-scrollbar-thumb\]\:rounded-full::-webkit-scrollbar-thumb {
+    border-radius: 3.40282e38px;
+  }
+
+  .\[\&\:\:-webkit-scrollbar-thumb\]\:bg-gray-400::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-400);
+  }
+
+  .\[\&\:\:-webkit-scrollbar-thumb\]\:bg-gray-600::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-600);
+  }
+
+  @media (hover: hover) {
+    .\[\&\:\:-webkit-scrollbar-thumb\]\:hover\:bg-gray-500::-webkit-scrollbar-thumb:hover {
+      background-color: var(--color-gray-500);
+    }
+  }
+
+  .\[\&\:\:-webkit-scrollbar-track\]\:bg-gray-200::-webkit-scrollbar-track {
+    background-color: var(--color-gray-200);
+  }
+
+  .\[\&\:\:-webkit-scrollbar-track\]\:bg-gray-700::-webkit-scrollbar-track {
     background-color: var(--color-gray-700);
   }
 }

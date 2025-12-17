@@ -121,7 +121,6 @@ export default function App() {
 
       if (token) {
         try {
-          console.log('🔐 Processing OAuth redirect with token');
           const authState = await handleOAuthRedirect(token);
           setAuthUser(authState.user);
           setAuthLoading(false);
@@ -410,13 +409,10 @@ export default function App() {
     }, 100);
 
     return () => {
-      console.log('🧹 Cleaning up volume SSE connection for user:', selectedUserId);
       clearTimeout(sseTimeout);
       isMounted = false;
       if (volumeEventSource) {
-        console.log('🔌 Closing volume EventSource, readyState was:', volumeEventSource.readyState);
         volumeEventSource.close();
-        console.log('✅ Volume SSE connection closed');
       }
     };
   }, [selectedUserId]);
@@ -875,7 +871,6 @@ export default function App() {
 
       // Get auth headers
       const authHeaders = getAuthHeadersWithCsrf();
-      console.log('📋 Auth headers:', authHeaders);
 
       const response = await fetch(API_ENDPOINTS.UPLOAD, {
         method: 'POST',

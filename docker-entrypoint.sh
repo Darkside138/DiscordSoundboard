@@ -12,17 +12,18 @@ echo "changing to config directory to update application.properties file"
 cd /etc/DiscordSoundboard/config
 
 #Overwrite the bottoken and username to join channel config entries from environment variables passed into docker run
-sed -i 's/^bot_token=.*/bot_token='$bottoken'/' application.properties
-sed -i 's/^username_to_join_channel=.*/username_to_join_channel='$username'/' application.properties
-sed -i 's/^command_character=.*/command_character='$commandcharacter'/' application.properties
-sed -i 's/^admin_user_list=.*/admin_user_list='$adminuserlist'/' application.properties
-sed -i 's/^moderator_user_list=.*/moderator_user_list='$moderatoruserlist'/' application.properties
-sed -i 's/^dj_user_list=.*/dj_user_list='$djuserlist'/' application.properties
-sed -i 's/^spring.security.oauth2.client.registration.discord.client-id=.*/spring.security.oauth2.client.registration.discord.client-id='$discordclientid'/' application.properties
-sed -i 's/^spring.security.oauth2.client.registration.discord.client-secret=.*/spring.security.oauth2.client.registration.discord.client-secret='$discordclientsecret'/' application.properties
-sed -i 's/^jwt.secret=.*/jwt.secret='$jwtsecret'/' application.properties
-#sed -i 's/^leaveOnEmptyChannel=.*/leaveOnEmptyChannel='$leaveOnEmptyChannel'/' application.properties
-sed -i 's~^app.frontend-url=.*~app.frontend-url='$frontendurl'~' application.properties
+# Only apply a change if the corresponding environment variable is set
+[ -n "$bottoken" ] && sed -i "s/^bot_token=.*/bot_token=$bottoken/" application.properties
+sed -i "s/^username_to_join_channel=.*/username_to_join_channel=$username/" application.properties
+[ -n "$commandcharacter" ] && sed -i "s/^command_character=.*/command_character=$commandcharacter/" application.properties
+[ -n "$adminuserlist" ] && sed -i "s/^admin_user_list=.*/admin_user_list=$adminuserlist/" application.properties
+sed -i "s/^moderator_user_list=.*/moderator_user_list=$moderatoruserlist/" application.properties
+sed -i "s/^dj_user_list=.*/dj_user_list=$djuserlist/" application.properties
+[ -n "$discordclientid" ] && sed -i "s/^spring.security.oauth2.client.registration.discord.client-id=.*/spring.security.oauth2.client.registration.discord.client-id=$discordclientid/" application.properties
+[ -n "$discordclientsecret" ] && sed -i "s/^spring.security.oauth2.client.registration.discord.client-secret=.*/spring.security.oauth2.client.registration.discord.client-secret=$discordclientsecret/" application.properties
+[ -n "$jwtsecret" ] && sed -i "s/^jwt.secret=.*/jwt.secret=$jwtsecret/" application.properties
+[ -n "$leaveOnEmptyChannel" ] && sed -i "s/^leaveOnEmptyChannel=.*/leaveOnEmptyChannel=$leaveOnEmptyChannel/" application.properties
+sed -i "s~^app.frontend-url=.*~app.frontend-url=$frontendurl~" application.properties
 
 echo "changing working directory to /etc/DiscordSoundboard/bin"
 
