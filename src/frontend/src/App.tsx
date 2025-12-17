@@ -5,168 +5,108 @@ import { DiscordUsersList } from './components/DiscordUsersList';
 import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
 import { AuthButton } from './components/AuthButton';
-import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Upload, Users, Settings } from 'lucide-react';
-import { API_ENDPOINTS } from './config';
-import {
-  loadAuth,
-  initiateDiscordLogin,
-  logout,
-  validateToken,
-  clearAuth,
-  handleOAuthRedirect,
-  type DiscordUser
-} from './utils/auth';
-import { getAuthHeaders, fetchWithAuth, fetchCsrfToken, getAuthHeadersWithCsrf } from './utils/api';
+import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 
-interface Sound {
-  id: string;
-  name: string;
-  category: string;
-  url: string;
-  favorite?: boolean;
-  displayName?: string | null;
-  timesPlayed: number;
-  dateAdded: string;
-  volumeOffset: number | null;
-}
-
-// API response type
-interface ApiSoundFile {
-  soundFileId: string;
-  soundFileLocation: string;
-  category: string;
-  timesPlayed: number;
-  dateAdded: string;
-  favorite: boolean;
-  displayName: string | null;
-  volumeOffsetPercentage: number | null;
-}
-
-// API response can be either paginated or array
-interface ApiResponse {
-  content: ApiSoundFile[];
-  page: {
-    size: number;
-    number: number;
-    totalElements: number;
-    totalPages: number;
-  };
-}
-
-// Helper function to transform API response to Sound format
-function transformApiSounds(apiSounds: ApiSoundFile[]): Sound[] {
-  return apiSounds.map(sound => ({
-    id: sound.soundFileId,
-    name: sound.displayName || sound.soundFileId.replace(/_/g, ' '),
-    category: sound.category,
-    url: sound.soundFileLocation,
-    favorite: sound.favorite,
-    displayName: sound.displayName,
-    timesPlayed: sound.timesPlayed,
-    dateAdded: sound.dateAdded,
-    volumeOffset: sound.volumeOffsetPercentage
-  }));
-}
+// Custom hooks
+import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
+import { useSounds } from './hooks/useSounds';
+import { useVolume } from './hooks/useVolume';
+import { useVolumeSSE } from './hooks/useVolumeSSE';
+import { usePlaybackTracking } from './hooks/usePlaybackTracking';
+import { useLocalPlayback } from './hooks/useLocalPlayback';
+import { useSoundActions } from './hooks/useSoundActions';
+import { useFilters } from './hooks/useFilters';
 
 export default function App() {
-  const [sounds, setSounds] = useState<Sound[]>([]);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeFilter, setActiveFilter] = useState<'none' | 'favorites' | 'popular' | 'recent'>('none');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  // Authentication
+  const { authUser, authLoading, handleLogin, handleLogout } = useAuth();
+
+  // Theme
+  const { theme, setTheme } = useTheme();
+
+  // Sounds data
+  const { sounds, setSounds, favorites, setFavorites, loading, connectionStatus } = useSounds();
+
+  // Volume management
+  const { volume, setVolume, updateVolume } = useVolume();
+
+  // User selection and playback state
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
+  const [selectedUserGuildId, setSelectedUserGuildId] = useState<string | null>(null);
+
+  // Volume SSE connection
+  useVolumeSSE({ selectedUserId, setVolume });
+
+  // Playback tracking
+  const { currentlyPlayingSoundId, setCurrentlyPlayingSoundId, currentPlayback } = usePlaybackTracking({
+    selectedUserGuildId
+  });
+
+  // Local playback
+  const { locallyPlayingSoundId, playLocalSound, stopLocalSound } = useLocalPlayback();
+
+  // Filters and search
+  const {
+    selectedCategory,
+    setSelectedCategory,
+    activeFilter,
+    setActiveFilter,
+    searchQuery,
+    setSearchQuery,
+    popularCount,
+    setPopularCount,
+    recentCount,
+    setRecentCount,
+    categories,
+    top10SoundIds,
+    recentlyAddedIds,
+    filteredSounds
+  } = useFilters(sounds, favorites);
+
+  // Sound actions
+  const {
+    toggleFavorite,
+    playSoundWithBot,
+    playRandomSound,
+    stopCurrentSound,
+    deleteSound,
+    downloadSound,
+    handleFileUpload
+  } = useSoundActions({
+    selectedUserId,
+    isPlaybackEnabled,
+    setCurrentlyPlayingSoundId,
+    setSounds,
+    favorites,
+    setFavorites
+  });
+
+  // UI state
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     soundId: string;
   } | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showUsersOverlay, setShowUsersOverlay] = useState(false);
+  const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
+
+  // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [volume, setVolume] = useState<number>(100);
-  const toggleFavoriteInProgressRef = useRef<Set<string>>(new Set());
-  const [isPlaybackEnabled, setIsPlaybackEnabled] = useState<boolean>(false);
-  const [showUsersOverlay, setShowUsersOverlay] = useState(false);
-  const [currentlyPlayingSoundId, setCurrentlyPlayingSoundId] = useState<string | null>(null);
-  const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
-  const [popularCount, setPopularCount] = useState<number>(10);
-  const [recentCount, setRecentCount] = useState<number>(10);
-  const [locallyPlayingSoundId, setLocallyPlayingSoundId] = useState<string | null>(null);
-  const currentLocalAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
-  const [currentPlayback, setCurrentPlayback] = useState<{ soundFileId: string; user: string; displayName?: string | null } | null>(null);
-  const [selectedUserGuildId, setSelectedUserGuildId] = useState<string | null>(null);
 
-  // Format sound file ID to be human-readable (same logic as SoundButton)
+  // Format sound file ID to be human-readable
   const formatSoundFileId = (name: string) => {
     return name
-      // Replace underscores and hyphens with spaces
       .replace(/[_-]/g, ' ')
-      // Add space before capital letters in camelCase
       .replace(/([a-z])([A-Z])/g, '$1 $2')
-      // Capitalize first letter of each word (but not after apostrophes)
       .replace(/(^|\s)\w/g, char => char.toUpperCase())
       .trim();
   };
 
-  // Handle Discord OAuth callback
-  useEffect(() => {
-    const handleCallback = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-
-      if (token) {
-        try {
-          const authState = await handleOAuthRedirect(token);
-          setAuthUser(authState.user);
-          setAuthLoading(false);
-
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (error) {
-          console.error('Failed to authenticate:', error);
-          setAuthLoading(false);
-        }
-      } else {
-        // No OAuth callback, check for existing auth
-        const storedAuth = loadAuth();
-        if (storedAuth.accessToken && storedAuth.user) {
-          // Validate token
-          const user = await validateToken(storedAuth.accessToken);
-          if (user) {
-            setAuthUser(user);
-          } else {
-            // Token invalid, clear stored auth
-            clearAuth();
-          }
-        }
-        setAuthLoading(false);
-      }
-
-      // Fetch CSRF token
-      await fetchCsrfToken();
-    };
-
-    handleCallback();
-  }, []);
-
-  const handleLogin = () => {
-    initiateDiscordLogin();
-  };
-
-  const handleLogout = async () => {
-    const storedAuth = loadAuth();
-    if (storedAuth.accessToken) {
-      await logout(storedAuth.accessToken);
-    }
-    setAuthUser(null);
-  };
-
-  // Global ESC key handler - works from anywhere
+  // Global ESC key handler
   useEffect(() => {
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -178,347 +118,16 @@ export default function App() {
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, []);
-
-  useEffect(() => {
-    // Prevent double SSE connections in StrictMode
-    let eventSource: EventSource | null = null;
-    let isMounted = true;
-
-    const handleSoundsUpdate = (data: any) => {
-      // Handle both array and paginated responses
-      const apiSounds = Array.isArray(data) ? data : (data.content || []);
-      const transformedSounds = transformApiSounds(apiSounds);
-      setSounds(transformedSounds);
-
-      // Update favorites based on sounds with favorite=true from backend
-      const newFavorites = new Set<string>();
-      transformedSounds.forEach(sound => {
-        if (sound.favorite) {
-          newFavorites.add(sound.id);
-        }
-      });
-
-      console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
-      console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
-      console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
-
-      setFavorites(newFavorites);
-
-      setLoading(false);
-      setConnectionStatus('connected');
-    };
-
-    try {
-      console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
-      eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
-
-      eventSource.onopen = () => {
-        if (!isMounted) return;
-        console.log('✅ SSE connection established');
-        setConnectionStatus('connected');
-      };
-
-      eventSource.onerror = (error) => {
-        // Let EventSource auto-reconnect silently
-      };
-
-      eventSource.addEventListener('sounds', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          handleSoundsUpdate(data);
-        } catch (error) {
-          console.error('Error parsing SSE data:', error);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to create SSE connection:', error);
-      setConnectionStatus('error');
-    }
-
-    // Load favorites from localStorage
-    const savedFavorites = localStorage.getItem('soundboard-favorites');
-    if (savedFavorites) {
-      setFavorites(new Set(JSON.parse(savedFavorites)));
-    }
-
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('soundboard-theme');
-    if (savedTheme) {
-      setTheme(savedTheme as 'light' | 'dark');
-    }
-
-    // Load volume from localStorage
-    const savedVolume = localStorage.getItem('soundboard-volume');
-    if (savedVolume) {
-      setVolume(parseInt(savedVolume, 10));
-    }
-
-    // Load settings from localStorage
-    const savedPopularCount = localStorage.getItem('soundboard-popular-count');
-    if (savedPopularCount) {
-      setPopularCount(parseInt(savedPopularCount, 10));
-    }
-
-    const savedRecentCount = localStorage.getItem('soundboard-recent-count');
-    if (savedRecentCount) {
-      setRecentCount(parseInt(savedRecentCount, 10));
-    }
-
-    // Cleanup: close the SSE connection when component unmounts
-    return () => {
-      isMounted = false;
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    // Save favorites to localStorage
-    localStorage.setItem('soundboard-favorites', JSON.stringify(Array.from(favorites)));
-  }, [favorites]);
-
-  useEffect(() => {
-    // Save theme to localStorage
-    localStorage.setItem('soundboard-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    // Save volume to localStorage
-    localStorage.setItem('soundboard-volume', volume.toString());
-  }, [volume]);
-
-  useEffect(() => {
-    // Save settings to localStorage
-    localStorage.setItem('soundboard-popular-count', popularCount.toString());
-    localStorage.setItem('soundboard-recent-count', recentCount.toString());
-  }, [popularCount, recentCount]);
-
-  // SSE connection for volume updates based on selected user
-  useEffect(() => {
-    if (!selectedUserId) {
-      return; // No user selected, don't connect
-    }
-    let volumeEventSource: EventSource | null = null;
-    let isMounted = true;
-
-    const handleVolumeUpdate = (volumeData: string) => {
-      const volumeValue = parseInt(volumeData, 10);
-      if (!isNaN(volumeValue) && volumeValue >= 0 && volumeValue <= 100) {
-        setVolume(volumeValue);
-      }
-    };
-
-    const handleGlobalVolumeUpdate = (volumeData: string) => {
-      const volumeValue = parseFloat(volumeData);
-      const volumePercentage = Math.round(volumeValue);
-      if (!isNaN(volumePercentage) && volumePercentage >= 0 && volumePercentage <= 100) {
-        setVolume(volumePercentage);
-      }
-    };
-
-    // First, fetch the current volume for this user
-    const fetchInitialVolume = async () => {
-      try {
-        const response = await fetch(`${API_ENDPOINTS.VOLUME}/${selectedUserId}`, {
-          headers: getAuthHeaders()
-        });
-        if (response.ok) {
-          const volumeValue = await response.text();
-          const parsedVolume = parseInt(volumeValue, 10);
-          if (!isNaN(parsedVolume) && parsedVolume >= 0 && parsedVolume <= 100) {
-            setVolume(parsedVolume);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching initial volume:', error);
-      }
-    };
-
-    fetchInitialVolume();
-
-    // Add a small delay to ensure initial fetch completes before opening SSE
-    const sseTimeout = setTimeout(() => {
-      if (!isMounted) return;
-
-      try {
-        const sseUrl = `${API_ENDPOINTS.VOLUME_STREAM}/${selectedUserId}`;
-        volumeEventSource = new EventSource(sseUrl);
-
-        volumeEventSource.onopen = () => {
-          // Connected
-        };
-
-        volumeEventSource.onmessage = (event) => {
-          if (!isMounted) return;
-          handleVolumeUpdate(event.data);
-        };
-
-        // Listen for named 'volume' events
-        volumeEventSource.addEventListener('volume', (event) => {
-          if (!isMounted) return;
-          handleVolumeUpdate(event.data);
-        });
-
-        // Listen for 'globalVolume' events from backend
-        volumeEventSource.addEventListener('globalVolume', (event) => {
-          console.log('🔔 Volume SSE GLOBALVOLUME EVENT received!');
-          console.log('📦 GlobalVolume event data:', event.data);
-
-          if (!isMounted) {
-            console.log('⚠ Component unmounted, ignoring globalVolume event');
-            return;
-          }
-          try {
-            console.log('Processing globalVolume SSE event:', event.data);
-            const volumeValue = parseFloat(event.data);
-
-            // Backend sends volume as percentage (0-100), not decimal (0-1)
-            const volumePercentage = Math.round(volumeValue);
-            console.log('Parsed globalVolume value:', volumeValue, '-> percentage:', volumePercentage);
-
-            if (!isNaN(volumePercentage) && volumePercentage >= 0 && volumePercentage <= 100) {
-              console.log('✅ VALID globalVolume value, calling setVolume with:', volumePercentage);
-              setVolume(volumePercentage);
-              console.log('✅ setVolume called successfully from globalVolume event');
-            } else {
-              console.warn('❌ Invalid globalVolume value:', event.data);
-            }
-          } catch (error) {
-            console.error('Error parsing globalVolume SSE event data:', error);
-          }
-        });
-
-        // Listen for ALL event types to debug
-        ['message', 'volume', 'update', 'change'].forEach(eventType => {
-          volumeEventSource?.addEventListener(eventType, (event) => {
-            console.log(`🎯 Received event of type "${eventType}":`, event);
-          });
-        });
-
-        volumeEventSource.onerror = (error) => {
-          // Let EventSource auto-reconnect silently
-        };
-
-        console.log('✅ EventSource created, waiting for events...');
-      } catch (error) {
-        console.error('Failed to create volume SSE connection:', error);
-      }
-    }, 100);
-
-    return () => {
-      clearTimeout(sseTimeout);
-      isMounted = false;
-      if (volumeEventSource) {
-        volumeEventSource.close();
-      }
-    };
-  }, [selectedUserId]);
-
-  // SSE connection for playback status tracking
-  const selectedUserGuildIdRef = useRef<string | null>(selectedUserGuildId);
-
-  useEffect(() => {
-    selectedUserGuildIdRef.current = selectedUserGuildId;
-  }, [selectedUserGuildId]);
-
-  useEffect(() => {
-    let playbackEventSource: EventSource | null = null;
-    let isMounted = true;
-
-    const handleTrackStart = (data: any) => {
-      // Only show playback if guildId matches the selected user's guild
-      if (data.soundFileId && data.guildId === selectedUserGuildIdRef.current) {
-        setCurrentlyPlayingSoundId(data.soundFileId);
-        setCurrentPlayback({
-          soundFileId: data.soundFileId,
-          user: data.user || 'Unknown',
-          displayName: data.displayName
-        });
-      }
-    };
-
-    const handleTrackEnd = (data: any) => {
-      // Only clear if guildId matches and the ended track matches the currently playing track
-      if (data.guildId === selectedUserGuildIdRef.current) {
-        setCurrentlyPlayingSoundId((currentId) => {
-          if (data.soundFileId && currentId === data.soundFileId) {
-            return null;
-          }
-          return currentId;
-        });
-        setCurrentPlayback((current) => {
-          if (current && data.soundFileId && current.soundFileId === data.soundFileId) {
-            return null;
-          }
-          return current;
-        });
-      }
-    };
-
-    try {
-      console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
-      playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
-
-      playbackEventSource.onopen = () => {
-        console.log('✅ Playback SSE connection established');
-      };
-
-      playbackEventSource.onerror = (error) => {
-        // Let EventSource auto-reconnect silently
-      };
-
-      // Listen for track start event
-      playbackEventSource.addEventListener('trackStart', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          console.log('🎵 Track started:', data);
-          handleTrackStart(data);
-        } catch (error) {
-          console.error('Error parsing trackStart event:', error);
-        }
-      });
-
-      // Listen for track end event
-      playbackEventSource.addEventListener('trackEnd', (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          console.log('🎵 Track ended:', data);
-          handleTrackEnd(data);
-        } catch (error) {
-          console.error('Error parsing trackEnd event:', error);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to create playback SSE connection:', error);
-    }
-
-    return () => {
-      isMounted = false;
-      if (playbackEventSource) {
-        console.log('🧹 Closing playback SSE connection');
-        playbackEventSource.close();
-      }
-    };
-  }, []);
+  }, [setSearchQuery]);
 
   // Auto-focus search box when user starts typing
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if user is typing a letter or number
       const isTypingChar = event.key.length === 1 && /[a-zA-Z0-9]/.test(event.key);
-
-      // Don't interfere if user is already in an input, textarea, or select
       const activeElement = document.activeElement;
       const isInInputField = activeElement instanceof HTMLInputElement ||
                             activeElement instanceof HTMLTextAreaElement ||
                             activeElement instanceof HTMLSelectElement;
-
-      // Don't interfere with keyboard shortcuts (Ctrl, Alt, Cmd, etc.)
       const hasModifier = event.ctrlKey || event.metaKey || event.altKey;
 
       if (isTypingChar && !isInInputField && !hasModifier && searchInputRef.current) {
@@ -527,245 +136,10 @@ export default function App() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
-
-  const toggleFavorite = async (soundId: string) => {
-    const isFavorite = favorites.has(soundId);
-    const newFavoriteState = !isFavorite;
-
-    // Generate unique call ID to track if this function is called multiple times
-    const callId = Math.random().toString(36).substring(7);
-
-    // Check if a toggle is already in progress for this sound
-    if (toggleFavoriteInProgressRef.current.has(soundId)) {
-      console.log(`[${callId}] toggleFavorite called for ${soundId}, but a toggle is already in progress`);
-      return;
-    }
-
-    // Mark this sound as being toggled
-    toggleFavoriteInProgressRef.current.add(soundId);
-
-    try {
-      console.log(`[${callId}] toggleFavorite called for ${soundId}, changing to ${newFavoriteState}`);
-      console.trace(`[${callId}] Call stack`);
-
-      // Call the API to update favorite status on the backend
-      console.log(`[${callId}] About to call fetch...`);
-      const response = await fetch(
-        `${API_ENDPOINTS.FAVORITE}/${soundId}?favorite=${newFavoriteState}`,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeadersWithCsrf()
-          }
-        }
-      );
-      console.log(`[${callId}] Fetch completed, response received`);
-
-      if (!response.ok) {
-        console.error(`[${callId}] Failed to update favorite status:`, response.status);
-        throw new Error('Failed to update favorite status');
-      }
-
-      // Check if there's a response body before trying to read it
-      const contentLength = response.headers.get('Content-Length');
-      if (contentLength && contentLength !== '0') {
-        await response.text();
-      } else {
-        // No body to consume, but we need to clone and read to fully close the connection
-        await response.clone().text().catch(() => {});
-      }
-
-      console.log(`[${callId}] Favorite status updated successfully: ${newFavoriteState}`);
-
-      // Update local state after successful API call
-      console.log(`[${callId}] Updating local favorites state...`);
-      setFavorites(prev => {
-        const newFavorites = new Set(prev);
-        if (newFavoriteState) {
-          newFavorites.add(soundId);
-          console.log(`[${callId}] Added ${soundId} to favorites. New favorites:`, Array.from(newFavorites));
-        } else {
-          newFavorites.delete(soundId);
-          console.log(`[${callId}] Removed ${soundId} from favorites. New favorites:`, Array.from(newFavorites));
-        }
-        return newFavorites;
-      });
-    } catch (error) {
-      console.error(`[${callId}] Error updating favorite status:`, error);
-      alert('Failed to update favorite. Please try again.');
-    } finally {
-      // Remove the sound from the in-progress set
-      toggleFavoriteInProgressRef.current.delete(soundId);
-    }
-  };
-
-  const updateVolume = async (newVolume: number) => {
-    if (!selectedUserId) return;
-
-    // Update local state immediately for responsive UI
-    setVolume(newVolume);
-
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.VOLUME}?username=${selectedUserId}&volume=${newVolume}`,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeadersWithCsrf()
-          }
-        }
-      );
-
-      if (!response.ok) {
-        console.error('Failed to update volume:', response.status);
-      } else {
-        console.log(`Volume updated successfully: ${newVolume}%`);
-      }
-    } catch (error) {
-      console.error('Error updating volume:', error);
-      // Don't show an alert for volume updates to avoid interrupting the user
-    }
-  };
-
-  const playSound = (url: string) => {
-    const audio = new Audio(url);
-    audio.play().catch(err => console.error('Error playing sound:', err));
-  };
-
-  const playLocalSound = async (soundId: string) => {
-    try {
-      // Stop any currently playing local audio
-      if (currentLocalAudioRef.current) {
-        currentLocalAudioRef.current.pause();
-        currentLocalAudioRef.current = null;
-      }
-
-      const audioUrl = `${API_ENDPOINTS.AUDIO_FILE}/${soundId}`;
-      const audio = new Audio(audioUrl);
-
-      // Set up event listeners
-      audio.addEventListener('ended', () => {
-        setLocallyPlayingSoundId(null);
-        currentLocalAudioRef.current = null;
-      });
-
-      audio.addEventListener('error', () => {
-        console.error('Error playing sound locally');
-        setLocallyPlayingSoundId(null);
-        currentLocalAudioRef.current = null;
-      });
-
-      audio.play().catch(err => {
-        console.error('Error playing sound locally:', err);
-        setLocallyPlayingSoundId(null);
-        currentLocalAudioRef.current = null;
-      });
-
-      setLocallyPlayingSoundId(soundId);
-      currentLocalAudioRef.current = audio;
-    } catch (error) {
-      console.error('Error playing sound locally:', error);
-      setLocallyPlayingSoundId(null);
-    }
-  };
-
-  const stopLocalSound = () => {
-    if (currentLocalAudioRef.current) {
-      currentLocalAudioRef.current.pause();
-      currentLocalAudioRef.current = null;
-      setLocallyPlayingSoundId(null);
-    }
-  };
-
-  const playSoundWithBot = async (soundId: string) => {
-    // Check if a user is selected
-    if (!selectedUserId) {
-      alert('Please select a user from the Active Users list before playing a sound.');
-      return;
-    }
-
-    // Check if playback is enabled (user must be in voice)
-    if (!isPlaybackEnabled) {
-      alert('The selected user must be in a voice channel to play sounds.');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.PLAY_FILE}?soundFileId=${soundId}&username=${selectedUserId}`,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: getAuthHeadersWithCsrf()
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error(`Failed to play sound through bot: ${response.status} - ${errorText}`);
-        throw new Error(`Failed to play sound through bot: ${response.status}`);
-      }
-
-      console.log('Sound played successfully through bot');
-      setCurrentlyPlayingSoundId(soundId);
-    } catch (error) {
-      console.error('Error playing sound through bot:', error);
-      // Only show alert for actual errors, not successful plays
-      if (error instanceof TypeError || (error instanceof Error && error.message.includes('Failed to play'))) {
-        if (error instanceof TypeError) {
-          alert('Failed to play sound. Please make sure the backend is running');
-        } else {
-          alert(`Failed to play sound: ${error.message}`);
-        }
-      }
-    }
-  };
-
-  const deleteSound = async (soundId: string) => {
-    try {
-      const response = await fetchWithAuth(`${API_ENDPOINTS.SOUND_FILE}/${soundId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        console.error('Failed to delete sound:', response.status, response.statusText);
-        toast.error('Failed to delete sound', { duration: 3000 });
-        return;
-      }
-
-      // Only update UI if API call was successful
-      setSounds(prev => prev.filter(s => s.id !== soundId));
-      // Also remove from favorites if it was favorited
-      setFavorites(prev => {
-        const newFavorites = new Set(prev);
-        newFavorites.delete(soundId);
-        return newFavorites;
-      });
-
-      toast.success('Sound deleted successfully', { duration: 3000 });
-    } catch (error) {
-      console.error('Error deleting sound:', error);
-      toast.error('Failed to delete sound', { duration: 3000 });
-    }
-  };
-
-  const downloadSound = (sound: Sound) => {
-    const link = document.createElement('a');
-    link.href = `${API_ENDPOINTS.DOWNLOAD}/${sound.id}`;
-    link.download = `${sound.name}.ogg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const handleContextMenu = (e: React.MouseEvent, soundId: string) => {
     e.preventDefault();
@@ -775,178 +149,6 @@ export default function App() {
       soundId
     });
   };
-
-  const playRandomSound = async () => {
-    if (!isPlaybackEnabled || filteredSounds.length === 0) {
-      alert('Please select a user from the Active Users list before playing a sound.');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.RANDOM}?username=${selectedUserId}`,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: getAuthHeadersWithCsrf()
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error(`Failed to play random sound: ${response.status} - ${errorText}`);
-        throw new Error(`Failed to play random sound: ${response.status}`);
-      }
-
-      console.log('Random sound played successfully');
-    } catch (error) {
-      console.error('Error playing random sound:', error);
-      if (error instanceof TypeError) {
-        alert('Failed to play random sound. Please make sure the backend is running');
-      } else if (error instanceof Error) {
-        alert(`Failed to play random sound: ${error.message}`);
-      }
-    }
-  };
-
-  const stopCurrentSound = async () => {
-    if (!isPlaybackEnabled) {
-      alert('Please select a user from the Active Users list.');
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_ENDPOINTS.STOP}?username=${selectedUserId}`,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: getAuthHeadersWithCsrf()
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error(`Failed to stop sound: ${response.status} - ${errorText}`);
-        throw new Error(`Failed to stop sound: ${response.status}`);
-      }
-
-      console.log('Sound stopped successfully');
-      setCurrentlyPlayingSoundId(null);
-    } catch (error) {
-      console.error('Error stopping sound:', error);
-      if (error instanceof TypeError) {
-        alert('Failed to stop sound. Please make sure the backend is running');
-      } else if (error instanceof Error) {
-        alert(`Failed to stop sound: ${error.message}`);
-      }
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type (audio files only)
-    const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3', 'audio/webm', 'audio/flac'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav|ogg|webm|flac)$/i)) {
-      toast.error('Please upload a valid audio file (MP3, WAV, OGG, WEBM, or FLAC)', { duration: 3000 });
-      event.target.value = ''; // Reset file input
-      return;
-    }
-
-    // Optional: Check file size (e.g., max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 10MB', { duration: 3000 });
-      event.target.value = ''; // Reset file input
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      console.log('📤 Uploading file:', file.name);
-
-      // Get auth headers
-      const authHeaders = getAuthHeadersWithCsrf();
-
-      const response = await fetch(API_ENDPOINTS.UPLOAD, {
-        method: 'POST',
-        mode: 'cors',
-        headers: authHeaders,
-        body: formData
-      });
-
-      if (response.status === 403) {
-        toast.error('Permission denied: You do not have permission to upload sounds.', { duration: 3000 });
-        event.target.value = '';
-        return;
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error(`Failed to upload file: ${response.status} - ${errorText}`);
-        throw new Error(`Failed to upload file: ${response.status}`);
-      }
-
-      console.log('✅ File uploaded successfully');
-      toast.success(`File "${file.name}" uploaded successfully!`, { duration: 3000 });
-
-      // Reset file input so the same file can be uploaded again if needed
-      event.target.value = '';
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      if (error instanceof TypeError) {
-        toast.error('Failed to upload file. Please make sure the backend is running', { duration: 3000 });
-      } else if (error instanceof Error) {
-        toast.error(`Failed to upload file: ${error.message}`, { duration: 3000 });
-      }
-      event.target.value = ''; // Reset file input
-    }
-  };
-
-  // Get unique categories
-  const categories = ['all', ...Array.from(new Set(sounds.map(s => s.category)))];
-
-  // Calculate top 10 sounds by timesPlayed (excluding already favorited sounds)
-  const top10SoundIds = new Set(
-    [...sounds]
-      .filter(sound => !favorites.has(sound.id))
-      .sort((a, b) => b.timesPlayed - a.timesPlayed)
-      .slice(0, popularCount)
-      .map(s => s.id)
-  );
-
-  // Calculate top 10 most recently added sounds (excluding favorites and top played)
-  const recentlyAddedIds = new Set(
-    [...sounds]
-      .filter(sound => !favorites.has(sound.id) && !top10SoundIds.has(sound.id))
-      .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
-      .slice(0, recentCount)
-      .map(s => s.id)
-  );
-
-  // Filter sounds
-  const filteredSounds = sounds
-    .filter(sound => {
-      const matchesCategory = selectedCategory === 'all' || sound.category === selectedCategory;
-
-      // Apply active filter
-      let matchesFilter = true;
-      if (activeFilter === 'favorites') {
-        matchesFilter = favorites.has(sound.id);
-      } else if (activeFilter === 'popular') {
-        matchesFilter = top10SoundIds.has(sound.id);
-      } else if (activeFilter === 'recent') {
-        matchesFilter = recentlyAddedIds.has(sound.id);
-      }
-
-      const matchesSearch = sound.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesFilter && matchesSearch;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
 
   if (loading) {
     return (
@@ -995,13 +197,13 @@ export default function App() {
               theme={theme}
             />
 
-            {/* Settings Button - Far Right */}
+            {/* Settings Button */}
             <button
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 setSettingsMenu({
-                  x: rect.right - 280, // Position to align right edge of menu with button
-                  y: rect.bottom + 8, // 8px below button
+                  x: rect.right - 280,
+                  y: rect.bottom + 8,
                 });
               }}
               className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
@@ -1034,7 +236,6 @@ export default function App() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && filteredSounds.length === 1) {
-                          // Play the single filtered sound when Enter is pressed
                           playSoundWithBot(filteredSounds[0].id);
                         }
                       }}
@@ -1058,7 +259,6 @@ export default function App() {
                     value={selectedCategory}
                     onChange={(e) => {
                       setSelectedCategory(e.target.value);
-                      // Disable all filters when selecting a specific category
                       if (e.target.value !== 'all') {
                         setActiveFilter('none');
                       }
@@ -1105,13 +305,12 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Filter Buttons and Action Buttons Row - All on one line when possible */}
+                {/* Filter Buttons and Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Filter Buttons */}
+                  {/* Favorites Filter */}
                   <button
                     onClick={() => {
                       setActiveFilter(activeFilter === 'favorites' ? 'none' : 'favorites');
-                      // Reset category to "all" when showing favorites
                       if (activeFilter !== 'favorites') {
                         setSelectedCategory('all');
                       }
@@ -1125,13 +324,13 @@ export default function App() {
                     }`}
                   >
                     <Star className={`w-5 h-5 ${activeFilter === 'favorites' ? 'fill-current' : ''}`} />
-                    {activeFilter === 'favorites' ? 'Favorites' : 'Favorites'}
+                    Favorites
                   </button>
 
+                  {/* Popular Filter */}
                   <button
                     onClick={() => {
                       setActiveFilter(activeFilter === 'popular' ? 'none' : 'popular');
-                      // Reset category to "all" when showing popular
                       if (activeFilter !== 'popular') {
                         setSelectedCategory('all');
                       }
@@ -1145,13 +344,13 @@ export default function App() {
                     }`}
                   >
                     <Grid3x3 className="w-5 h-5" />
-                    {activeFilter === 'popular' ? 'Popular' : 'Popular'}
+                    Popular
                   </button>
 
+                  {/* Recent Filter */}
                   <button
                     onClick={() => {
                       setActiveFilter(activeFilter === 'recent' ? 'none' : 'recent');
-                      // Reset category to "all" when showing recent
                       if (activeFilter !== 'recent') {
                         setSelectedCategory('all');
                       }
@@ -1167,10 +366,10 @@ export default function App() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {activeFilter === 'recent' ? 'Recent' : 'Recent'}
+                    Recent
                   </button>
 
-                  {/* Volume Slider - Reserve space even when hidden */}
+                  {/* Volume Slider */}
                   <div className={`flex items-center gap-3 flex-1 min-w-[200px] ${selectedUserId && isPlaybackEnabled ? '' : 'invisible'}`}>
                     <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
                     <input
@@ -1179,8 +378,8 @@ export default function App() {
                       max="100"
                       value={volume}
                       onChange={(e) => setVolume(parseInt(e.target.value, 10))}
-                      onMouseUp={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
-                      onTouchEnd={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10))}
+                      onMouseUp={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10), selectedUserId)}
+                      onTouchEnd={(e) => updateVolume(parseInt((e.target as HTMLInputElement).value, 10), selectedUserId)}
                       className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                       style={{
                         background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} 0%, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} 100%)`
@@ -1195,7 +394,7 @@ export default function App() {
 
                   {/* Play Random Sound Button */}
                   <button
-                    onClick={playRandomSound}
+                    onClick={() => playRandomSound(filteredSounds)}
                     disabled={!isPlaybackEnabled || filteredSounds.length === 0}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       !isPlaybackEnabled || filteredSounds.length === 0
@@ -1271,75 +470,60 @@ export default function App() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Context Menu */}
-        {contextMenu && (() => {
-          const sound = sounds.find(s => s.id === contextMenu.soundId);
-          return sound ? (
-            <ContextMenu
-              x={contextMenu.x}
-              y={contextMenu.y}
-              onClose={() => setContextMenu(null)}
-              onFavorite={async () => {
-                await toggleFavorite(contextMenu.soundId);
-                setContextMenu(null);
-              }}
-              onDelete={async () => {
-                await deleteSound(contextMenu.soundId);
-                setContextMenu(null);
-              }}
-              onDownload={() => downloadSound(sound)}
-              onPlayLocally={() => playLocalSound(contextMenu.soundId)}
-              isFavorite={favorites.has(contextMenu.soundId)}
-              theme={theme}
-              timesPlayed={sound.timesPlayed}
-              dateAdded={sound.dateAdded}
-              volumeOffset={sound.volumeOffset}
-              soundId={sound.id}
-              displayName={sound.displayName ?? null}
-              category={sound.category}
-              canEditSounds={authUser?.permissions?.editSounds ?? false}
-              canDeleteSounds={authUser?.permissions?.deleteSounds ?? false}
-            />
-          ) : null;
-        })()}
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          sound={sounds.find(s => s.id === contextMenu.soundId)!}
+          onClose={() => setContextMenu(null)}
+          onPlayLocal={playLocalSound}
+          onToggleFavorite={toggleFavorite}
+          onDownload={downloadSound}
+          onDelete={deleteSound}
+          isFavorite={favorites.has(contextMenu.soundId)}
+          theme={theme}
+          userPermissions={authUser?.permissions}
+        />
+      )}
 
-        {/* Users Overlay */}
+      {/* Users Overlay */}
+      {showUsersOverlay && (
         <UsersOverlay
           isOpen={showUsersOverlay}
           onClose={() => setShowUsersOverlay(false)}
           theme={theme}
-          sounds={sounds.map(s => ({ id: s.id, name: s.name }))}
+          sounds={sounds}
         />
+      )}
 
-        {/* Settings Menu */}
-        {settingsMenu && (
-          <SettingsMenu
-            x={settingsMenu.x}
-            y={settingsMenu.y}
-            onClose={() => setSettingsMenu(null)}
-            theme={theme}
-            popularCount={popularCount}
-            recentCount={recentCount}
-            onPopularCountChange={setPopularCount}
-            onRecentCountChange={setRecentCount}
-            onThemeChange={setTheme}
-            canUpload={authUser?.permissions?.upload ?? false}
-            canManageUsers={authUser?.permissions?.manageUsers ?? false}
-            onUploadClick={() => {
-              setSettingsMenu(null);
-              fileInputRef.current?.click();
-            }}
-            onUsersClick={() => {
-              setSettingsMenu(null);
-              setShowUsersOverlay(true);
-            }}
-          />
-        )}
-      </div>
+      {/* Settings Menu */}
+      {settingsMenu && (
+        <SettingsMenu
+          x={settingsMenu.x}
+          y={settingsMenu.y}
+          theme={theme}
+          onThemeChange={setTheme}
+          onClose={() => setSettingsMenu(null)}
+          onUploadClick={() => fileInputRef.current?.click()}
+          onUsersClick={() => setShowUsersOverlay(true)}
+          popularCount={popularCount}
+          recentCount={recentCount}
+          onPopularCountChange={setPopularCount}
+          onRecentCountChange={setRecentCount}
+          canUpload={authUser?.permissions?.upload}
+          canManageUsers={authUser?.permissions?.manageUsers}
+        />
+      )}
 
       {/* Toast notifications */}
-      <Toaster theme={theme} position="bottom-right" />
+      <Toaster
+        position="top-right"
+        theme={theme}
+        richColors
+      />
     </div>
   );
 }
