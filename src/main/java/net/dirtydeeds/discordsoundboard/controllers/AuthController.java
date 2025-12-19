@@ -35,7 +35,8 @@ public class AuthController {
             Claims claims = jwtUtil.getClaimsFromToken(token);
 
             // Get permissions from the token
-        List<String> permissionsList = claims.get("permissions", List.class);
+            @SuppressWarnings("unchecked")
+            List<String> permissionsList = claims.get("permissions", List.class);
             if (permissionsList == null) {
                 permissionsList = new ArrayList<>();
             }
