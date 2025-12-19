@@ -15,3 +15,67 @@ spring:
   datasource:
     url: jdbc:h2:file:./discordDB/discordDB;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
     driver-class-name: org.h2.Driver
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            authorizationGrantType: authorization_code
+            scope:
+              - identify
+              - email
+            redirectUri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            clientName: Discord Soundboard
+        provider:
+          discord:
+            authorizationUri: https://discordapp.com/api/oauth2/authorize
+            tokenUri: https://discordapp.com/api/oauth2/token
+            userInfoUri: https://discordapp.com/api/users/@me
+            usernameAttribute: id
+app:
+  users:
+    permissions:
+      admin:
+        - upload
+        - delete-sounds
+        - edit-sounds
+        - manage-users
+        - play-sounds
+        - download-sounds
+        - update-volume
+      dj:
+        - upload
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      moderator:
+        - delete-sounds
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+        - update-volume
+      user:
+        - play-sounds
+        - download-sounds
+
+      # Default permissions for unauthenticated users
+      default-permissions:
+        - play-sounds
+        - download-sounds
+logging:
+  level:
+    org.springframework.web.servlet.mvc.method.annotation.SseEmitter: error
+    org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitterReturnValueHandler: error
+
+    # Async request lifecycle tends to log client disconnects
+    org.springframework.web.context.request.async: error
+    org.springframework.web.context.request.async.StandardServletAsyncWebRequest: error
+
+    # Tomcat write/flush path that often logs "connection was aborted"
+    org.apache.catalina.connector.CoyoteAdapter: error
+    org.apache.catalina.connector.OutputBuffer: error
+    org.apache.coyote.http11.Http11OutputBuffer: error
+    org.apache.tomcat.util.net.NioEndpoint: error
+
+    # This appears in your stack; can be noisy on disconnect
+    org.springframework.security.web.util.OnCommittedResponseWrapper: error

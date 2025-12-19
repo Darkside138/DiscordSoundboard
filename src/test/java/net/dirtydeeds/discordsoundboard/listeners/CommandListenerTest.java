@@ -90,4 +90,66 @@ class CommandListenerTest {
         when(soundPlayer.isUserAllowed(any())).thenReturn(true);
         when(soundPlayer.isUserBanned(any())).thenReturn(false);
     }
+
+    @Test
+    void ignores_messages_from_bot_users() {
+        // Arrange minimal command set
+        commandListener.addCommand(help);
+        commandListener.addCommand(play);
+        when(botConfig.isRespondToChatCommands()).thenReturn(true);
+        when(botConfig.isRespondToDmsString()).thenReturn(true);
+        when(messageReceivedEvent.isFromType(ChannelType.PRIVATE)).thenReturn(true);
+        when(botConfig.getCommandCharacter()).thenReturn("?");
+        when(message.getContentRaw()).thenReturn("?help");
+
+        when(messageReceivedEvent.getAuthor()).thenReturn(user);
+        when(user.isBot()).thenReturn(true); // bot author
+
+        // Act
+        commandListener.onMessageReceived(messageReceivedEvent);
+
+        // Assert: no commands executed
+        verify(help, never()).run(any());
+        verify(play, never()).run(any());
+    }
+
+    @Test
+    void does_not_respond_when_chat_commands_disabled() {
+        setupWithNormalCommands();
+        when(botConfig.isRespondToChatCommands()).thenReturn(false);
+        when(message.getContentRaw()).thenReturn("?help");
+
+        commandListener.onMessageReceived(messageReceivedEvent);
+
+        verify(help, never()).run(any());
+        verify(play, never()).run(any());
+        verify(list, never()).run(any());
+    }
+
+    @Test
+    void user_not_in_allowed_list_is_blocked() {
+        setupWithNormalCommands();
+        when(message.getContentRaw()).thenReturn("?help");
+        // Simulate allowed users list does NOT contain the requesting user
+        when(messageReceivedEvent.getAuthor()).thenReturn(user);
+        when(user.getName()).thenReturn("eve");
+        when(botConfig.getAllowedUsersList()).thenReturn(java.util.List.of("alice", "bob"));
+
+        commandListener.onMessageReceived(messageReceivedEvent);
+
+        verify(help, never()).run(any());
+    }
+
+    @Test
+    void banned_user_is_blocked() {
+        setupWithNormalCommands();
+        when(message.getContentRaw()).thenReturn("?help");
+        when(messageReceivedEvent.getAuthor()).thenReturn(user);
+        when(user.getName()).thenReturn("mallory");
+        when(botConfig.getBannedUsersList()).thenReturn(java.util.List.of("mallory"));
+
+        commandListener.onMessageReceived(messageReceivedEvent);
+
+        verify(help, never()).run(any());
+    }
 }

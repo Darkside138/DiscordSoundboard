@@ -81,7 +81,7 @@ public class ListCommand extends Command {
             output.append(word);
             lineLen += word.length();
         }
-        if (output.length() > 0) {
+        if (!output.isEmpty()) {
             output.append("```");
         }
         soundFiles.add(output.toString());
@@ -93,7 +93,7 @@ public class ListCommand extends Command {
 
         Set<Map.Entry<String, SoundFile>> entrySet = soundPlayer.getAvailableSoundFiles().entrySet();
 
-        if (entrySet.size() > 0) {
+        if (!entrySet.isEmpty()) {
             entrySet.forEach(entry -> sb.append(event.getPrefix()).append(entry.getKey()).append("\n"));
         }
         return sb;

@@ -2,9 +2,9 @@ package net.dirtydeeds.discordsoundboard.commands;
 
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
-import net.dirtydeeds.discordsoundboard.beans.User;
+import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
+import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
-import net.dirtydeeds.discordsoundboard.service.UserService;
 
 /**
  * @author Dave Furrer
@@ -14,14 +14,14 @@ import net.dirtydeeds.discordsoundboard.service.UserService;
  */
 public class LeaveCommand extends Command {
 
-    private final UserService userService;
+    private final DiscordUserService discordUserService;
     private final SoundService soundService;
     private final SoundPlayer soundPlayer;
 
-    public LeaveCommand(SoundPlayer soundPlayer, UserService userService,
+    public LeaveCommand(SoundPlayer soundPlayer, DiscordUserService discordUserService,
                         SoundService soundService) {
         this.soundPlayer = soundPlayer;
-        this.userService = userService;
+        this.discordUserService = discordUserService;
         this.soundService = soundService;
         this.name = "leave";
         this.help = "Sets leave sound for user. Leave soundFileName empty to remove";
@@ -40,26 +40,26 @@ public class LeaveCommand extends Command {
             if (event.userIsAdmin() ||
                     (pmUser.getName().equalsIgnoreCase(userNameOrId)
                             || pmUser.getId().equals(userNameOrId))) {
-                User user = userService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
-                if (user == null) {
+                DiscordUser discordUser = discordUserService.findOneByIdOrUsernameIgnoreCase(userNameOrId, userNameOrId);
+                if (discordUser == null) {
                     net.dv8tion.jda.api.entities.User jdaUser = soundPlayer.retrieveUserById(userNameOrId);
                     if (jdaUser != null) {
-                        user = new User(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus());
+                        discordUser = new DiscordUser(jdaUser.getId(), jdaUser.getName(), false, jdaUser.getJDA().getStatus(), jdaUser.getJDA().getPresence().getStatus());
                     }
                 }
-                if (user != null) {
+                if (discordUser != null) {
                     if (soundFileName.isEmpty()) {
-                        user.setLeaveSound(null);
+                        discordUser.setLeaveSound(null);
                         event.replyByPrivateMessage("User: " + userNameOrId + " leave sound cleared");
-                        userService.save(user);
+                        discordUserService.save(discordUser);
                     } else {
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileName);
                         if (soundFile == null) {
                             event.replyByPrivateMessage("Could not find sound file: " + soundFileName);
                         } else {
-                            user.setLeaveSound(soundFileName);
+                            discordUser.setLeaveSound(soundFileName);
                             event.replyByPrivateMessage("User: " + userNameOrId + " leave sound set to: " + soundFileName);
-                            userService.save(user);
+                            discordUserService.save(discordUser);
                         }
                     }
                 } else {

@@ -29,20 +29,20 @@ public class PlayCommand extends Command {
                 fileNameRequested = event.getArguments().getFirst();
             }
 
-            // If there is the repeat character (~) then cut up the message string.
+            // If there is the repeat character (~), then cut up the message string.
             int repeatIndex = fileNameRequested.indexOf('~');
             if (repeatIndex > -1) {
                 String original = fileNameRequested;
                 fileNameRequested = fileNameRequested.substring(0, repeatIndex).trim();
-                if (repeatIndex + 1 != fileNameRequested.length()) { // If there is something after the ~ then repeat for that value
+                if (repeatIndex + 1 != fileNameRequested.length()) { // If there is something after the ~, then repeat for that value
                     repeatNumber = Integer.parseInt(original.substring(repeatIndex + 1).trim()); // +1 to ignore the ~ character
                 }
             }
             LOG.info("Attempting to play file: {} {} times. Requested by {}.", fileNameRequested, repeatNumber, event.getRequestingUser());
 
-            soundPlayer.playForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber, null);
+            soundPlayer.playForUser(fileNameRequested, event.getAuthor().getName(), repeatNumber, null, event.getAuthor().getName());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Could not play requested sound: {}", event.getCommandString());
         }
     }
 }

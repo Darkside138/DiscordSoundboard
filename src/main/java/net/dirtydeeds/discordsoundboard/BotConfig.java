@@ -1,13 +1,11 @@
 package net.dirtydeeds.discordsoundboard;
 
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,8 +15,6 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class BotConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BotConfig.class);
 
     @Value("${leaveAfterPlayback:false}")
     boolean leaveAfterPlayback;

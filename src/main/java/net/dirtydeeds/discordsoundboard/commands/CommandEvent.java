@@ -1,6 +1,5 @@
 package net.dirtydeeds.discordsoundboard.commands;
 
-import kotlin.text.Regex;
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.util.BotUtils;
 import net.dv8tion.jda.api.entities.User;
@@ -8,7 +7,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,11 +17,12 @@ public class CommandEvent {
     private static final Logger LOG = LoggerFactory.getLogger(CommandEvent.class);
 
     private final MessageReceivedEvent messageReceivedEvent;
-    private LinkedList<String> arguments = new LinkedList<>();
+    private final LinkedList<String> arguments = new LinkedList<>();
     private String commandString = "";
     private String prefix = "";
 
     public CommandEvent(MessageReceivedEvent messageReceivedEvent) {
+        LOG.debug("Message received: {}", messageReceivedEvent.getMessage().getContentRaw());
         this.messageReceivedEvent = messageReceivedEvent;
         String input = messageReceivedEvent.getMessage().getContentRaw();
         if (!input.isEmpty()) {
@@ -33,15 +32,11 @@ public class CommandEvent {
             while (m.find()) {
                 this.arguments.add(m.group(1).replace("\"", "")); // Add .replace("\"", "") to remove surrounding quotes.
             }
-            if (this.arguments.size() > 0) {
+            if (!this.arguments.isEmpty()) {
                 commandString = this.arguments.get(0);
                 this.arguments.remove(0);
             }
         }
-    }
-
-    public String getCommandString() {
-        return this.commandString;
     }
 
     public String getMessage() {

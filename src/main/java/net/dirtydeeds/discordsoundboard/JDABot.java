@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard;
 import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.listeners.OnReadyListener;
 import net.dirtydeeds.discordsoundboard.handlers.PlayerManager;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -20,12 +21,14 @@ public class JDABot {
 
     private final PlayerManager playerManager;
     private final BotConfig botConfig;
+    private final PlaybackService playbackService;
 
     private JDA jda;
 
-    public JDABot(BotConfig botConfig) {
+    public JDABot(BotConfig botConfig, PlaybackService playbackService) {
         this.botConfig = botConfig;
-        this.playerManager = new PlayerManager(this);
+        this.playbackService = playbackService;
+        this.playerManager = new PlayerManager(this, playbackService);
         this.playerManager.init();
 
         try {
@@ -34,11 +37,12 @@ public class JDABot {
                 LOG.error("No Discord Token found. Please confirm you have an application.properties file and you have the property bot_token filled with a valid token from https://discord.com/developers/applications");
                 return;
             }
-
+            LOG.debug("Bot Token: {}", botToken);
             jda = JDABuilder.createDefault(botToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                             GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES,
-                            GatewayIntent.GUILD_VOICE_STATES)
+                            GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES)
                     .disableCache(CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS)
+                    .enableCache(CacheFlag.ACTIVITY)
                     .setMemberCachePolicy(MemberCachePolicy.ALL)
                     .setAutoReconnect(true)
                     .addEventListeners(new OnReadyListener(this))

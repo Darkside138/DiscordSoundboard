@@ -4,6 +4,7 @@ import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ public class SoundServiceImpl implements SoundService {
     SoundFileRepository soundRepository;
 
     @Override
-    public Iterable<SoundFile> findAll(Pageable pageable) {
+    public Page<SoundFile> findAll(Pageable pageable) {
         return soundRepository.findAll(pageable);
     }
 

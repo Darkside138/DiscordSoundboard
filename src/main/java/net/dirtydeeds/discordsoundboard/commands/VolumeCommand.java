@@ -23,15 +23,15 @@ public class VolumeCommand extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        if (event.getArguments().size() > 0) {
+        if (!event.getArguments().isEmpty()) {
             int volume = Integer.parseInt(event.getArguments().getFirst());
 
             if (volume >= 1 && volume <= 100) {
-                soundPlayer.setSoundPlayerVolume(volume, event.getRequestingUser(), null);
+                soundPlayer.setGlobalVolume(volume, event.getRequestingUser(), null);
                 event.replyByPrivateMessage("*Volume set to " + volume + "%*");
                 LOG.info("Volume set to {}% by {}.", volume, event.getRequestingUser());
             } else if (volume == 0) {
-                soundPlayer.setSoundPlayerVolume(volume, event.getRequestingUser(), null);
+                soundPlayer.setGlobalVolume(volume, event.getRequestingUser(), null);
                 event.replyByPrivateMessage(event.getRequestingUser() + " muted me.");
                 LOG.info("Bot muted by {}", event.getRequestingUser());
             }

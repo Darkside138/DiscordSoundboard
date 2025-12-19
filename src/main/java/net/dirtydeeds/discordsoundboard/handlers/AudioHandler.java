@@ -5,29 +5,40 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+import lombok.Setter;
+import net.dirtydeeds.discordsoundboard.service.PlaybackService;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class AudioHandler extends AudioEventAdapter implements AudioSendHandler {
 
     private final PlayerManager manager;
     private final AudioPlayer audioPlayer;
-    private final long guildId;
+    private final String guildId;
     private AudioFrame lastFrame;
+    @Setter
+    private Integer globalVolume;
+    private final PlaybackService playbackService;
 
-    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player)
+    protected AudioHandler(PlayerManager manager, Guild guild, AudioPlayer player, PlaybackService playbackService)
     {
         this.manager = manager;
         this.audioPlayer = player;
-        this.guildId = guild.getIdLong();
+        this.guildId = guild.getId();
+        this.playbackService = playbackService;
     }
 
-    public int addTrack(AudioTrack track)
-    {
+    public Integer getGlobalVolume() {
+        return (globalVolume != null) ? globalVolume : 75;
+    }
+
+    public int addTrack(AudioTrack track) {
         audioPlayer.playTrack(track);
         return -1;
     }
@@ -48,6 +59,9 @@ public class AudioHandler extends AudioEventAdapter implements AudioSendHandler 
             track.setUserData(--repeatTimes);
             audioPlayer.playTrack(track.makeClone());
         }
+        audioPlayer.setVolume(getGlobalVolume());
+        File file = new File(track.getIdentifier());
+        playbackService.sendTrackEnd(file.getName().substring(0, file.getName().lastIndexOf('.')), guildId);
     }
 
     @Override

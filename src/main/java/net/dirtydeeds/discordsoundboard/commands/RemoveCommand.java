@@ -37,7 +37,7 @@ public class RemoveCommand extends Command {
             boolean hasManageServerPerm = event.userIsAdmin();
             if (!event.getArguments().isEmpty()) {
                 String soundToRemove = event.getArguments().getFirst();
-                //They can remove their own entrance/leave sound else they have to have admin rights
+                //They can remove their own entrance/leave sound, else they have to have admin rights
                 if (event.getAuthor().getName().equalsIgnoreCase(soundToRemove)
                         || event.getAuthor().getName().equalsIgnoreCase(
                                 soundToRemove.replace(botConfig.getLeaveSuffix(), ""))

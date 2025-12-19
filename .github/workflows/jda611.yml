@@ -1,0 +1,48 @@
+name: JDA611 Branch Publish
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ jda611b ]
+
+jobs:
+  publish-docker-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Login to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.SOUNDBOARD_GHCR }}
+
+      # Generate tags + labels for BOTH registries
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            davefurrer/discordsoundboard
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=jda611
+
+      # Build & push using metadata
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

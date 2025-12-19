@@ -1,10 +1,10 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.*;
 import org.springframework.lang.Nullable;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import java.time.ZonedDateTime;
 
 /**
@@ -19,7 +19,7 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class SoundFile {
-    
+
     @Id
     @NonNull
     private String soundFileId;
@@ -31,4 +31,10 @@ public class SoundFile {
     private Integer timesPlayed;
     @Nullable
     private ZonedDateTime dateAdded;
+    @Nullable
+    private Boolean favorite;
+    @Nullable
+    private String displayName;
+    @Nullable
+    private Integer volumeOffsetPercentage;
 }

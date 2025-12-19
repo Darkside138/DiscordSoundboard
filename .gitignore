@@ -1,9 +1,9 @@
-/app.properties
 *.iml
-tokens.json
 .idea/
-src/main/resources/app.properties
 build
 .gradle/
-/src/main/resources/application.properties
 /discordDB/
+/src/frontend/node_modules/
+/src/main/resources/application-local.properties
+/src/frontend/coverage/
+/.gitattributes

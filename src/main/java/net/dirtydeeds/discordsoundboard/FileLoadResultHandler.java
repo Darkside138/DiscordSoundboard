@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dirtydeeds.discordsoundboard.handlers.AudioHandler;
 import net.dv8tion.jda.api.entities.Guild;
 
+@SuppressWarnings("unused")
 public class FileLoadResultHandler implements AudioLoadResultHandler {
     private final Guild guild;
     private final int repeatTimes;
@@ -20,7 +21,9 @@ public class FileLoadResultHandler implements AudioLoadResultHandler {
         AudioHandler handler = (AudioHandler)guild.getAudioManager().getSendingHandler();
 
         track.setUserData(repeatTimes);
-        handler.addTrack(track);
+        if (handler != null) {
+            handler.addTrack(track);
+        }
     }
 
     private int loadPlaylist(AudioPlaylist playlist, AudioTrack exclude) {

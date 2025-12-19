@@ -6,40 +6,102 @@
 ![Java CI with Gradle](https://github.com/Darkside138/DiscordSoundboard/workflows/Java%20CI%20with%20Gradle/badge.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/darkside138/discordsoundboard/badge/master)](https://www.codefactor.io/repository/github/darkside138/discordsoundboard/overview/master)
 
-Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can 
-choose the sound from the web UI. You will need to create a bot account that the bot will use to join 
-and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to. 
+Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can
+choose the sound from the web UI. You will need to create a bot account that the bot will use to join
+and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to.
 Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
 
-## 3.0 Release
-Updated to the new JDA 3.X library and also updated to a new music player. This should resolve a lot of the issues people were having with sound files (like mono not working). Aso, added the ability to play youtube URLs.
 
-[3.3.6.zip](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
+[4.1.9.zip](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
 
 ## Must have Java 17+ 64bit version installed in order for the soundboard to work properly
 
 Join the official discord: [https://discord.gg/kZTNtfW](https://discord.gg/kZTNtfW)
 
-## Current Release
-Latest Release (Use version above). 
-Download the zip|tar file and extract its contents in a directory. If you have an existing install, do not overwrite 
-the "application.properties" file. In that same directory you will need a directory called "sounds" (This directory is 
-configurable in the application.properties). Put all the clips you 
-want to play in the sounds directory. In the app.properties file you should fill in the login information for 
-your bot (you should create a new discord BOT account for your soundboard). Once you've created your new bot you must invite 
-it to any server you want to use it on. The property "username_to_join_channel" is your username on discord. 
-When you click a sound file to play in the soundboard the app will look for this username and join the voice 
-channel that user is in. If you don't have this configured properly the bot will not work. Also, the bot can 
-respond to text channel commands. See below for information on those commands. Once this is complete execute 
-the .jar file, or the .bat file. You should see a bunch of logging and eventually something like 
-"Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by 
+## 4.* Releases
+**If you're updating from any version prior to 4.0 you will need to delete your old DB file.** The release of 4.* updates
+the JDA library to 6.1.1 and some updates to the legacy UI. In 4.1.* and above, I added a new UI available at {BASE_URL}/indexV2.html.
+The new UI allows OAuth through Discord. The UI should work fine without configuring OAuth but will give extra functionality
+if you do configure it for users you grant roles to (Admin, Moderator, or DJ). To configure, you'll need to go to the [Discord
+developer portal](https://discord.com/developers/applications/), click your application, select OAuth2. From this screen
+you'll need your Client ID and Client Secret, add a Redirect (https://your_soundboard_url/login/oauth2/code/discord). Please
+use https if you don't, it will not be secure. Take the Client Id and Client Secret and find these entries in your
+application.properties file and replace the values with your own:
+
+spring.security.oauth2.client.registration.discord.client-id=replace_with_your_discord_client_id
+spring.security.oauth2.client.registration.discord.client-secret=replace_with_your_discord_secret
+
+Then you just need to generate a JWT secret. Go to this URL https://jwtgenerator.com/tools/jwt-generator and click
+"Generate New Secret". Take that value and replace the placeholder, again in application.properties, with the secret you just generated:
+
+jwt.secret=your-secret-key-here-change-this-in-production
+
+Then find this entry in application.properties:
+
+adminUserList=somediscordid
+
+Replace the value with a comma-separated list of discord user ids that you want to have an admin role.
+
+For reference, here is a list of roles and the permissions given to those roles:
+
+      admin:
+        - upload
+        - delete-sounds
+        - edit-sounds
+        - manage-users
+        - play-sounds
+        - download-sounds
+      dj:
+        - upload
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      moderator:
+        - delete-sounds
+        - edit-sounds
+        - play-sounds
+        - download-sounds
+      user:
+        - play-sounds
+        - download-sounds
+
+      # Default permissions for unauthenticated users
+      default-permissions:
+        - play-sounds
+        - download-sounds
+
+## Unraid OAuth Setup For Previously Installed
+Add these new container variables:
+```
+<Config Name="Admin Role User ID List" Target="adminuserlist" Default="" Mode="" Description="List of discord user id's you like to have admin role. Comma-separated" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Discord Client ID" Target="discordclientid" Default="replace_with_your_discord_client_id" Mode="" Description="https://discord.com/developers/applications&#13;&#10;Select your application and go to OAuth2 in the menu. This is where you get client id and client secret. Add a redirect to your soundboardURL/login/oauth2/code/discord" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Discord Client Secret" Target="discordclientsecret" Default="replace_with_your_discord_secret" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false">-</Config>
+<Config Name="JWT Secret" Target="jwtsecret" Default="your-secret-key-here-change-this-in-production" Mode="" Description="Set this to a unique value. You can generate one here:&#13;&#10;https://jwtgenerator.com/tools/jwt-generator" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+<Config Name="Moderator Role User ID List" Target="moderatoruserlist" Default="" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"/>
+<Config Name="DJ Role User ID List" Target="djuserlist" Default="" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"/>
+<Config Name="Front End URL" Target="frontendurl" Default="http://localhost:8080" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false"></Config>
+```
+
+## Configuration
+Latest Release (Use version above).
+Download the zip|tar file and extract its contents in a directory. If you have an existing install, do not overwrite
+the "application.properties" file. In that same directory you will need a directory called "sounds" (This directory is
+configurable in the application.properties). Put all the clips you
+want to play in the sounds directory. In the app.properties file you should fill in the login information for
+your bot (you should create a new discord BOT account for your soundboard). Once you've created your new bot you must invite
+it to any server you want to use it on. The property "username_to_join_channel" is your username on discord.
+When you click a sound file to play in the soundboard, the app will look for this username and join the voice
+channel that user is in. If you don't have this configured properly the bot will not work. Also, the bot can
+respond to text channel commands. See below for information on those commands. Once this is complete execute
+the .jar file, or the .bat file. You should see a bunch of logging and eventually something like
+"Started MainController in 6.383 seconds (JVM running for 6.939)". Now you should be able to access the UI by
 opening a browser and navigating to "http://localhost:8080".
 
 ## How to Get a Bot Token and Invite your Bot
 https://github.com/Darkside138/DiscordSoundboard/wiki
 
 ## Installation and Setup Video
-Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw). 
+Smugaloof has made a great setup video you can watch [here](https://www.youtube.com/watch?v=DQSXP9AgYvw).
 This will walk you through the process of getting your bot up and running.
 
 ### Docker Setup
@@ -58,8 +120,14 @@ services:
       - chatcommands=true
       - dm=true
       - commandcharacter=?
-      - sizelimit=2000
       - leavesuffix=_leave
+      - discordclientid=<Your OAuth2 client id>
+      - discordclientsecret=<Your OAuth2 discord secret>
+      - jwtsecret=<generate your own unique UUID here>
+      - adminuserlist=<Discord ID of the user(s) you want to be admin in the UI>
+      - moderatoruserlist=
+      - djuserlist=
+      - frontendurl=<Your front end URL (ex:https://localhost:8080)>
     ports:
       - 8080:8080
     volumes:
@@ -84,9 +152,9 @@ Backup your application.properties before the update to a new Version.
 A new (clean) one is provided in the release file and will overwrite your config.
 
 ## Usage
-Running locally from an IDE: Update the app.properties file with the login information for your "bot". Property 
-"username_to_join_channel" is used by the application when a button in the UI is clicked. Before playing the 
-sound file the bot will look for the username specified in all the servers the bot account has access to and 
+Running locally from an IDE: Update the app.properties file with the login information for your "bot". Property
+"username_to_join_channel" is used by the application when a button in the UI is clicked. Before playing the
+sound file the bot will look for the username specified in all the servers the bot account has access to and
 join that channel, then play the sound that was clicked. For local usage sounds can be placed in src/main/resources/sounds/.
 
 ### Executing the app
@@ -108,12 +176,18 @@ Unzip the application. Update the application.properties with your bot token and
 * ?userdetails userName
 
 Commands can be typed in any text channel that the bot has access to or you can send direct messages to the bot.
-Responses will be sent to the requesting user via direct message also.
+Responses will be sent to the requesting discordUser via direct message also.
 
 PM the bot a wav or mp3 file < 10MB and it will add it to the soundboard.
 
 ### Playing sounds by text commands
-Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will 
-be the name of the sound file minus extension. When a user types one of the sound file commands listed the bot 
-will join that users channel and then play the requested sound file. The bot remains in that channel unless the 
+Type ?list to get a list of sounds file commands the soundboard has available. The name of the commands will
+be the name of the sound file minus extension. When a discordUser types one of the sound file commands listed the bot
+will join that discordUser channel and then play the requested sound file. The bot remains in that channel unless the
 bot is requested to play sound in a different channel.
+
+### Local Development
+Included in the project files /.run folder there are IntelliJ run configurations. Execute the bootRun to run the application locally.
+For the local run to work you need to, at minimum, put your bot_token into application-local.properties.
+
+To create a distribution zip simply execute the gradle assembleBootDist. Once complete there will be a file in /build/distributions called DiscordSoundboard-version.zip

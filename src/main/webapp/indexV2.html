@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head profile="http://www.w3.org/2005/10/profile">
+    <link rel="icon"
+          type="image/png"
+          href="https://github.com/Darkside138/DiscordSoundboard/blob/master/distFiles/avatar.jpg?raw=true">
+    <!-- Layout by Jona, made for github.com/Darkside138/DiscordSoundboard -->
+    <!-- Feel free to use as fit -->
+    <title>Discord Soundboard</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha256-L/W5Wfqfa0sdBNIKN9cG6QA5F2qx4qICmU2VgLruv9Y=" crossorigin="anonymous" />
+
+    <style>
+        .dropdown-item {
+            color: #e9ecef;
+        }
+        .dropdown-menu {
+            min-width: 15em;
+            background-color: #2c2f33;
+            border: 1px solid #23272a;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            padding: 0px;
+            font-family: 'Segoe UI', sans-serif;
+            color: #e9ecef;
+            padding-bottom: 10px;
+        }
+        .searchDiv {
+            margin-bottom: 0px;
+            min-width: 150px;
+        }
+        .bg-darker,.btn-secondary {
+            background-color:rgba(25,25,25,0.7);
+            border: none;
+        }
+        .button {
+            position: relative;
+        }
+        .recentBadge {
+            border-radius: 50%;
+            width: 7px;
+            height: 7px;
+            display: block;
+            position: absolute;
+            background: rgba(31,206,255,.75);
+            border: 0px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: -1px;
+            right: -1px;
+            transition: all .3s;
+            z-index: 1;
+        }
+        .popularBadge {
+            border-radius: 50%;
+            width: 7px;
+            height: 7px;
+            display: block;
+            position: absolute;
+            background: rgba(255,0,22,.75);
+            border: 0px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: -1px;
+            right: -1px;
+            transition: all .3s;
+            z-index: 2;
+        }
+
+        /* Text inside the star */
+        .favoriteItem {
+            position: absolute;
+            top: 1px;
+            right: -11px;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: #ffca00;
+            z-index: 3;
+        }
+        html, body{
+          height: 100%;
+        }
+        /* Rainbow background: https://codepen.io/nohoid/pen/kIfto */
+        .bg-rgb {
+          height: 100%;
+          width: 100%;
+          background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+          background-size: 1800% 1800%;
+
+          -webkit-animation: rainbow 18s ease infinite;
+          -z-animation: rainbow 18s ease infinite;
+          -o-animation: rainbow 18s ease infinite;
+          animation: rainbow 18s ease infinite;
+        }
+
+        @-webkit-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @-moz-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @-o-keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+        @keyframes rainbow {
+            0%{background-position:0% 82%}
+            50%{background-position:100% 19%}
+            100%{background-position:0% 82%}
+        }
+
+        /* Custom context menu styling */
+        #contextMenu {
+            display: none;
+            min-width: 150px;
+            overflow: hidden;
+            position: absolute;
+            background-color: #2c2f33;
+            border: 1px solid #23272a;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            padding: 0px;
+            width: 260px;
+            font-family: 'Segoe UI', sans-serif;
+            color: #e9ecef;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .context-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(25, 25, 25, 0.7);
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        .custom-offset-range {
+            width: 90%;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .close-btn:hover {
+            color: #ffcccc;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-dark">
+<nav class="navbar navbar-expand navbar-dark bg-darker" >
+    <a class="navbar-brand" href="#">Discord Soundboard</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul id="categories" class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" data-category="All">All</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-category="Favorites">★</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav mr-auto">
+            <li id="more" class="nav-item dropdown" style="display:none;">
+                <a class="nav-link dropdown-toggle" href="#" id="moreLabel" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More...
+                </a>
+                <div class="dropdown-menu" aria-labelledby="moreLabel">
+                    <a class="dropdown-item" href="#" data-category="All" style="display:none;">All</a>
+                    <a class="dropdown-item" href="#" data-category="Favorites" style="display:none;">★</a>
+                </div>
+            </li>
+        </ul>
+        <ul class="navbar-nav navbarConfig">
+            <li class="navbar-nav">
+                <div id="searchContainer">
+                    <div class="form-group searchDiv">
+                        <input id="search" class="form-control" type="search" placeholder="Search">
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a id="random" class="nav-link" title="Play Random Sound" href="#"><i class="fas fa-fw fa-random"></i></a>
+            </li>
+            <li class="nav-item">
+                <a id="stop" class="nav-link" title="Stop Playback" href="#"><i class="fas fa-fw fa-ban"></i></a>
+            </li>
+            <li id="settings" title="Settings"  class="nav-item dropdown">
+                <a class="nav-link" href="#" id="settingsLabel" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-fw fa-cogs"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="settingsLabel">
+                    <form class="px-3 pt-2">
+                        <label id="searchLabel" for="search">Search Sounds:</label>
+                        <div id="dropdownSearchContainer" class="dropdownSearch"></div>
+                        <div class="form-group">
+                            <label for="discordUser">Play sounds for:</label>
+                            <select id="discordUser" class="custom-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="volume">Volume</label>
+                            <input id="volume" type="range" class="custom-range">
+                        </div>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="rgb">
+                            <label class="custom-control-label" for="rgb">RGB</label>
+                        </div>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div id="sounds" class="container-fluid p-3 soundList"></div>
+
+<div id="contextMenu">
+    <div class="context-menu-header">
+        <div id="context-soundFileTitle"></div>
+        <button class="close-btn" id="context-close">×</button>
+    </div>
+    <form class="px-3 pt-2">
+        <div>Times Played: <span id="context-timesPlayed"></span></div>
+        <div>Favorite: <span id="context-favorite"></span></div>
+        <div>Date Added: <span id="context-dateAdded"></span></div>
+        <div>
+            <div><label for="volumeOffset">Volume Offset: <span id="volumeOffsetValue">0</span></label></div>
+            <input id="volumeOffset" type="range" min="-100" max="100" value="0" class="custom-offset-range">
+        </div>
+        <div id="favorite" class="button btn btn-secondary m-1 favoriteButton">Favorite</div>
+        <div id="download" class="button btn btn-secondary m-1 downloadButton">Download</div>
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.bundle.min.js" integrity="sha256-OUFW7hFO0/r5aEGTQOz9F/aXQOt+TwqI1Z4fbVvww04=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    $(function() {
+        const searchBar = document.getElementById('search');
+        const contextMenu = document.getElementById("contextMenu");
+
+        // Keep track of the sound file element that was last right clicked on
+        var soundFileRightClicked = null;
+
+        // Listen for any key press on the page. Allow F5 to pass through to refresh the page. If the user is typing
+        // and not already in an input box, then change focus to the search bar.
+        // If the user presses the ESC key then clear the search.
+        // If there is only 1 sound file currently showing pressing enter will play it.
+        document.addEventListener('keydown', function(event) {
+
+            if (event.key === 'F5') return;
+
+            // Ignore if user is already typing in an input/textarea or using modifier keys
+            const activeTag = document.activeElement.tagName.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea' || event.ctrlKey
+                    || event.metaKey || event.altKey || event.keyCode === 27 || event.key === 'Enter') {
+                if (event.keyCode === 27) {
+                    searchBar.value = '';
+                    filterSounds('');
+                }
+                if (event.key === 'Enter') {
+                    var visibleDivs = getVisibleDivs();
+                    if (visibleDivs.length === 1) {
+                        visibleDivs[0].click();
+                    }
+                }
+                return;
+            }
+
+            // Optional: If you only want a specific key (e.g., '/'), uncomment:
+            // if (event.key !== '/') return;
+
+            // Focus the search bar
+            searchBar.focus();
+
+            // If you want the pressed key to appear in the search bar immediately:
+            if (event.key.length === 1) { // Only printable characters
+                searchBar.value = event.key;
+                // Move cursor to end
+                searchBar.setSelectionRange(searchBar.value.length, searchBar.value.length);
+            }
+
+            // Prevent default browser actions for that key if needed
+            event.preventDefault();
+        });
+
+        function closeMenu() {
+            contextMenu.style.display = "none";
+        }
+
+        function getVisibleDivs() {
+            const allDivs = document.getElementById('sounds').children;
+            return Array.from(allDivs).filter(div => {
+                const style = window.getComputedStyle(div);
+                return (
+                    style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    !div.hasAttribute('hidden')
+                );
+            });
+        }
+        var category = 'All';
+
+        // Determine what categories to show in navigation and what categories to show in the more-dropdown
+        // Also move the search input to the config/settings menu when the width of the page is too small
+        function determineShownNavigation(){
+            closeMenu();
+
+            // Get available width for shown categories.
+            // 275px extra for spacing, more-dropdown and buttons
+            var availableWidth = window.innerWidth - $('.navbar-brand').width() - 380;
+            var shouldSkip = false;
+            $.each($('#categories li'), function(i, obj){
+                var willFit = availableWidth - $(obj).width() > 0;
+                if (shouldSkip) willFit=false;
+                $(obj).toggle(willFit);
+                $('#more a[data-category="' + $(obj).find('a').data('category') + '"]').toggle(!willFit);
+                if (willFit) {
+                    availableWidth -= $(obj).width();
+                } else {
+                    shouldSkip = true;
+                }
+            });
+            const searchDiv = document.querySelector('.searchDiv');
+            const searchContainer = document.getElementById('searchContainer');
+            const settingsLi = document.getElementById('dropdownSearchContainer');
+            const searchLabel = document.getElementById('searchLabel');
+
+            if (window.innerWidth < 550) {
+                if (!settingsLi.querySelector('.searchDiv')) {
+                    settingsLi.appendChild(searchDiv);
+                }
+                searchLabel.style.display= '';
+            } else {
+                if (!searchContainer.querySelector('.searchDiv')) {
+                    searchContainer.appendChild(searchDiv);
+                }
+                searchLabel.style.display= 'none';
+            }
+
+            $('#more').toggle($('#categories li:hidden').length > 0);
+        }
+
+        // Filter the list by category and search-term
+        function filterSounds(search) {
+            $('#sounds div').hide();
+            $('#sounds div').filter(function() {
+                if (category === 'Favorites') {
+                    var favValue = this.getAttribute("data-favorite");
+                    return (favValue === true || favValue === 'true') && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
+                } else {
+                    return (category === 'All' || $(this).data('category') === category) && (search == '' || $(this).text().toLowerCase().includes(search.toLowerCase()));
+                }
+            }).show();
+            var visibleSounds = Array.from(document.getElementById('sounds').children).filter(isVisible);
+            document.getElementById('search').placeholder = "Search " + visibleSounds.length + " sounds";
+        }
+
+        function isVisible(el) {
+            if (!(el instanceof HTMLElement)) return false;
+
+            const style = window.getComputedStyle(el);
+            return (
+                style.display !== 'none' &&
+                style.visibility !== 'hidden' &&
+                style.opacity !== '0' &&
+                el.offsetWidth > 0 &&
+                el.offsetHeight > 0
+            );
+        }
+
+        // Create sort function for list of discordUser
+        function createDynamicSorter(propertyName) {
+            let sortDirection = 1;
+            if(propertyName[0] === "-") {
+                sortDirection = -1;
+                propertyName = propertyName.substring(1); // Remove '-' prefix
+            }
+            return function (obj1, obj2) {
+                const value1 = obj1[propertyName];
+                const value2 = obj2[propertyName];
+                let comparisonResult = 0;
+                if (value1 < value2) {
+                    comparisonResult = -1;
+                } else if (value1 > value2) {
+                    comparisonResult = 1;
+                }
+                return comparisonResult * sortDirection;
+            }
+        }
+
+        function createMultiPropertySorter(...properties) {
+            return function (objA, objB) {
+                let index = 0, comparisonResult = 0;
+                const totalProperties = properties.length;
+                /* Iterate through properties until a non-zero comparison result is found */
+                while(comparisonResult === 0 && index < totalProperties) {
+                    comparisonResult = createDynamicSorter(properties[index])(objA, objB);
+                    index++;
+                }
+                return comparisonResult;
+            }
+        }
+
+        // Function to call the download endpoint when the button is clicked in the contextMenu
+        function downloadSoundFile() {
+            var filePath = soundFileRightClicked.dataset.soundfilelocation;
+            if (typeof filePath !== "string" || filePath.trim() === "") {
+                throw new Error("Invalid file path: must be a non-empty string.");
+            }
+            filePath = filePath.split(/[/\\]/).pop()
+            var extension = "";
+
+            // Find the last dot in the file name
+            const lastDotIndex = filePath.lastIndexOf(".");
+
+            // No dot found or dot is the first character (hidden file without extension)
+            if (lastDotIndex <= 0 || lastDotIndex === filePath.length - 1) {
+                extension = "";
+            } else {
+                extension = filePath.slice(lastDotIndex + 1);
+            }
+
+            const filename = soundFileRightClicked.id + '.mp3';
+            fetch(`/api/soundFiles/download/${soundFileRightClicked.id}`, {
+                method: "GET"
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("File not found or server error");
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create a temporary link to trigger download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error("Download error:", error);
+            });
+        }
+
+        // Setup all of the event handlers
+        $(document).on('click', 'a[data-category]', function(){
+            closeMenu()
+            // Filter by category
+            category = $(this).data('category');
+            $('a[data-category]').removeClass('active');
+            $('a[data-category="' + category + '"]').addClass('active');
+            $('#more').toggleClass('active', $('a[data-category].active:visible').closest('#more').length > 0);
+            filterSounds($('#search').val());
+        }).on('input', '#search', function(){
+            closeMenu()
+            // Search sound by name
+            filterSounds($(this).val());
+        }).on('click', '#sounds div', function(){
+            // Play sound
+            $.ajax({
+                method: "POST",
+                url: "/bot/playFile?soundFileId=" + this.id + "&username=" + $('#discordUser').val()
+            });
+            const newTimesPlayed = parseInt(this.getAttribute("data-timesPlayed")) + 1;
+            this.setAttribute("data-timesPlayed", newTimesPlayed);
+            document.getElementById("context-timesPlayed").textContent = newTimesPlayed;
+        }).on('click', '#random', function(){
+            // Play random sound
+            $.ajax({
+                method: "POST",
+                url: "/bot/random?username=" + $('#discordUser').val()
+            });
+        }).on('click', '#stop', function(){
+            // Stop sound
+            $.ajax({
+                method: "POST",
+                url: "/bot/stop?username=" + $('#discordUser').val()
+            });
+        }).on('change', '#rgb', function(){
+            // Enable RGB
+            $('body').toggleClass('bg-rgb', $('#rgb').is(':checked'));
+        }).on('change', '#volume', function(){
+            // Change volume
+            $.ajax({
+                method: "POST",
+                url: "/bot/volume?volume=" + $(this).val() + "&username=" + $('#discordUser').val()
+            });
+        }).on('show.bs.dropdown', '#settings', function(){
+            closeMenu();
+            fetchDiscordUsers().then(result => {
+                // Get current volume when opening settings
+                $.ajax({
+                    method: "GET",
+                    url: "/bot/volume?username=" + $('#discordUser').val() + "&voiceChannelId=" + $('#channel').val()
+                }).done(function( data ) {
+                    $('#volume').val(data);
+                });
+            });
+        }).on('click', '#download', function() {
+            downloadSoundFile(soundFileRightClicked.id);
+        }).on('click', '#favorite', function() {
+            const setFavorite = (document.getElementById(soundFileRightClicked.id).getAttribute("data-favorite") === 'true') ? false : true;
+            $.ajax({
+                method: "POST",
+                url: "/api/soundFiles/favorite/" + soundFileRightClicked.id + "?favorite=" + setFavorite
+            }).done(function( data ) {
+                document.getElementById(soundFileRightClicked.id).setAttribute("data-favorite", setFavorite)
+                document.getElementById("context-favorite").textContent = (setFavorite === true) ? "True" : "False";
+                if (setFavorite) {
+                    document.getElementById(soundFileRightClicked.id).querySelector(".favoriteItem").style.display= '';
+                } else {
+                    document.getElementById(soundFileRightClicked.id).querySelector(".favoriteItem").style.display= 'none';
+                }
+                filterSounds('');
+            });
+        }).on('click', '#context-close', function() {
+            closeMenu();
+        }).on('input', '#volumeOffset', function() {
+            const rangeValue = document.getElementById('volumeOffsetValue');
+            rangeValue.textContent = document.getElementById('volumeOffset').value;
+        }).on('change', '#volumeOffset', function() {
+            const rangeValue = document.getElementById('volumeOffset').value;
+            $.ajax({
+                method: "PATCH",
+                url: "/api/soundFiles/" + soundFileRightClicked.id + "?volumeOffsetPercentage=" + rangeValue
+            });
+        }).on('click', '#sounds', function() {
+            closeMenu();
+        });
+
+        // Determine shown categories in navigation when windows get resized
+        $(window).on('resize', determineShownNavigation);
+
+        // Get sounds
+        $.ajax({
+            method: "GET",
+            url: "api/soundFiles/findAll"
+        }).done(function( data ) {
+            var soundObjects = data.content;
+            document.getElementById('search').placeholder = "Search " + soundObjects.length + " sounds";
+            soundObjects.sort(function(a,b){
+              // Turn your strings into dates, and then subtract them
+              // to get a value that is either negative, positive, or zero.
+              return new Date(b.dateAdded) - new Date(a.dateAdded);
+            });
+            var top10ByDate = soundObjects.slice(0,10);
+
+            soundObjects.sort(function(a,b) {
+                return b.timesPlayed - a.timesPlayed;
+            });
+            var top10Popular = soundObjects.slice(0,10);
+
+            soundObjects.sort(function(a, b) {
+                var textA = a.soundFileId.toUpperCase();
+                var textB = b.soundFileId.toUpperCase();
+                return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+            });
+            var today = new Date();
+            var lastWeek = Date.parse(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7));
+            $.each(soundObjects, function(i, obj) {
+                var recentClass = '';
+                var popularItemClass = '';
+                var favoriteClass = '';
+                var recentItem = top10ByDate.filter(e => e.soundFileId === obj.soundFileId);
+                var popularItem = top10Popular.filter(e => e.soundFileId === obj.soundFileId);
+                if (recentItem.length > 0) {
+                    recentClass = '<span class="recentBadge" title="Recently Added"></span>';
+                }
+                if (popularItem.length > 0) {
+                    popularItemClass = '<span class="popularBadge" title="Recently Added"></span>';
+                }
+
+                favoriteClass = '<span class="favoriteItem" title="Favorite">★</span>'
+
+                var soundFileName = obj.soundFileId.charAt(0).toUpperCase() + obj.soundFileId.slice(1).replace(/(?<!\s)([A-Z])/g, ' $1').replace(/_/g, " ").trim()
+                $('#sounds').append('<div id="' + obj.soundFileId + '" class="button btn btn-secondary m-1 soundButton" data-category="' + obj.category + '" data-timesPlayed="' + obj.timesPlayed + '" data-favorite="' + obj.favorite + '" data-dateAdded="' + obj.dateAdded + '" data-volumeOffsetPercentage="' + obj.volumeOffsetPercentage + '" data-soundFileLocation="' + obj.soundFileLocation + '">' + popularItemClass + '<span class="content" title="Sound Name: ' + soundFileName + '\nTimes Played: ' + obj.timesPlayed + ((recentItem.length > 0) ? '\nRecently Added' : '') + '\nSound File Id: ' + obj.soundFileId + '\nVolume Offset: ' + ((obj.volumeOffsetPercentage === null) ? 0 : obj.volumeOffsetPercentage) + '">' + soundFileName + '</span>' + recentClass + favoriteClass + '</div>');
+                if (!obj.favorite) {
+                    document.getElementById(obj.soundFileId).querySelector(".favoriteItem").style.display= 'none';
+                }
+            });
+
+            // Add a context menu event listener so when the sound file is right clicked a menu appears
+            document.getElementById('sounds').querySelectorAll('div').forEach(div => {
+                div.addEventListener('contextmenu', function(event) {
+                    event.preventDefault(); // Prevent default right-click menu
+
+                    soundFileRightClicked = this;
+
+                    const soundFileButton = document.getElementById(this.id);
+
+                    document.getElementById("context-soundFileTitle").textContent = this.querySelector(".content").textContent;
+                    document.getElementById("context-timesPlayed").textContent = soundFileButton.getAttribute("data-timesPlayed");
+                    document.getElementById("context-favorite").textContent = (soundFileButton.getAttribute("data-favorite") === null || soundFileButton.getAttribute("data-favorite") === "null" || soundFileButton.getAttribute("data-favorite") === "false" || soundFileButton.getAttribute("data-favorite") === false) ? "False" : "True" ;
+                    document.getElementById("context-dateAdded").textContent = new Date(soundFileButton.getAttribute("data-dateAdded")).toLocaleDateString('en-US');
+                    const volumeOffsetPercentage = soundFileButton.getAttribute("data-volumeOffsetPercentage");
+                    document.getElementById('volumeOffset').value = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
+                    document.getElementById('volumeOffsetValue').textContent = (volumeOffsetPercentage === 'null') ? 0 : volumeOffsetPercentage;
+
+                    contextMenu.style.display = "block";
+
+                    positionPopup(document.getElementById("contextMenu"), soundFileButton);
+
+                });
+            });
+        });
+
+        function positionPopup(popup, target) {
+            const padding = 8; // space from edges
+            const targetRect = target.getBoundingClientRect();
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let top = targetRect.bottom + window.scrollY + padding;
+            let left = targetRect.left + window.scrollX;
+
+            // Adjust horizontally if overflowing
+            if (left + popupRect.width > viewportWidth - padding) {
+                left = viewportWidth - popupRect.width - padding + window.scrollX;
+            }
+            if (left < padding) {
+                left = padding + window.scrollX;
+            }
+
+            // Adjust vertically if overflowing
+            if (top + popupRect.height > viewportHeight + window.scrollY - padding) {
+                // Place above target if not enough space below
+                top = targetRect.top + window.scrollY - popupRect.height - padding;
+            }
+            if (top < padding + window.scrollY) {
+                top = padding + window.scrollY;
+            }
+
+            popup.style.left = `${left}px`;
+            popup.style.top = `${top}px`;
+        }
+
+        async function fetchDiscordUsers() {
+            let discordUsers = [];
+            let currentPage = 1;
+            let totalPages = 1; // Will be updated after first request
+
+            try {
+                do {
+                    const response = await fetch(`api/discordUsers?page=` + currentPage, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const json = await response.json();
+
+                    // Validate structure
+                    if (!Array.isArray(json.content)) {
+                        throw new Error("Unexpected API response format: 'data' is not an array");
+                    }
+
+                    discordUsers = discordUsers.concat(json.content);
+
+                    // Update pagination info
+                    totalPages = json.page.totalPages || totalPages;
+                    currentPage++;
+
+                } while (currentPage <= totalPages);
+
+                discordUsers.sort(createMultiPropertySorter("-onlineStatus", "username"));
+
+                var userSelect = document.getElementById("discordUser")
+                userSelect.options.length = 0;
+                const groups = userSelect.querySelectorAll("optgroup");
+                groups.forEach(group => group.remove());
+                var previousStatus = null;
+                $.each(discordUsers, function(i, obj) {
+                    if (obj.inVoice || obj.selected) {
+                        var onlineStatus = (obj.inVoice) ? "IN VOICE" : obj.onlineStatus;
+                        if (previousStatus != onlineStatus) {
+                            previousStatus = onlineStatus;
+                            $('#discordUser').append('</optgroup>');
+                            $('#discordUser').append('<optgroup label="' + onlineStatus + '">');
+                        }
+                        $('#discordUser').append('<option value="' + obj.id + '"' + ((obj.selected) ? 'selected' : '') + '>' + obj.username + '</option>');
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching paginated data:", error);
+                return [];
+            }
+        }
+
+        fetchDiscordUsers();
+
+        // Get categories
+        $.ajax({
+            method: "GET",
+            url: "api/soundFiles/categories"
+        }).done(function( data ) {
+            $.each(data.sort(), function(i, obj) {
+                if(obj !== 'sounds') {
+                    // Add to main navigation
+                    $('#categories').append('<li class="nav-item"><a class="nav-link" href="#" data-category="' + obj + '">' + obj + '</a></li>');
+                    // Add hidden to more-dropdown
+                    $('#more .dropdown-menu').append('<a class="dropdown-item" href="#" data-category="' + obj + '" style="display:none;">' + obj + '</a>');
+                }
+            });
+
+            // Determine shown categories in navigation
+            determineShownNavigation();
+        });
+    });
+    </script>
+</body>
+</html>

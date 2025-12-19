@@ -1,5 +1,6 @@
 package net.dirtydeeds.discordsoundboard.listeners;
 
+import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.BotConfig;
 import net.dirtydeeds.discordsoundboard.commands.Command;
 import net.dirtydeeds.discordsoundboard.commands.CommandEvent;
@@ -25,6 +26,7 @@ public class CommandListener extends ListenerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(CommandListener.class);
 
     private final BotConfig botConfig;
+    @Getter
     private final Set<Command> commands = new HashSet<>();
 
     public CommandListener(BotConfig botConfig) {
@@ -39,10 +41,6 @@ public class CommandListener extends ListenerAdapter {
         return commands.stream()
                 .filter(c -> c.getName().equalsIgnoreCase(name))
                 .findFirst();
-    }
-
-    public Set<Command> getCommands() {
-        return commands;
     }
 
     @Override
@@ -65,13 +63,15 @@ public class CommandListener extends ListenerAdapter {
                             if (!commandEvent.getPrefix().isEmpty()) {
                                 command = findCommand("help");
                             }
-                        } else if (commandEvent.getMessage().length() > 0) {
+                        } else if (!commandEvent.getMessage().isEmpty()) {
                             command = findCommand("play");
                         }
-                    }
-                    command.ifPresent(c -> c.run(commandEvent));
+                        command.ifPresent(c -> c.run(commandEvent));
+                    } else {
+                        command.ifPresent(c -> c.run(commandEvent));
 
-                    afterMessageReceived(event);
+                        afterMessageReceived(event);
+                    }
                 }
             }
         }
