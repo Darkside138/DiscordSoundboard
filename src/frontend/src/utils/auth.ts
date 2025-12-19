@@ -138,6 +138,7 @@ export async function handleOAuthRedirect(token: string): Promise<AuthState> {
 async function fetchUserInfo(accessToken: string): Promise<DiscordUser | null> {
   try {
     const response = await fetch(`${API_ENDPOINTS.AUTH_USER}`, {
+      credentials: 'include', // Include cookies to receive CSRF token
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
@@ -186,11 +187,12 @@ export async function logout(accessToken: string): Promise<void> {
 
     const csrfToken = getCsrfToken();
     if (csrfToken) {
-      headers['X-CSRF-TOKEN'] = csrfToken;
+      headers['X-XSRF-TOKEN'] = csrfToken;
     }
 
     await fetch(`${API_ENDPOINTS.AUTH_LOGOUT}`, {
       method: 'POST',
+      credentials: 'include', // Include cookies for CSRF token
       headers
     });
   } catch {

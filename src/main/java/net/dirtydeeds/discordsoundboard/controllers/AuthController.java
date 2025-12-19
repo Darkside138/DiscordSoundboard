@@ -22,7 +22,9 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @GetMapping("/user")
-    public ResponseEntity<Map<String, Object>> getUser(@RequestHeader("Authorization") String authorization) {
+    public ResponseEntity<Map<String, Object>> getUser(
+            @RequestHeader("Authorization") String authorization,
+            CsrfToken csrfToken) { // Accessing CsrfToken triggers cookie generation
         try {
             String token = authorization.replace("Bearer ", "");
 
@@ -33,7 +35,7 @@ public class AuthController {
             Claims claims = jwtUtil.getClaimsFromToken(token);
 
             // Get permissions from the token
-            List<String> permissionsList = claims.get("permissions", List.class);
+        List<String> permissionsList = claims.get("permissions", List.class);
             if (permissionsList == null) {
                 permissionsList = new ArrayList<>();
             }

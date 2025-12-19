@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
@@ -31,6 +32,7 @@ public class SecurityConfig {
                     .csrfTokenRepository(tokenRepository)
                     .csrfTokenRequestHandler(requestHandler)
             )
+            .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
             .oauth2Login(oauth2 -> oauth2
                     .successHandler(oAuth2LoginSuccessHandler)
             )

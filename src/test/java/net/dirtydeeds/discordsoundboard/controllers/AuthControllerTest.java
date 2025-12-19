@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +24,9 @@ class AuthControllerTest {
 
     @Mock
     private JwtUtil jwtUtil;
+
+    @Mock
+    private CsrfToken csrfToken;
 
     @InjectMocks
     private AuthController authController;
@@ -52,7 +56,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -80,7 +84,7 @@ class AuthControllerTest {
         when(jwtUtil.validateToken(validToken)).thenReturn(false);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -93,7 +97,7 @@ class AuthControllerTest {
         when(jwtUtil.validateToken(validToken)).thenThrow(new RuntimeException("Token validation error"));
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -107,7 +111,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenThrow(new RuntimeException("Claims error"));
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -130,7 +134,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -171,7 +175,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -200,7 +204,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        authController.getUser(authorizationHeader);
+        authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         verify(jwtUtil).validateToken(validToken); // Verify token without "Bearer " prefix
@@ -223,7 +227,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -256,7 +260,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -279,7 +283,7 @@ class AuthControllerTest {
         when(jwtUtil.getClaimsFromToken(validToken)).thenReturn(claims);
 
         // Act
-        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader);
+        ResponseEntity<Map<String, Object>> response = authController.getUser(authorizationHeader, csrfToken);
 
         // Assert
         @SuppressWarnings("unchecked")
