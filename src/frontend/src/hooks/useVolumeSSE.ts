@@ -27,6 +27,7 @@ export function useVolumeSSE({ selectedUserId, setVolume }: UseVolumeSSEProps) {
     const fetchInitialVolume = async () => {
       try {
         const response = await fetch(`${API_ENDPOINTS.VOLUME}/${selectedUserId}`, {
+          credentials: 'include',
           headers: getAuthHeaders()
         });
         if (response.ok) {
@@ -46,7 +47,7 @@ export function useVolumeSSE({ selectedUserId, setVolume }: UseVolumeSSEProps) {
     // Connect to SSE
     const sseTimeout = setTimeout(() => {
       if (!isMounted) return;
-      
+
       try {
         const sseUrl = `${API_ENDPOINTS.VOLUME_STREAM}/${selectedUserId}`;
         volumeEventSource = new EventSource(sseUrl);
@@ -68,7 +69,7 @@ export function useVolumeSSE({ selectedUserId, setVolume }: UseVolumeSSEProps) {
         volumeEventSource.addEventListener('globalVolume', (event) => {
           console.log('🔔 Volume SSE GLOBALVOLUME EVENT received!');
           console.log('📦 GlobalVolume event data:', event.data);
-          
+
           if (!isMounted) {
             console.log('⚠ Component unmounted, ignoring globalVolume event');
             return;
@@ -78,7 +79,7 @@ export function useVolumeSSE({ selectedUserId, setVolume }: UseVolumeSSEProps) {
             const volumeValue = parseFloat(event.data);
             const volumePercentage = Math.round(volumeValue);
             console.log('Parsed globalVolume value:', volumeValue, '-> percentage:', volumePercentage);
-            
+
             if (!isNaN(volumePercentage) && volumePercentage >= 0 && volumePercentage <= 100) {
               console.log('✅ VALID globalVolume value, calling setVolume with:', volumePercentage);
               setVolume(volumePercentage);

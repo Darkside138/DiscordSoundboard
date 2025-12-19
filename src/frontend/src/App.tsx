@@ -473,21 +473,32 @@ export default function App() {
       </div>
 
       {/* Context Menu */}
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          sound={sounds.find(s => s.id === contextMenu.soundId)!}
-          onClose={() => setContextMenu(null)}
-          onPlayLocal={playLocalSound}
-          onToggleFavorite={toggleFavorite}
-          onDownload={downloadSound}
-          onDelete={deleteSound}
-          isFavorite={favorites.has(contextMenu.soundId)}
-          theme={theme}
-          userPermissions={authUser?.permissions}
-        />
-      )}
+      {contextMenu && (() => {
+        const sound = sounds.find(s => s.id === contextMenu.soundId);
+        if (!sound) return null;
+
+        return (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            onFavorite={() => toggleFavorite(contextMenu.soundId)}
+            onDelete={() => deleteSound(contextMenu.soundId)}
+            onDownload={() => downloadSound(contextMenu.soundId)}
+            onPlayLocally={() => playLocalSound(contextMenu.soundId)}
+            isFavorite={favorites.has(contextMenu.soundId)}
+            theme={theme}
+            timesPlayed={sound.timesPlayed}
+            dateAdded={sound.dateAdded}
+            volumeOffset={sound.volumeOffset}
+            soundId={sound.id}
+            displayName={sound.displayName || null}
+            category={sound.category}
+            canEditSounds={authUser?.permissions?.editSounds ?? false}
+            canDeleteSounds={authUser?.permissions?.deleteSounds ?? false}
+          />
+        );
+      })()}
 
       {/* Users Overlay */}
       {showUsersOverlay && (

@@ -1,7 +1,5 @@
-package net.dirtydeeds.discordsoundboard.service;
+package net.dirtydeeds.discordsoundboard;
 
-import net.dirtydeeds.discordsoundboard.MainWatch;
-import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.repository.SoundFileRepository;
 import net.dirtydeeds.discordsoundboard.repository.DiscordUserRepository;

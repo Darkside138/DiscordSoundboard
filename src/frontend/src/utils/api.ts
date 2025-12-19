@@ -1,34 +1,11 @@
 import { loadAuth } from './auth';
-
-// Store CSRF token in memory
-let csrfToken: string | null = null;
+import Cookies from 'js-cookie';
 
 /**
- * Fetch CSRF token from the backend
- */
-export async function fetchCsrfToken(): Promise<string | null> {
-  try {
-    const response = await fetch('/api/auth/csrf-token', {
-      credentials: 'include', // Include cookies
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      csrfToken = data.token;
-      return csrfToken;
-    }
-  } catch (error) {
-    console.error('Failed to fetch CSRF token:', error);
-  }
-
-  return null;
-}
-
-/**
- * Get the current CSRF token
+ * Get the CSRF token from cookie
  */
 export function getCsrfToken(): string | null {
-  return csrfToken;
+  return Cookies.get('XSRF-TOKEN') || null;
 }
 
 /**
@@ -38,45 +15,6 @@ function requiresCsrfToken(method?: string): boolean {
   if (!method) return false;
   const upperMethod = method.toUpperCase();
   return ['POST', 'PUT', 'DELETE', 'PATCH'].includes(upperMethod);
-}
-
-/**
- * Make an authenticated API request with the JWT token
- */
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  const auth = loadAuth();
-
-  const headers: HeadersInit = {
-    ...options.headers,
-  };
-
-  // Add Authorization header if we have a token
-  if (auth.accessToken) {
-    headers['Authorization'] = `Bearer ${auth.accessToken}`;
-  }
-
-  // Add CSRF token for mutation requests
-  if (requiresCsrfToken(options.method) && csrfToken) {
-    headers['X-CSRF-TOKEN'] = csrfToken;
-  }
-
-  return fetch(url, {
-    ...options,
-    headers,
-  });
-}
-
-/**
- * Make an authenticated API request and parse JSON response
- */
-export async function fetchJsonWithAuth<T = any>(url: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetchWithAuth(url, options);
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 /**
@@ -99,9 +37,53 @@ export function getAuthHeaders(): HeadersInit {
 export function getAuthHeadersWithCsrf(): HeadersInit {
   const headers = getAuthHeaders();
 
+  const csrfToken = getCsrfToken();
   if (csrfToken) {
-    headers['X-CSRF-TOKEN'] = csrfToken;
+    headers['X-XSRF-TOKEN'] = csrfToken;
   }
 
   return headers;
+}
+
+/**
+ * Make an authenticated API request with the JWT token
+ */
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const auth = loadAuth();
+
+  const headers: HeadersInit = {
+    ...options.headers,
+  };
+
+  // Add Authorization header if we have a token
+  if (auth.accessToken) {
+    headers['Authorization'] = `Bearer ${auth.accessToken}`;
+  }
+
+  // Add CSRF token for mutation requests
+  if (requiresCsrfToken(options.method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = csrfToken;
+    }
+  }
+
+  return fetch(url, {
+    ...options,
+    credentials: 'include', // Always include cookies for CSRF token
+    headers,
+  });
+}
+
+/**
+ * Make an authenticated API request and parse JSON response
+ */
+export async function fetchJsonWithAuth<T = any>(url: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetchWithAuth(url, options);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../config';
 import { fetchWithAuth, getAuthHeaders } from '../utils/api';
 
@@ -65,7 +66,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
       setTotalPages(data.page?.totalPages || 1);
     } catch (error) {
       console.error('Error fetching users:', error);
-      alert('Failed to load users. Please try again.');
+      toast.error('Failed to load users. Please try again.', { duration: 3000 });
     } finally {
       setLoading(false);
     }
@@ -149,9 +150,9 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
     } catch (error) {
       console.error('Error updating user:', error);
       if (error instanceof TypeError) {
-        alert('Failed to update user. Please make sure the backend is running.');
+        toast.error('Failed to update user. Please make sure the backend is running.', { duration: 3000 });
       } else if (error instanceof Error) {
-        alert(`Failed to update user: ${error.message}`);
+        toast.error(`Failed to update user: ${error.message}`, { duration: 3000 });
       }
     }
   };

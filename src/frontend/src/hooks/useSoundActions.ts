@@ -45,6 +45,7 @@ export function useSoundActions({
         { 
           method: 'POST',
           mode: 'cors',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             ...getAuthHeadersWithCsrf()
@@ -52,7 +53,7 @@ export function useSoundActions({
         }
       );
       console.log(`[${callId}] Fetch completed, response received`);
-      
+
       if (!response.ok) {
         console.error(`[${callId}] Failed to update favorite status:`, response.status);
         throw new Error('Failed to update favorite status');
@@ -66,7 +67,7 @@ export function useSoundActions({
       }
 
       console.log(`[${callId}] Favorite status updated successfully: ${newFavoriteState}`);
-      
+
       console.log(`[${callId}] Updating local favorites state...`);
       setFavorites(prev => {
         const newFavorites = new Set(prev);
@@ -81,7 +82,7 @@ export function useSoundActions({
       });
     } catch (error) {
       console.error(`[${callId}] Error updating favorite status:`, error);
-      alert('Failed to update favorite. Please try again.');
+      toast.error('Failed to update favorite. Please try again.', { duration: 3000 });
     } finally {
       toggleFavoriteInProgressRef.current.delete(soundId);
     }
@@ -89,21 +90,22 @@ export function useSoundActions({
 
   const playSoundWithBot = async (soundId: string) => {
     if (!selectedUserId) {
-      alert('Please select a user from the Active Users list before playing a sound.');
+      toast.warning('Please select a user from the Active Users list before playing a sound.', { duration: 3000 });
       return;
     }
 
     if (!isPlaybackEnabled) {
-      alert('The selected user must be in a voice channel to play sounds.');
+      toast.warning('The selected user must be in a voice channel to play sounds.', { duration: 3000 });
       return;
     }
 
     try {
       const response = await fetch(
         `${API_ENDPOINTS.PLAY_FILE}?soundFileId=${soundId}&username=${selectedUserId}`,
-        { 
+        {
           method: 'POST',
           mode: 'cors',
+          credentials: 'include',
           headers: getAuthHeadersWithCsrf()
         }
       );
@@ -120,9 +122,9 @@ export function useSoundActions({
       console.error('Error playing sound through bot:', error);
       if (error instanceof TypeError || (error instanceof Error && error.message.includes('Failed to play'))) {
         if (error instanceof TypeError) {
-          alert('Failed to play sound. Please make sure the backend is running');
+          toast.error('Failed to play sound. Please make sure the backend is running', { duration: 3000 });
         } else {
-          alert(`Failed to play sound: ${error.message}`);
+          toast.error(`Failed to play sound: ${error.message}`, { duration: 3000 });
         }
       }
     }
@@ -130,7 +132,7 @@ export function useSoundActions({
 
   const playRandomSound = async (filteredSounds: Sound[]) => {
     if (!isPlaybackEnabled || filteredSounds.length === 0) {
-      alert('Please select a user from the Active Users list before playing a sound.');
+      toast.warning('Please select a user from the Active Users list before playing a sound.', { duration: 3000 });
       return;
     }
 
@@ -140,6 +142,7 @@ export function useSoundActions({
         {
           method: 'POST',
           mode: 'cors',
+          credentials: 'include',
           headers: getAuthHeadersWithCsrf()
         }
       );
@@ -154,16 +157,16 @@ export function useSoundActions({
     } catch (error) {
       console.error('Error playing random sound:', error);
       if (error instanceof TypeError) {
-        alert('Failed to play random sound. Please make sure the backend is running');
+        toast.error('Failed to play random sound. Please make sure the backend is running', { duration: 3000 });
       } else if (error instanceof Error) {
-        alert(`Failed to play random sound: ${error.message}`);
+        toast.error(`Failed to play random sound: ${error.message}`, { duration: 3000 });
       }
     }
   };
 
   const stopCurrentSound = async () => {
     if (!isPlaybackEnabled) {
-      alert('Please select a user from the Active Users list.');
+      toast.warning('Please select a user from the Active Users list.', { duration: 3000 });
       return;
     }
 
@@ -173,6 +176,7 @@ export function useSoundActions({
         {
           method: 'POST',
           mode: 'cors',
+          credentials: 'include',
           headers: getAuthHeadersWithCsrf()
         }
       );
@@ -188,9 +192,9 @@ export function useSoundActions({
     } catch (error) {
       console.error('Error stopping sound:', error);
       if (error instanceof TypeError) {
-        alert('Failed to stop sound. Please make sure the backend is running');
+        toast.error('Failed to stop sound. Please make sure the backend is running', { duration: 3000 });
       } else if (error instanceof Error) {
-        alert(`Failed to stop sound: ${error.message}`);
+        toast.error(`Failed to stop sound: ${error.message}`, { duration: 3000 });
       }
     }
   };
@@ -213,7 +217,7 @@ export function useSoundActions({
         newFavorites.delete(soundId);
         return newFavorites;
       });
-      
+
       toast.success('Sound deleted successfully', { duration: 3000 });
     } catch (error) {
       console.error('Error deleting sound:', error);
@@ -253,12 +257,13 @@ export function useSoundActions({
 
     try {
       console.log('📤 Uploading file:', file.name);
-      
+
       const authHeaders = getAuthHeadersWithCsrf();
-      
+
       const response = await fetch(API_ENDPOINTS.UPLOAD, {
         method: 'POST',
         mode: 'cors',
+        credentials: 'include',
         headers: authHeaders,
         body: formData
       });
@@ -277,7 +282,7 @@ export function useSoundActions({
 
       console.log('✅ File uploaded successfully');
       toast.success(`File "${file.name}" uploaded successfully!`, { duration: 3000 });
-      
+
       event.target.value = '';
     } catch (error) {
       console.error('Error uploading file:', error);

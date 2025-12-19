@@ -1,3 +1,4 @@
+
 {
       "name": "Discord Soundboard",
       "version": "0.1.0",
@@ -34,6 +35,7 @@
             "cmdk": "^1.1.1",
             "embla-carousel-react": "^8.6.0",
             "input-otp": "^1.4.2",
+            "js-cookie": "*",
             "lucide-react": "^0.487.0",
             "next-themes": "^0.4.6",
             "react": "^18.3.1",
@@ -47,22 +49,24 @@
             "vaul": "^1.1.2"
       },
       "devDependencies": {
-            "@testing-library/jest-dom": "^6.6.3",
-            "@testing-library/react": "^16.1.0",
-            "@testing-library/user-event": "^14.6.1",
-            "@types/jsdom": "^21.1.7",
+            "@testing-library/jest-dom": "^6.1.5",
+            "@testing-library/react": "^14.1.2",
+            "@testing-library/user-event": "^14.5.1",
+            "@types/js-cookie": "^3.0.6",
             "@types/node": "^20.10.0",
+            "@types/react": "^18.2.45",
+            "@types/react-dom": "^18.2.18",
             "@vitejs/plugin-react-swc": "^3.10.2",
-            "@vitest/coverage-v8": "^2.1.9",
-            "jsdom": "^26.0.0",
+            "jsdom": "^23.0.1",
+            "typescript": "^5.3.3",
             "vite": "6.3.5",
-            "vitest": "^2.1.8"
+            "vitest": "^1.0.4"
       },
       "scripts": {
             "dev": "vite",
             "build": "vite build",
-            "test": "vitest",
-            "test:watch": "vitest --watch",
-            "test:coverage": "vitest --coverage"
+            "test": "vitest run",
+            "test:watch": "vitest",
+            "test:coverage": "vitest run --coverage"
       }
 }

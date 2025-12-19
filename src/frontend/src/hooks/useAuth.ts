@@ -8,7 +8,6 @@ import {
   handleOAuthRedirect,
   type DiscordUser
 } from '../utils/auth';
-import { fetchCsrfToken } from '../utils/api';
 
 export function useAuth() {
   const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
@@ -19,13 +18,13 @@ export function useAuth() {
     const handleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
-      
+
       if (token) {
         try {
           const authState = await handleOAuthRedirect(token);
           setAuthUser(authState.user);
           setAuthLoading(false);
-          
+
           // Clean up URL
           window.history.replaceState({}, document.title, window.location.pathname);
         } catch (error) {
@@ -47,11 +46,8 @@ export function useAuth() {
         }
         setAuthLoading(false);
       }
-      
-      // Fetch CSRF token
-      await fetchCsrfToken();
     };
-    
+
     handleCallback();
   }, []);
 

@@ -30,6 +30,7 @@ export function useVolume() {
         {
           method: 'POST',
           mode: 'cors',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             ...getAuthHeadersWithCsrf()

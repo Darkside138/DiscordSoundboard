@@ -2,6 +2,7 @@ package net.dirtydeeds.discordsoundboard.controllers;
 
 import io.jsonwebtoken.Claims;
 import net.dirtydeeds.discordsoundboard.util.JwtUtil;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -47,14 +48,7 @@ public class AuthController {
             userResponse.put("roles", claims.get("roles", List.class));
 
             // Convert the permissions list to a boolean map
-            Map<String, Boolean> permissions = new HashMap<>();
-            permissions.put("upload", permissionsList.contains("upload"));
-            permissions.put("delete", permissionsList.contains("delete-sounds"));
-            permissions.put("manageUsers", permissionsList.contains("manage-users"));
-            permissions.put("editSounds", permissionsList.contains("edit-sounds"));
-            permissions.put("playSounds", permissionsList.contains("play-sounds"));
-            permissions.put("downloadSounds", permissionsList.contains("download-sounds"));
-            permissions.put("updateVolume", permissionsList.contains("update-volume"));
+            Map<String, Boolean> permissions = getStringBooleanMap(permissionsList);
 
             userResponse.put("permissions", permissions);
 
@@ -64,14 +58,16 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/csrf-token")
-    @ResponseBody
-    public CsrfToken csrfToken(CsrfToken token) {
-        return token;
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
-        return ResponseEntity.ok().build();
+    @NotNull
+    private static Map<String, Boolean> getStringBooleanMap(List<String> permissionsList) {
+        Map<String, Boolean> permissions = new HashMap<>();
+        permissions.put("upload", permissionsList.contains("upload"));
+        permissions.put("delete", permissionsList.contains("delete-sounds"));
+        permissions.put("manageUsers", permissionsList.contains("manage-users"));
+        permissions.put("editSounds", permissionsList.contains("edit-sounds"));
+        permissions.put("playSounds", permissionsList.contains("play-sounds"));
+        permissions.put("downloadSounds", permissionsList.contains("download-sounds"));
+        permissions.put("updateVolume", permissionsList.contains("update-volume"));
+        return permissions;
     }
 }
