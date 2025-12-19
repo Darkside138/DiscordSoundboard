@@ -5,6 +5,8 @@ import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,57 +43,57 @@ class EntranceCommandTest {
         when(author.getId()).thenReturn("123");
     }
 
-//    @Test
-//    void executeSetsEntranceSoundSuccessfully() {
-//        String userName = "testUser";
-//        String soundName = "welcome";
-//        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName, soundName)));
-//        when(event.userIsAdmin()).thenReturn(false);
-//
-//        DiscordUser discordUser = new DiscordUser("123", userName, false, null, null);
-//        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName)).thenReturn(discordUser);
-//        when(soundService.findOneBySoundFileIdIgnoreCase(soundName)).thenReturn(new SoundFile(soundName, "path", "category"));
-//
-//        entranceCommand.execute(event);
-//
-//        assertEquals(soundName, discordUser.getEntranceSound());
-//        verify(discordUserService).save(discordUser);
-//        verify(event).replyByPrivateMessage(contains("entrance sound set to: welcome"));
-//    }
+    @Test
+    void executeSetsEntranceSoundSuccessfully() {
+        String userName = "testUser";
+        String soundName = "welcome";
+        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName, soundName)));
+        when(event.userIsAdmin()).thenReturn(false);
 
-//    @Test
-//    void executeClearsEntranceSoundWhenNoSoundProvided() {
-//        String userName = "testUser";
-//        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName)));
-//        when(event.userIsAdmin()).thenReturn(false);
-//
-//        DiscordUser discordUser = new DiscordUser("123", userName, false, null, null);
-//        discordUser.setEntranceSound("oldSound");
-//        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName)).thenReturn(discordUser);
-//
-//        entranceCommand.execute(event);
-//
-//        assertNull(discordUser.getEntranceSound());
-//        verify(discordUserService).save(discordUser);
-//        verify(event).replyByPrivateMessage(contains("entrance sound cleared"));
-//    }
+        DiscordUser discordUser = new DiscordUser("123", userName, false, JDA.Status.CONNECTED, OnlineStatus.ONLINE);
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName)).thenReturn(discordUser);
+        when(soundService.findOneBySoundFileIdIgnoreCase(soundName)).thenReturn(new SoundFile(soundName, "path", "category"));
 
-//    @Test
-//    void executeFailsIfSoundNotFound() {
-//        String userName = "testUser";
-//        String soundName = "nonexistent";
-//        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName, soundName)));
-//        when(event.userIsAdmin()).thenReturn(true);
-//
-//        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName))
-//                .thenReturn(new DiscordUser("123", userName, false, null, null));
-//        when(soundService.findOneBySoundFileIdIgnoreCase(soundName)).thenReturn(null);
-//
-//        entranceCommand.execute(event);
-//
-//        verify(event).replyByPrivateMessage(contains("Could not find sound file"));
-//        verify(discordUserService, never()).save(any());
-//    }
+        entranceCommand.execute(event);
+
+        assertEquals(soundName, discordUser.getEntranceSound());
+        verify(discordUserService).save(discordUser);
+        verify(event).replyByPrivateMessage(contains("entrance sound set to: welcome"));
+    }
+
+    @Test
+    void executeClearsEntranceSoundWhenNoSoundProvided() {
+        String userName = "testUser";
+        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName)));
+        when(event.userIsAdmin()).thenReturn(false);
+
+        DiscordUser discordUser = new DiscordUser("123", userName, false, JDA.Status.DISCONNECTED, OnlineStatus.DO_NOT_DISTURB);
+        discordUser.setEntranceSound("oldSound");
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName)).thenReturn(discordUser);
+
+        entranceCommand.execute(event);
+
+        assertNull(discordUser.getEntranceSound());
+        verify(discordUserService).save(discordUser);
+        verify(event).replyByPrivateMessage(contains("entrance sound cleared"));
+    }
+
+    @Test
+    void executeFailsIfSoundNotFound() {
+        String userName = "testUser";
+        String soundName = "nonexistent";
+        when(event.getArguments()).thenReturn(new LinkedList<>(List.of(userName, soundName)));
+        when(event.userIsAdmin()).thenReturn(true);
+
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase(userName, userName))
+                .thenReturn(new DiscordUser("123", userName, false, JDA.Status.CONNECTED, OnlineStatus.OFFLINE));
+        when(soundService.findOneBySoundFileIdIgnoreCase(soundName)).thenReturn(null);
+
+        entranceCommand.execute(event);
+
+        verify(event).replyByPrivateMessage(contains("Could not find sound file"));
+        verify(discordUserService, never()).save(any());
+    }
 
     @Test
     void executeFailsIfUserNotAdminAndEditingOtherUser() {
