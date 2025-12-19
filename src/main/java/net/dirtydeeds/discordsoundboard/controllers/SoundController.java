@@ -175,7 +175,13 @@ public class SoundController {
     }
 
     @PostMapping(value = "/favorite/{soundId}")
-    public ResponseEntity<Void> setFavorite(@PathVariable String soundId, @RequestParam(defaultValue = "false") Boolean favorite) {
+    public ResponseEntity<Void> setFavorite(@PathVariable String soundId,
+                                    @RequestParam(defaultValue = "false") Boolean favorite,
+                                    @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String userId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (userId == null || !userRoleConfig.hasPermission(userId, "edit-sounds")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
 
         soundFile.setFavorite(favorite);
@@ -257,7 +263,8 @@ public class SoundController {
             String filePath = uploadDir + "/" + originalFilename;
             file.transferTo(new File(filePath));
 
-            soundService.save(new SoundFile(originalFilename, filePath, "", 0, ZonedDateTime.now(), false, null, 0));
+            soundService.save(new SoundFile(originalFilename, filePath, "", 0,
+                                            ZonedDateTime.now(),false, null, 0));
             log.error("Failed to upload file");
 
             broadcastUpdate();

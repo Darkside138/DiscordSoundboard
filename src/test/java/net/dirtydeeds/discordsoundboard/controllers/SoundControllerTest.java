@@ -149,13 +149,16 @@ class SoundControllerTest {
     @Test
     void setFavorite_updatesSoundFile() {
         // Arrange
+        String authorization = "Bearer token";
         String soundId = "test-sound";
         when(soundService.findOneBySoundFileIdIgnoreCase(soundId)).thenReturn(testSoundFile);
         when(soundService.save(any(SoundFile.class))).thenReturn(testSoundFile);
         when(soundService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
 
         // Act
-        ResponseEntity<Void> response = soundController.setFavorite(soundId, true);
+        ResponseEntity<Void> response = soundController.setFavorite(soundId, true, authorization);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -166,14 +169,17 @@ class SoundControllerTest {
     @Test
     void setFavorite_withDefaultFalse_setsFavoriteToFalse() {
         // Arrange
+        String authorization = "Bearer token";
         String soundId = "test-sound";
         testSoundFile.setFavorite(true);
         when(soundService.findOneBySoundFileIdIgnoreCase(soundId)).thenReturn(testSoundFile);
         when(soundService.save(any(SoundFile.class))).thenReturn(testSoundFile);
         when(soundService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
 
         // Act
-        ResponseEntity<Void> response = soundController.setFavorite(soundId, false);
+        ResponseEntity<Void> response = soundController.setFavorite(soundId, false, authorization);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());

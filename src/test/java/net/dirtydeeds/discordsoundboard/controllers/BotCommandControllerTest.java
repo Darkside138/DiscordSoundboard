@@ -299,11 +299,11 @@ class BotCommandControllerTest {
     @Test
     void setVolume_setsVolumeAndBroadcasts() {
         // Arrange
-        Integer volume = 75;
+        int volume = 75;
         String username = "testuser";
 
         // Act
-        ResponseEntity<Void> response = botCommandController.setVolume(volume, username, "", null);
+        ResponseEntity<?> response = botCommandController.setVolume(volume, username, "", null);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());

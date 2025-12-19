@@ -1,6 +1,7 @@
 package net.dirtydeeds.discordsoundboard.beans;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,8 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@SuppressWarnings("unused")
 public class AuthUser {
 
     // Getters and Setters
@@ -18,13 +21,5 @@ public class AuthUser {
 
     @JsonProperty("global_name")
     private String globalName;
-
-    public AuthUser(String id, String username, String discriminator, String avatar, String globalName) {
-        this.id = id;
-        this.username = username;
-        this.discriminator = discriminator;
-        this.avatar = avatar;
-        this.globalName = globalName;
-    }
 
 }

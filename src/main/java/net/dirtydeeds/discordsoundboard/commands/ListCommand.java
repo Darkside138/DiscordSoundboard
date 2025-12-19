@@ -22,11 +22,6 @@ public class ListCommand extends Command {
     private final SoundPlayer soundPlayer;
     private final BotConfig botConfig;
 
-    private static final int MAX_SOUNDS_PER_ROW = 5;
-    private static final int MAX_SOUNDS_ROWS = 4;
-
-    private static final int MAX_SOUNDS_PER_PAGE = MAX_SOUNDS_ROWS * MAX_SOUNDS_PER_ROW;
-
     public ListCommand(SoundPlayer soundPlayer, BotConfig botConfig) {
         this.botConfig = botConfig;
         this.soundPlayer = soundPlayer;

@@ -58,6 +58,11 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
+        return ResponseEntity.ok().build();
+    }
+
     @NotNull
     private static Map<String, Boolean> getStringBooleanMap(List<String> permissionsList) {
         Map<String, Boolean> permissions = new HashMap<>();

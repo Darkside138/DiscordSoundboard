@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.nio.file.*;
 
 /**
- * MainWatch monitors the sound file directory for changes (create/modify/delete) and updates the file list if one
- * of those events happen.
+ * MainWatch monitors the sound file directory for changes (create/modify/delete) and updates the file list.
  *
  * @author dfurrer.
  */

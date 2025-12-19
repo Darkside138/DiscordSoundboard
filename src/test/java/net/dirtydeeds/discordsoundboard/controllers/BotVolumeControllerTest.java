@@ -39,7 +39,7 @@ class BotVolumeControllerTest {
         // Arrange
         String authorization = "Bearer token";
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
-        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(false);
+        when(userRoleConfig.hasPermission("user123", "update-volume")).thenReturn(false);
 
         // Act
         ResponseEntity<Void> response = botVolumeController.setVolume(75, "testuser", "", authorization);
@@ -71,14 +71,14 @@ class BotVolumeControllerTest {
         Integer volume = 75;
 
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
-        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
+        when(userRoleConfig.hasPermission("user123", "update-volume")).thenReturn(true);
 
         // Act
         ResponseEntity<Void> response = botVolumeController.setVolume(volume, username, "", authorization);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(soundPlayer).setGlobalVolume(volume, username, null);
+        verify(soundPlayer).setGlobalVolume(volume, username, "");
     }
 
     @Test
@@ -89,13 +89,13 @@ class BotVolumeControllerTest {
         Integer volume = 75;
 
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
-        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
+        when(userRoleConfig.hasPermission("user123", "update-volume")).thenReturn(true);
 
         // Act
         botVolumeController.setVolume(volume, username, "", authorization);
 
         // Assert - broadcastUpdate is called internally, verify side effects
-        verify(soundPlayer).setGlobalVolume(volume, username, null);
+        verify(soundPlayer).setGlobalVolume(volume, username, "");
     }
 
     @Test

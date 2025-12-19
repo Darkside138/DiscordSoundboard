@@ -105,9 +105,15 @@ public class BotCommandController {
     }
 
     @PostMapping(value = "/volume")
-    public ResponseEntity<Void> setVolume(@RequestParam Integer volume, @RequestParam String username,
+    public ResponseEntity<?> setVolume(@RequestParam Integer volume, @RequestParam String username,
                                 @RequestParam(defaultValue = "") String voiceChannelId,
                                 @RequestHeader(value = "Authorization", required = false) String authorization) {
+        if (authorization != null) {
+            String userId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (userId == null || !userRoleConfig.hasPermission(userId, "update-volume")) {
+                return ResponseEntity.status(403).body("You don't have permission to update volume");
+            }
+        }
         soundPlayer.setGlobalVolume(volume, username, null);
         botVolumeController.broadcastUpdate(username);
         return ResponseEntity.ok().build();

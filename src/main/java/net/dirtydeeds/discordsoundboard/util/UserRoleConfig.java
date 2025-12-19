@@ -12,6 +12,7 @@ import java.util.*;
 
 @Configuration
 @ConfigurationProperties(prefix = "app.users")
+@SuppressWarnings("unused")
 public class UserRoleConfig {
 
     // Map of user ID to their roles
@@ -28,7 +29,7 @@ public class UserRoleConfig {
     @Value("dj_user_list")
     private List<String> djUserList = new ArrayList<>();
 
-    // Map of role to their permissions
+    // Map of roles to their permissions
     @Setter
     @Getter
     private Map<String, List<String>> permissions = new HashMap<>();

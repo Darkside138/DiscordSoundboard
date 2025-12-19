@@ -366,6 +366,7 @@ public class SoundPlayer {
     public String stop(String user, String voiceChannelId) {
         Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
         String soundFileId = stopPlayback(guild);
+
         if (soundFileId != null) return soundFileId;
 
         return null;

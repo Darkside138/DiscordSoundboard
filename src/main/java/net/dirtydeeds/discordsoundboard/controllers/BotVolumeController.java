@@ -1,7 +1,5 @@
 package net.dirtydeeds.discordsoundboard.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
@@ -59,11 +57,11 @@ public class BotVolumeController {
                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
 
         String userId = userRoleConfig.getUserIdFromAuth(authorization);
-        if (userId == null || !userRoleConfig.hasPermission(userId, "edit-sounds")) {
+        if (userId == null || !userRoleConfig.hasPermission(userId, "update-volume")) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        soundPlayer.setGlobalVolume(volume, username, null);
+        soundPlayer.setGlobalVolume(volume, username, voiceChannelId);
         broadcastUpdate(username);
         return ResponseEntity.ok().build();
     }
