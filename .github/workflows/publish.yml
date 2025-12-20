@@ -1,4 +1,6 @@
 name: Master Branch Publish
+permissions:
+  contents: read
 
 on:
   push:
@@ -34,7 +36,7 @@ jobs:
             davefurrer/discordsoundboard
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=master
+            type=raw,value=latest
 
       # Build & push using metadata
       - name: Build and push Docker images
@@ -44,3 +46,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Actions for Discord
+        uses: Ilshidur/action-discord@0.4.0
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: '{{ EVENT_PAYLOAD.repository.full_name }} Unraid/Docker image has been updated.'

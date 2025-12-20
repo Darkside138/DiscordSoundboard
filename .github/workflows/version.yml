@@ -1,4 +1,6 @@
 name: Docker Version Release
+permissions:
+  contents: read
 
 on:
   create:
