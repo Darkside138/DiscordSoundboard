@@ -3,6 +3,7 @@ package net.dirtydeeds.discordsoundboard.commands;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
+import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
 import net.dirtydeeds.discordsoundboard.service.DiscordUserService;
 import net.dirtydeeds.discordsoundboard.service.SoundService;
 
@@ -52,6 +53,7 @@ public class EntranceCommand extends Command {
                         discordUser.setEntranceSound(null);
                         event.replyByPrivateMessage("User: " + userNameOrId + " entrance sound cleared");
                         discordUserService.save(discordUser);
+                        soundPlayer.broadcastUserUpdate();
                     } else {
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileName);
                         if (soundFile == null) {
@@ -60,6 +62,7 @@ public class EntranceCommand extends Command {
                             discordUser.setEntranceSound(soundFileName);
                             event.replyByPrivateMessage("User: " + userNameOrId + " entrance sound set to: " + soundFileName);
                             discordUserService.save(discordUser);
+                            soundPlayer.broadcastUserUpdate();
                         }
                     }
                 } else {

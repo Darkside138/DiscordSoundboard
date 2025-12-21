@@ -52,6 +52,7 @@ public class LeaveCommand extends Command {
                         discordUser.setLeaveSound(null);
                         event.replyByPrivateMessage("User: " + userNameOrId + " leave sound cleared");
                         discordUserService.save(discordUser);
+                        soundPlayer.broadcastUserUpdate();
                     } else {
                         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileName);
                         if (soundFile == null) {
@@ -60,6 +61,7 @@ public class LeaveCommand extends Command {
                             discordUser.setLeaveSound(soundFileName);
                             event.replyByPrivateMessage("User: " + userNameOrId + " leave sound set to: " + soundFileName);
                             discordUserService.save(discordUser);
+                            soundPlayer.broadcastUserUpdate();
                         }
                     }
                 } else {

@@ -8,6 +8,7 @@ import jakarta.inject.Singleton;
 import net.dirtydeeds.discordsoundboard.beans.DiscordUser;
 import net.dirtydeeds.discordsoundboard.beans.SoundFile;
 import net.dirtydeeds.discordsoundboard.commands.*;
+import net.dirtydeeds.discordsoundboard.controllers.BotVolumeController;
 import net.dirtydeeds.discordsoundboard.controllers.DiscordUserController;
 import net.dirtydeeds.discordsoundboard.controllers.SoundController;
 import net.dirtydeeds.discordsoundboard.controllers.response.ChannelResponse;
@@ -61,6 +62,7 @@ public class SoundPlayer {
     private final DiscordUserController discordUserController;
     private final SoundController soundController;
     private final PlaybackService playbackService;
+    private final BotVolumeController botVolumeController;
 
     @Inject
     public SoundPlayer(MainWatch mainWatch, SoundService soundService,
@@ -68,7 +70,8 @@ public class SoundPlayer {
                        ServletWebServerApplicationContext webServerApplicationContext,
                        DiscordUserController discordUserController,
                        SoundController soundController,
-                       PlaybackService playbackService) {
+                       PlaybackService playbackService,
+                       BotVolumeController botVolumeController) {
         this.playbackService = playbackService;
         this.mainWatch = mainWatch;
         this.mainWatch.setSoundPlayer(this);
@@ -79,6 +82,8 @@ public class SoundPlayer {
         this.botConfig = botConfig;
         this.webServerApplicationContext = webServerApplicationContext;
         this.discordUserController = discordUserController;
+        this.botVolumeController = botVolumeController;
+        this.botVolumeController.setSoundPlayer(this);
         this.soundController = soundController;
         this.soundController.setSoundPlayer(this);
 
@@ -165,6 +170,7 @@ public class SoundPlayer {
             AudioHandler handler = (AudioHandler) guild.getAudioManager().getSendingHandler();
             if (handler != null) {
                 handler.setGlobalVolume(volume);
+                broadcastGlobalVolumeUpdate(user);
             }
         }
     }
@@ -701,6 +707,14 @@ public class SoundPlayer {
             guild.getAudioManager().closeAudioConnection();
             LOG.debug("Disconnecting from channel.");
         }
+    }
+
+    public void broadcastUserUpdate() {
+        discordUserController.broadcastUpdate();
+    }
+
+    public void broadcastGlobalVolumeUpdate(String username) {
+        botVolumeController.broadcastUpdate(username);
     }
 
     @PreDestroy

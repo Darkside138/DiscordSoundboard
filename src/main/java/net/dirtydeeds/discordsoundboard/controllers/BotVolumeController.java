@@ -4,8 +4,10 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Setter;
 import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dirtydeeds.discordsoundboard.util.UserRoleConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +28,9 @@ public class BotVolumeController {
 
     private static final long EMITTER_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
 
-    private final SoundPlayer soundPlayer;
+    @Setter
+    private SoundPlayer soundPlayer;
+    @Autowired
     private final UserRoleConfig userRoleConfig;
 
     // Store all active SSE connections
@@ -40,8 +44,7 @@ public class BotVolumeController {
             });
 
     @Inject
-    private BotVolumeController (SoundPlayer soundPlayer, UserRoleConfig userRoleConfig) {
-        this.soundPlayer = soundPlayer;
+    private BotVolumeController (UserRoleConfig userRoleConfig) {
         this.userRoleConfig = userRoleConfig;
 
         // Send a heartbeat every 25 seconds (tweak as needed)
@@ -62,7 +65,6 @@ public class BotVolumeController {
         }
 
         soundPlayer.setGlobalVolume(volume, username, voiceChannelId);
-        broadcastUpdate(username);
         return ResponseEntity.ok().build();
     }
 
@@ -73,7 +75,7 @@ public class BotVolumeController {
 
     // SSE endpoint for real-time updates
     @GetMapping(value = "/stream/{username}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamSounds(@PathVariable String username, HttpServletResponse response) {
+    public SseEmitter streamVolume(@PathVariable String username, HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
         response.setHeader("X-Accel-Buffering", "no");
