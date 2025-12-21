@@ -29,9 +29,12 @@ class BotVolumeControllerTest {
 
     @AfterEach
     void tearDown() {
-        if (botVolumeController != null) {
-            botVolumeController.shutdownHeartbeat();
-        }
+        botVolumeController.shutdownHeartbeat();
+    }
+
+    @BeforeEach
+    void setup() {
+        botVolumeController.setSoundPlayer(soundPlayer);
     }
 
     @Test
@@ -68,7 +71,7 @@ class BotVolumeControllerTest {
         // Arrange
         String authorization = "Bearer token";
         String username = "testuser";
-        Integer volume = 75;
+        int volume = 75;
 
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
         when(userRoleConfig.hasPermission("user123", "update-volume")).thenReturn(true);
@@ -86,7 +89,7 @@ class BotVolumeControllerTest {
         // Arrange
         String authorization = "Bearer token";
         String username = "testuser";
-        Integer volume = 75;
+        int volume = 75;
 
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
         when(userRoleConfig.hasPermission("user123", "update-volume")).thenReturn(true);
