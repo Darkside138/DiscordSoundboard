@@ -46,63 +46,59 @@ public class MovedChannelListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
         if (event.getChannelLeft() != null && event.getChannelJoined() != null) {
-            soundPlayer.updateUsersInDb();
-            discordUserController.broadcastUpdate();
-            if (isAlone(event.getGuild()) && botConfig.isLeaveOnEmptyChannel()) {
-                soundPlayer.disconnectFromChannel(event.getGuild());
-            } else {
-                if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
-                    String discordUser = event.getMember().getEffectiveName();
-                    String discordUserId = event.getMember().getId();
-                    String entranceFile = null;
-                    String disconnectFile = null;
+            if (playEntranceOnMove && !event.getMember().getUser().isBot()) {
+                String discordUser = event.getMember().getEffectiveName();
+                String discordUserId = event.getMember().getId();
+                String entranceFile = null;
+                String disconnectFile = null;
 
-                    DiscordUser users = discordUserService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
-                    if (users != null) {
-                        if (StringUtils.hasText(users.getEntranceSound())) {
-                            entranceFile = users.getEntranceSound();
+                DiscordUser users = discordUserService.findOneByIdOrUsernameIgnoreCase(discordUserId, discordUser);
+                if (users != null) {
+                    if (StringUtils.hasText(users.getEntranceSound())) {
+                        entranceFile = users.getEntranceSound();
 
-                            LOG.info("Playing move sound {}", entranceFile);
-                        } else {
-                            SoundFile entranceSoundFile = soundService.findOneBySoundFileIdIgnoreCase(users.getUsername());
-                            if (entranceSoundFile != null) {
-                                entranceFile = entranceSoundFile.getSoundFileId();
-                            }
-                        }
-                        if (StringUtils.hasText(users.getLeaveSound())) {
-                            disconnectFile = users.getLeaveSound();
-
-                            LOG.info("Playing leave sound {}", disconnectFile);
-                        } else {
-                            SoundFile disconnectSoundFile = soundService.findOneBySoundFileIdIgnoreCase(
-                                    users.getUsername() + botConfig.getLeaveSuffix());
-                            if (disconnectSoundFile != null) {
-                                disconnectFile = disconnectSoundFile.getSoundFileId();
-                            }
-                        }
-                    }
-                    if (StringUtils.hasText(botConfig.getEntranceForAll())) {
-                        entranceFile = botConfig.getEntranceForAll();
-                        LOG.info("Playing entrance for all sound {}", entranceFile);
-                    }
-
-                    if (StringUtils.hasText(entranceFile)) {
-                        try {
-                            soundPlayer.playFileInChannel(entranceFile, event.getChannelJoined(), users);
-                        } catch (Exception e) {
-                            LOG.error("Could not play file for entrance of {}", users);
-                        }
-                    } else if (StringUtils.hasText(disconnectFile)) {
-                        try {
-                            soundPlayer.playFileInChannel(disconnectFile, event.getChannelLeft(), users);
-                        } catch (Exception e) {
-                            LOG.error("Could not play file for disconnection of {}", users);
-                        }
+                        LOG.info("Playing move sound {}", entranceFile);
                     } else {
-                        LOG.debug("Could not find entrance or disconnect sound for {}, so ignoring GuildVoiceMoveEvent.", users);
+                        SoundFile entranceSoundFile = soundService.findOneBySoundFileIdIgnoreCase(users.getUsername());
+                        if (entranceSoundFile != null) {
+                            entranceFile = entranceSoundFile.getSoundFileId();
+                        }
+                    }
+                    if (StringUtils.hasText(users.getLeaveSound())) {
+                        disconnectFile = users.getLeaveSound();
+
+                        LOG.info("Playing leave sound {}", disconnectFile);
+                    } else {
+                        SoundFile disconnectSoundFile = soundService.findOneBySoundFileIdIgnoreCase(
+                                users.getUsername() + botConfig.getLeaveSuffix());
+                        if (disconnectSoundFile != null) {
+                            disconnectFile = disconnectSoundFile.getSoundFileId();
+                        }
                     }
                 }
+                if (StringUtils.hasText(botConfig.getEntranceForAll())) {
+                    entranceFile = botConfig.getEntranceForAll();
+                    LOG.info("Playing entrance for all sound {}", entranceFile);
+                }
+
+                if (StringUtils.hasText(entranceFile)) {
+                    try {
+                        soundPlayer.playFileInChannel(entranceFile, event.getChannelJoined(), users);
+                    } catch (Exception e) {
+                        LOG.error("Could not play file for entrance of {}", users);
+                    }
+                } else if (StringUtils.hasText(disconnectFile)) {
+                    try {
+                        soundPlayer.playFileInChannel(disconnectFile, event.getChannelLeft(), users);
+                    } catch (Exception e) {
+                        LOG.error("Could not play file for disconnection of {}", users);
+                    }
+                } else {
+                    LOG.debug("Could not find entrance or disconnect sound for {}, so ignoring GuildVoiceMoveEvent.", users);
+                }
             }
+            soundPlayer.updateUsersInDb();
+            discordUserController.broadcastUpdate();
         }
     }
 

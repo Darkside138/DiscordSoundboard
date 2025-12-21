@@ -664,6 +664,7 @@ public class SoundPlayer {
                 LOG.warn("Waiting for audio connection was interrupted.");
             }
         }
+        LOG.debug("Got Audio channel");
     }
 
     /**

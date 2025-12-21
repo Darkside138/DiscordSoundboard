@@ -46,8 +46,6 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
         if (event.getChannelLeft() == null && event.getChannelJoined() != null) {
-            soundPlayer.updateUsersInDb();
-            discordUserController.broadcastUpdate();
             if (playEntranceOnJoin && !event.getMember().getUser().isBot()) {
                 String userJoined = event.getMember().getEffectiveName();
                 String userId = event.getMember().getId();
@@ -77,6 +75,8 @@ public class EntranceSoundBoardListener extends ListenerAdapter {
                     }
                 }
             }
+            soundPlayer.updateUsersInDb();
+            discordUserController.broadcastUpdate();
         }
     }
 }

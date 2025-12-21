@@ -45,8 +45,6 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
         if (event.getChannelJoined() == null && event.getChannelLeft() != null) {
-            soundPlayer.updateUsersInDb();
-            discordUserController.broadcastUpdate();
             if (isAlone(event.getGuild()) && botConfig.isLeaveOnEmptyChannel()) {
                 soundPlayer.disconnectFromChannel(event.getGuild());
             } else {
@@ -72,6 +70,8 @@ public class LeaveSoundBoardListener extends ListenerAdapter {
                     }
                 }
             }
+            soundPlayer.updateUsersInDb();
+            discordUserController.broadcastUpdate();
         }
     }
 
