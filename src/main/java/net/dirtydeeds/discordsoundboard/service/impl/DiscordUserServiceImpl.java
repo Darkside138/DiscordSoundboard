@@ -78,4 +78,45 @@ public class DiscordUserServiceImpl implements DiscordUserService {
 
         throw new Exception("Could not load discord user");
     }
+
+    @Override
+    public DiscordUser assignRole(String userId, String role, String assignedByUserId) throws Exception {
+        // Validate role is valid
+        if (!role.equals("admin") && !role.equals("dj") && !role.equals("moderator") && !role.equals("user")) {
+            throw new Exception("Invalid role: " + role);
+        }
+
+        Optional<DiscordUser> optionalDiscordUser = discordUserRepository.findById(userId);
+
+        if (optionalDiscordUser.isPresent()) {
+            DiscordUser discordUser = optionalDiscordUser.get();
+            discordUser.setAssignedRole(role);
+            discordUser.setRoleAssignedAt(java.time.Instant.now());
+            discordUser.setRoleAssignedBy(assignedByUserId);
+
+            discordUserRepository.save(discordUser);
+
+            return discordUser;
+        }
+
+        throw new Exception("Could not load discord user");
+    }
+
+    @Override
+    public DiscordUser removeRole(String userId, String removedByUserId) throws Exception {
+        Optional<DiscordUser> optionalDiscordUser = discordUserRepository.findById(userId);
+
+        if (optionalDiscordUser.isPresent()) {
+            DiscordUser discordUser = optionalDiscordUser.get();
+            discordUser.setAssignedRole(null);
+            discordUser.setRoleAssignedAt(null);
+            discordUser.setRoleAssignedBy(null);
+
+            discordUserRepository.save(discordUser);
+
+            return discordUser;
+        }
+
+        throw new Exception("Could not load discord user");
+    }
 }

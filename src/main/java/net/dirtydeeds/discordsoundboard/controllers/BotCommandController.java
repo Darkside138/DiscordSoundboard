@@ -42,13 +42,20 @@ public class BotCommandController {
                             @RequestParam(defaultValue = "") String voiceChannelId,
                             @RequestHeader(value = "Authorization", required = false) String authorization) {
         String requestingUser = "anonymous";
+        String requestingUserId = null;
+
         if (authorization != null) {
-            String requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
-            if (requestingUserId == null || !userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
-                return ResponseEntity.status(403).body("You don't have permission to play sounds");
+            requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (requestingUserId != null) {
+                requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
             }
-            requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
         }
+
+        // Check permission for both authenticated and unauthenticated users
+        if (!userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
+            return ResponseEntity.status(403).body("You don't have permission to play sounds");
+        }
+
         soundPlayer.playForUser(soundFileId, username, repeatTimes, voiceChannelId, requestingUser);
         return ResponseEntity.ok().build();
     }
@@ -58,13 +65,20 @@ public class BotCommandController {
                         @RequestParam(defaultValue = "") String voiceChannelId,
                         @RequestHeader(value = "Authorization", required = false) String authorization) {
         String requestingUser = "anonymous";
+        String requestingUserId = null;
+
         if (authorization != null) {
-            String requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
-            if (requestingUserId == null || !userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
-                return ResponseEntity.status(403).body("You don't have permission to play URL");
+            requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (requestingUserId != null) {
+                requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
             }
-            requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
         }
+
+        // Check permission for both authenticated and unauthenticated users
+        if (!userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
+            return ResponseEntity.status(403).body("You don't have permission to play URL");
+        }
+
         soundPlayer.playForUser(url, username, 1, voiceChannelId, requestingUser);
         return ResponseEntity.ok().build();
     }
@@ -75,13 +89,20 @@ public class BotCommandController {
                                            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
             String requestingUser = "anonymous";
+            String requestingUserId = null;
+
             if (authorization != null) {
-                String requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
-                if (requestingUserId == null || !userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
-                    return ResponseEntity.status(403).body("You don't have permission to play sounds");
+                requestingUserId = userRoleConfig.getUserIdFromAuth(authorization);
+                if (requestingUserId != null) {
+                    requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
                 }
-                requestingUser = discordUserService.findOneByIdOrUsernameIgnoreCase(requestingUserId, requestingUserId).getUsername();
             }
+
+            // Check permission for both authenticated and unauthenticated users
+            if (!userRoleConfig.hasPermission(requestingUserId, "play-sounds")) {
+                return ResponseEntity.status(403).body("You don't have permission to play sounds");
+            }
+
             SoundFile soundFile = soundPlayer.playRandomSoundFile(username, null, requestingUser);
         } catch (SoundPlaybackException e) {
             return ResponseEntity.internalServerError().build();
@@ -93,12 +114,16 @@ public class BotCommandController {
     public ResponseEntity<?> stopPlayback(@RequestParam String username,
                                 @RequestParam(defaultValue = "") String voiceChannelId,
                                 @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String userId = null;
         if (authorization != null) {
-            String userId = userRoleConfig.getUserIdFromAuth(authorization);
-            if (userId == null || !userRoleConfig.hasPermission(userId, "play-sounds")) {
-                return ResponseEntity.status(403).body("You don't have permission to stop sounds");
-            }
+            userId = userRoleConfig.getUserIdFromAuth(authorization);
         }
+
+        // Check permission for both authenticated and unauthenticated users
+        if (!userRoleConfig.hasPermission(userId, "play-sounds")) {
+            return ResponseEntity.status(403).body("You don't have permission to stop sounds");
+        }
+
         String soundFileId = soundPlayer.stop(username, voiceChannelId);
 
         return ResponseEntity.ok().build();
@@ -108,12 +133,16 @@ public class BotCommandController {
     public ResponseEntity<?> setVolume(@RequestParam Integer volume, @RequestParam String username,
                                 @RequestParam(defaultValue = "") String voiceChannelId,
                                 @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String userId = null;
         if (authorization != null) {
-            String userId = userRoleConfig.getUserIdFromAuth(authorization);
-            if (userId == null || !userRoleConfig.hasPermission(userId, "update-volume")) {
-                return ResponseEntity.status(403).body("You don't have permission to update volume");
-            }
+            userId = userRoleConfig.getUserIdFromAuth(authorization);
         }
+
+        // Check permission for both authenticated and unauthenticated users
+        if (!userRoleConfig.hasPermission(userId, "update-volume")) {
+            return ResponseEntity.status(403).body("You don't have permission to update volume");
+        }
+
         soundPlayer.setGlobalVolume(volume, username, null);
         botVolumeController.broadcastUpdate(username);
         return ResponseEntity.ok().build();

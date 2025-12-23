@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Sun, Moon, Upload, Users } from 'lucide-react';
+import { Sun, Moon, Upload, Users, Shield } from 'lucide-react';
 import { API_ENDPOINTS } from '../config';
 import { getAuthHeaders } from '../utils/api';
 
@@ -17,6 +17,7 @@ interface SettingsMenuProps {
   canManageUsers?: boolean;
   onUploadClick?: () => void;
   onUsersClick?: () => void;
+  onRolesClick?: () => void;
 }
 
 export function SettingsMenu({
@@ -33,6 +34,7 @@ export function SettingsMenu({
   canManageUsers,
   onUploadClick,
   onUsersClick,
+  onRolesClick,
 }: SettingsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [botVersion, setBotVersion] = useState<string>('Loading...');
@@ -218,7 +220,10 @@ export function SettingsMenu({
       {/* Manage Users Button */}
       {canManageUsers && onUsersClick && (
         <button
-          onClick={onUsersClick}
+          onClick={() => {
+            onUsersClick();
+            onClose();
+          }}
           className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
             theme === 'dark'
               ? 'bg-blue-700 text-white hover:bg-blue-600'
@@ -227,6 +232,24 @@ export function SettingsMenu({
         >
           <Users className="w-5 h-5 mr-2" />
           Manage Users
+        </button>
+      )}
+
+      {/* Manage Roles Button */}
+      {canManageUsers && onRolesClick && (
+        <button
+          onClick={() => {
+            onRolesClick();
+            onClose();
+          }}
+          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
+            theme === 'dark'
+              ? 'bg-blue-700 text-white hover:bg-blue-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <Shield className="w-5 h-5 mr-2" />
+          Manage Roles
         </button>
       )}
 

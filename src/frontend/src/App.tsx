@@ -4,6 +4,7 @@ import { ContextMenu } from './components/ContextMenu';
 import { DiscordUsersList } from './components/DiscordUsersList';
 import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
+import { RoleManagementDialog } from './components/RoleManagementDialog';
 import { AuthButton } from './components/AuthButton';
 import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
@@ -21,7 +22,7 @@ import { useFilters } from './hooks/useFilters';
 
 export default function App() {
   // Authentication
-  const { authUser, authLoading, handleLogin, handleLogout } = useAuth();
+  const { authUser, authLoading, handleLogin, handleLogout, refreshAuthToken } = useAuth();
 
   // Theme
   const { theme, setTheme } = useTheme();
@@ -91,6 +92,7 @@ export default function App() {
     soundId: string;
   } | null>(null);
   const [showUsersOverlay, setShowUsersOverlay] = useState(false);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Refs
@@ -140,6 +142,13 @@ export default function App() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Handle role changes - refresh token to get updated permissions
+  const handleRoleChanged = async () => {
+    if (authUser) {
+      await refreshAuthToken();
+    }
+  };
 
   const handleContextMenu = (e: React.MouseEvent, soundId: string) => {
     e.preventDefault();
@@ -385,7 +394,15 @@ export default function App() {
                         background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} 0%, ${theme === 'dark' ? '#3b82f6' : '#60a5fa'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} ${volume}%, ${theme === 'dark' ? '#374151' : '#e5e7eb'} 100%)`
                       }}
                       disabled={!selectedUserId || !isPlaybackEnabled || !authUser?.permissions?.updateVolume}
-                      title={!authUser?.permissions?.updateVolume ? 'You do not have permission to change volume' : ''}
+                      title={
+                        !authUser?.permissions?.updateVolume
+                          ? "You don't have permission to change volume"
+                          : !isPlaybackEnabled
+                          ? 'User must be in voice channel'
+                          : !selectedUserId
+                          ? 'Select a user'
+                          : 'Adjust volume'
+                      }
                     />
                     <span className={`min-w-[3rem] text-right ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
                       {volume}%
@@ -395,15 +412,21 @@ export default function App() {
                   {/* Play Random Sound Button */}
                   <button
                     onClick={() => playRandomSound(filteredSounds)}
-                    disabled={!isPlaybackEnabled || filteredSounds.length === 0}
+                    disabled={!isPlaybackEnabled || filteredSounds.length === 0 || !authUser?.permissions?.playSounds}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      !isPlaybackEnabled || filteredSounds.length === 0
+                      !isPlaybackEnabled || filteredSounds.length === 0 || !authUser?.permissions?.playSounds
                         ? 'opacity-50 cursor-not-allowed bg-gray-600 text-gray-400'
                         : theme === 'dark'
                         ? 'bg-blue-700 text-white hover:bg-blue-600'
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
-                    title={!isPlaybackEnabled ? 'User must be in voice channel' : 'Play random sound from filtered list'}
+                    title={
+                      !authUser?.permissions?.playSounds
+                        ? "You don't have permission to play sounds"
+                        : !isPlaybackEnabled
+                        ? 'User must be in voice channel'
+                        : 'Play random sound from filtered list'
+                    }
                   >
                     <Shuffle className="w-5 h-5" />
                     Random
@@ -412,15 +435,21 @@ export default function App() {
                   {/* Stop Sound Button */}
                   <button
                     onClick={stopCurrentSound}
-                    disabled={!isPlaybackEnabled}
+                    disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      !isPlaybackEnabled
+                      !isPlaybackEnabled || !authUser?.permissions?.playSounds
                         ? 'opacity-50 cursor-not-allowed bg-gray-600 text-gray-400'
                         : theme === 'dark'
                         ? 'bg-red-700 text-white hover:bg-red-600'
                         : 'bg-red-600 text-white hover:bg-red-700'
                     }`}
-                    title={!isPlaybackEnabled ? 'User must be in voice channel' : 'Stop currently playing sound'}
+                    title={
+                      !authUser?.permissions?.playSounds
+                        ? "You don't have permission to stop sounds"
+                        : !isPlaybackEnabled
+                        ? 'User must be in voice channel'
+                        : 'Stop currently playing sound'
+                    }
                   >
                     <StopCircle className="w-5 h-5" />
                     Stop
@@ -455,7 +484,14 @@ export default function App() {
                 onToggleFavorite={() => toggleFavorite(sound.id)}
                 onContextMenu={(e) => handleContextMenu(e, sound.id)}
                 theme={theme}
-                disabled={!isPlaybackEnabled}
+                disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                disabledReason={
+                  !authUser?.permissions?.playSounds
+                    ? "You don't have permission to play sounds"
+                    : !isPlaybackEnabled
+                    ? 'User must be in voice channel to play sounds'
+                    : undefined
+                }
                 isCurrentlyPlaying={currentlyPlayingSoundId === sound.id}
                 isLocallyPlaying={locallyPlayingSoundId === sound.id}
                 onStopLocalPlayback={stopLocalSound}
@@ -520,6 +556,7 @@ export default function App() {
           onClose={() => setSettingsMenu(null)}
           onUploadClick={() => fileInputRef.current?.click()}
           onUsersClick={() => setShowUsersOverlay(true)}
+          onRolesClick={() => setShowRoleDialog(true)}
           popularCount={popularCount}
           recentCount={recentCount}
           onPopularCountChange={setPopularCount}
@@ -528,6 +565,16 @@ export default function App() {
           canManageUsers={authUser?.permissions?.manageUsers}
         />
       )}
+
+      {/* Role Management Dialog */}
+      <RoleManagementDialog
+        isOpen={showRoleDialog}
+        onClose={() => setShowRoleDialog(false)}
+        theme={theme}
+        currentUserId={authUser?.id || ''}
+        onRoleChanged={handleRoleChanged}
+        canManageUsers={authUser?.permissions?.manageUsers || false}
+      />
 
       {/* Toast notifications */}
       <Toaster

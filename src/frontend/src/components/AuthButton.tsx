@@ -28,7 +28,8 @@ export function AuthButton({ user, onLogin, onLogout, theme }: AuthButtonProps) 
     return `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNum}.png`;
   };
 
-  if (user) {
+  // Only show user info if actually authenticated (not guest user)
+  if (user && user.id !== 'guest') {
     return (
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
         theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-md'

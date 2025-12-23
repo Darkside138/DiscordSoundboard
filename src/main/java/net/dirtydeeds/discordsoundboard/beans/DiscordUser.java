@@ -37,6 +37,9 @@ public class DiscordUser {
     private String channelName;
     private String guildInAudioName;
     private String guildInAudioId;
+    private String assignedRole;
+    private java.time.Instant roleAssignedAt;
+    private String roleAssignedBy;
 
     public DiscordUser(@NonNull String id, String username, @NonNull Boolean selected, @NonNull JDA.Status status, @NonNull OnlineStatus onlineStatus) {
         this.id = id;

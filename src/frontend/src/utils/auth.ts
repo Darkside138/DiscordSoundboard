@@ -200,3 +200,84 @@ export async function logout(accessToken: string): Promise<void> {
   }
   clearAuth();
 }
+
+export async function refreshToken(accessToken: string): Promise<AuthState | null> {
+  try {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${accessToken}`
+    };
+
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = csrfToken;
+    }
+
+    const response = await fetch(`${API_ENDPOINTS.AUTH_REFRESH}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    const newToken = data.token;
+
+    // Fetch updated user info with new token
+    const user = await fetchUserInfo(newToken);
+
+    if (!user) {
+      return null;
+    }
+
+    const authState: AuthState = {
+      accessToken: newToken,
+      user: user
+    };
+
+    saveAuth(authState);
+    return authState;
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch default permissions for unauthenticated users
+ */
+export async function fetchDefaultPermissions(): Promise<DiscordUser | null> {
+  try {
+    const response = await fetch(`${API_ENDPOINTS.AUTH_DEFAULT_PERMISSIONS}`, {
+      credentials: 'include', // Include cookies to receive CSRF token
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.permissions) {
+      return null;
+    }
+
+    const transformed = transformPermissions(data.permissions);
+
+    // Create a minimal "guest" user with just permissions
+    return {
+      id: 'guest',
+      username: 'Guest',
+      discriminator: '0000',
+      avatar: null,
+      globalName: null,
+      roles: ['default'],
+      permissions: transformed
+    };
+  } catch (error) {
+    console.error('Error fetching default permissions:', error);
+    return null;
+  }
+}

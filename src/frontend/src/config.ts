@@ -27,8 +27,21 @@ export const API_ENDPOINTS = {
   AUTH_CALLBACK: `${API_BASE_URL}/api/auth/callback`,
   AUTH_USER: `${API_BASE_URL}/api/auth/user`,
   AUTH_LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+  AUTH_REFRESH: `${API_BASE_URL}/api/auth/refresh`,
+  AUTH_DEFAULT_PERMISSIONS: `${API_BASE_URL}/api/auth/default-permissions`,
   OAUTH_LOGIN: `${API_BASE_URL}/oauth2/authorization/discord`,
   CSRF_TOKEN: `${API_BASE_URL}/api/auth/csrf-token`,
+  // Role management endpoints
+  USER_ROLES: `${API_BASE_URL}/api/discordUsers/roles`,
+  ASSIGN_ROLE: (userId: string) => `${API_BASE_URL}/api/discordUsers/${userId}/role`,
+  REMOVE_ROLE: (userId: string) => `${API_BASE_URL}/api/discordUsers/${userId}/role`,
+  // Permission management endpoints
+  ROLE_PERMISSIONS: `${API_BASE_URL}/api/rolePermissions`,
+  ROLE_PERMISSIONS_CONFIGURED: `${API_BASE_URL}/api/rolePermissions/configured`,
+  ROLE_PERMISSIONS_FOR_ROLE: (role: string) => `${API_BASE_URL}/api/rolePermissions/${role}`,
+  ADD_PERMISSION_TO_ROLE: (role: string) => `${API_BASE_URL}/api/rolePermissions/${role}/permissions`,
+  REMOVE_PERMISSION_FROM_ROLE: (role: string, permission: string) => `${API_BASE_URL}/api/rolePermissions/${role}/permissions/${permission}`,
+  RESET_ROLE_TO_DEFAULTS: (role: string) => `${API_BASE_URL}/api/rolePermissions/${role}/reset`,
   // Bot version
   BOT_VERSION: `${API_BASE_URL}/bot/version`,
 };

@@ -20,12 +20,13 @@ interface SoundButtonProps {
   onContextMenu: (e: React.MouseEvent) => void;
   theme: 'light' | 'dark';
   disabled?: boolean;
+  disabledReason?: string;
   isCurrentlyPlaying?: boolean;
   isLocallyPlaying?: boolean;
   onStopLocalPlayback?: () => void;
 }
 
-export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
+export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, disabledReason, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
   const formatSoundName = (name: string) => {
     return name
       // Replace underscores and hyphens with spaces
@@ -86,7 +87,7 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
         } ${
           isCurrentlyPlaying ? 'bg-gradient-to-br from-blue-600 to-blue-400 text-white' : ''
         }`}
-        title={disabled ? 'User must be in voice channel to play sounds' : displayText}
+        title={disabled ? (disabledReason || 'User must be in voice channel to play sounds') : displayText}
         disabled={disabled}
       >
         {isCurrentlyPlaying && (

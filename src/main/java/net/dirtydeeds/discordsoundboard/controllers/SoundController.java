@@ -150,8 +150,16 @@ public class SoundController {
     }
 
     @GetMapping(value = "/download/{soundId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public ResponseEntity<Resource> downloadFile(@PathVariable String soundId) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable String soundId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         try {
+            // Check permission for both authenticated and unauthenticated users
+            String userId = userRoleConfig.getUserIdFromAuth(authorization);
+            if (!userRoleConfig.hasPermission(userId, "download-sounds")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
             SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
 
             Path filePath = Paths.get("files").resolve(soundFile.getSoundFileLocation()).normalize();
@@ -278,7 +286,15 @@ public class SoundController {
     }
 
     @GetMapping(value = "/{soundFileId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<Resource> getAudioFile(@PathVariable String soundFileId) throws IOException {
+    public ResponseEntity<Resource> getAudioFile(
+            @PathVariable String soundFileId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) throws IOException {
+        // Check permission for both authenticated and unauthenticated users
+        String userId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (!userRoleConfig.hasPermission(userId, "download-sounds")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundFileId);
         Path filePath = Paths.get(soundFile.getSoundFileLocation());
         Resource resource = new UrlResource(filePath.toUri());

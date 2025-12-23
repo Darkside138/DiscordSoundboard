@@ -186,4 +186,75 @@ public class DiscordUserController {
     public void shutdownHeartbeat() {
         sseHeartbeatExecutor.shutdownNow();
     }
+
+    @GetMapping("/roles")
+    public ResponseEntity<Page<DiscordUser>> getUsersWithRoles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        String authId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (!userRoleConfig.hasPermission(authId, "manage-users")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Page<DiscordUser> users = discordUserService.findAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(users);
+    }
+
+    @PutMapping("/{userId}/role")
+    public ResponseEntity<DiscordUser> assignRole(
+            @PathVariable String userId,
+            @RequestParam String role,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        String authId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (!userRoleConfig.hasPermission(authId, "manage-users")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // Prevent self-demotion if removing admin role
+        if (authId != null && authId.equals(userId) &&
+                userRoleConfig.hasRole(authId, "admin") && !role.equals("admin")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        try {
+            DiscordUser user = discordUserService.assignRole(userId, role, authId);
+
+            // Broadcast update via SSE
+            broadcastUpdate();
+
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/{userId}/role")
+    public ResponseEntity<DiscordUser> removeRole(
+            @PathVariable String userId,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+
+        String authId = userRoleConfig.getUserIdFromAuth(authorization);
+        if (!userRoleConfig.hasPermission(authId, "manage-users")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // Prevent self-removal of admin role
+        if (authId != null && authId.equals(userId) && userRoleConfig.hasRole(authId, "admin")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        try {
+            DiscordUser user = discordUserService.removeRole(userId, authId);
+
+            // Broadcast update via SSE
+            broadcastUpdate();
+
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

@@ -21,6 +21,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private net.dirtydeeds.discordsoundboard.util.UserRoleConfig userRoleConfig;
+
     @GetMapping("/user")
     public ResponseEntity<Map<String, Object>> getUser(
             @RequestHeader("Authorization") String authorization,
@@ -64,6 +67,58 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, Object>> refreshToken(
+            @RequestHeader("Authorization") String authorization) {
+        try {
+            String token = authorization.replace("Bearer ", "");
+
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(401).build();
+            }
+
+            Claims claims = jwtUtil.getClaimsFromToken(token);
+            String userId = claims.getSubject();
+
+            // Re-fetch roles from UserRoleConfig (which now checks DB)
+            java.util.List<String> roles = userRoleConfig.getUserRoles(userId);
+            java.util.Set<String> permissions = userRoleConfig.getUserPermissions(userId);
+
+            // Preserve existing claims, update roles/permissions
+            Map<String, Object> newClaims = new HashMap<>();
+            newClaims.put("username", claims.get("username"));
+            newClaims.put("discriminator", claims.get("discriminator"));
+            newClaims.put("avatar", claims.get("avatar"));
+            newClaims.put("globalName", claims.get("globalName"));
+            newClaims.put("roles", roles);
+            newClaims.put("permissions", new ArrayList<>(permissions));
+
+            // Generate new JWT with updated permissions
+            String newToken = jwtUtil.generateToken(userId, newClaims);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", newToken);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+    @GetMapping("/default-permissions")
+    public ResponseEntity<Map<String, Object>> getDefaultPermissions(CsrfToken csrfToken) {
+        // Get permissions for unauthenticated users (default role)
+        java.util.Set<String> permissions = userRoleConfig.getUserPermissions(null);
+
+        // Convert to boolean map
+        Map<String, Boolean> permissionsMap = getStringBooleanMap(new ArrayList<>(permissions));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("permissions", permissionsMap);
+
+        return ResponseEntity.ok(response);
     }
 
     @NotNull

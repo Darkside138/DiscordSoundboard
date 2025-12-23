@@ -24,4 +24,8 @@ public interface DiscordUserService {
     void setSoundPlayer(SoundPlayer soundPlayer);
 
     DiscordUser updateSounds(String userId, String entranceSound, String leaveSound) throws Exception;
+
+    DiscordUser assignRole(String userId, String role, String assignedByUserId) throws Exception;
+
+    DiscordUser removeRole(String userId, String removedByUserId) throws Exception;
 }

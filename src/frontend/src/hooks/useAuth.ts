@@ -6,6 +6,8 @@ import {
   validateToken,
   clearAuth,
   handleOAuthRedirect,
+  refreshToken,
+  fetchDefaultPermissions,
   type DiscordUser
 } from '../utils/auth';
 
@@ -42,6 +44,17 @@ export function useAuth() {
           } else {
             // Token invalid, clear stored auth
             clearAuth();
+            // Fetch default permissions for unauthenticated user
+            const guestUser = await fetchDefaultPermissions();
+            if (guestUser) {
+              setAuthUser(guestUser);
+            }
+          }
+        } else {
+          // No authenticated user, fetch default permissions
+          const guestUser = await fetchDefaultPermissions();
+          if (guestUser) {
+            setAuthUser(guestUser);
           }
         }
         setAuthLoading(false);
@@ -60,13 +73,35 @@ export function useAuth() {
     if (storedAuth.accessToken) {
       await logout(storedAuth.accessToken);
     }
+    // After logout, set user to guest with default permissions
+    const guestUser = await fetchDefaultPermissions();
+    if (guestUser) {
+      setAuthUser(guestUser);
+    } else {
+      setAuthUser(null);
+    }
+  };
+
+  const refreshAuthToken = async (): Promise<boolean> => {
+    const storedAuth = loadAuth();
+    if (!storedAuth.accessToken) return false;
+
+    const newAuth = await refreshToken(storedAuth.accessToken);
+    if (newAuth) {
+      setAuthUser(newAuth.user);
+      return true;
+    }
+
+    clearAuth();
     setAuthUser(null);
+    return false;
   };
 
   return {
     authUser,
     authLoading,
     handleLogin,
-    handleLogout
+    handleLogout,
+    refreshAuthToken
   };
 }
