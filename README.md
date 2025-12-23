@@ -4,7 +4,6 @@
 [![Release](https://img.shields.io/github/release/Darkside138/DiscordSoundboard.svg)](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
 [![License](https://img.shields.io/github/license/Darkside138/DiscordSoundboard.svg)](https://github.com/Darkside138/DiscordSoundboard/blob/master/LICENSE)
 ![Java CI with Gradle](https://github.com/Darkside138/DiscordSoundboard/workflows/Java%20CI%20with%20Gradle/badge.svg)
-[![CodeFactor](https://www.codefactor.io/repository/github/darkside138/discordsoundboard/badge/master)](https://www.codefactor.io/repository/github/darkside138/discordsoundboard/overview/master)
 
 Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can
 choose the sound from the web UI. You will need to create a bot account that the bot will use to join
