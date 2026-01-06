@@ -69,9 +69,9 @@ public class CommandListener extends ListenerAdapter {
                         command.ifPresent(c -> c.run(commandEvent));
                     } else {
                         command.ifPresent(c -> c.run(commandEvent));
-
-                        afterMessageReceived(event);
                     }
+
+                    afterMessageReceived(event);
                 }
             }
         }
