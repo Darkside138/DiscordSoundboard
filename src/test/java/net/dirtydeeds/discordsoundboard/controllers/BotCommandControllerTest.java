@@ -56,6 +56,7 @@ class BotCommandControllerTest {
         // Arrange
         String soundFileId = "sound123";
         String username = "testuser";
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.playSoundFile(
@@ -91,6 +92,7 @@ class BotCommandControllerTest {
         // Arrange
         String authorization = "Bearer token";
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase("user123", "user123")).thenReturn(testUser);
         when(userRoleConfig.hasPermission("user123", "play-sounds")).thenReturn(false);
 
         // Act
@@ -124,6 +126,7 @@ class BotCommandControllerTest {
         String soundFileId = "sound123";
         String username = "testuser";
         int repeatTimes = 3;
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.playSoundFile(
@@ -139,6 +142,8 @@ class BotCommandControllerTest {
         // Arrange
         String url = "http://example.com/sound.mp3";
         String username = "testuser";
+
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.playSoundUrl(url, username, "", null);
@@ -172,6 +177,7 @@ class BotCommandControllerTest {
         // Arrange
         String authorization = "Bearer token";
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase("user123", "user123")).thenReturn(testUser);
         when(userRoleConfig.hasPermission("user123", "play-sounds")).thenReturn(false);
 
         // Act
@@ -189,6 +195,8 @@ class BotCommandControllerTest {
         // Arrange
         String username = "testuser";
         SoundFile soundFile = new SoundFile();
+
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
         when(soundPlayer.playRandomSoundFile(username, null, "anonymous")).thenReturn(soundFile);
 
         // Act
@@ -209,7 +217,7 @@ class BotCommandControllerTest {
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
         when(userRoleConfig.hasPermission("user123", "play-sounds")).thenReturn(true);
         when(discordUserService.findOneByIdOrUsernameIgnoreCase("user123", "user123")).thenReturn(testUser);
-        when(soundPlayer.playRandomSoundFile(username, null, "testuser")).thenReturn(soundFile);
+        when(soundPlayer.playRandomSoundFile(username, null, username)).thenReturn(soundFile);
 
         // Act
         ResponseEntity<?> response = botCommandController.playRandom(username, "", authorization);
@@ -223,7 +231,9 @@ class BotCommandControllerTest {
     void playRandom_withoutPermission_returns403() {
         // Arrange
         String authorization = "Bearer token";
+
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(discordUserService.findOneByIdOrUsernameIgnoreCase("user123", "user123")).thenReturn(testUser);
         when(userRoleConfig.hasPermission("user123", "play-sounds")).thenReturn(false);
 
         // Act
@@ -240,6 +250,7 @@ class BotCommandControllerTest {
         String username = "testuser";
         when(soundPlayer.playRandomSoundFile(username, null, "anonymous"))
                 .thenThrow(new SoundPlaybackException("Error"));
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.playRandom(username, "", null);
@@ -253,6 +264,7 @@ class BotCommandControllerTest {
         // Arrange
         String username = "testuser";
         when(soundPlayer.stop(username, "")).thenReturn("sound123");
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.stopPlayback(username, "", null);
@@ -301,6 +313,8 @@ class BotCommandControllerTest {
         // Arrange
         int volume = 75;
         String username = "testuser";
+
+        when(userRoleConfig.hasPermission(null, "update-volume")).thenReturn(true);
 
         // Act
         ResponseEntity<?> response = botCommandController.setVolume(volume, username, "", null);
