@@ -77,6 +77,11 @@ public class UserRoleConfig {
         // 3. Fallback to YAML roles map
         returnRoles.addAll(roles.getOrDefault(userId, new ArrayList<>()));
 
+        // 4. If no roles assigned, give default "user" role
+        if (returnRoles.isEmpty()) {
+            returnRoles.add("user");
+        }
+
         return returnRoles;
     }
 
