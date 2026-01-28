@@ -1,10 +1,11 @@
-name: Master Branch Publish
+name: Docker Publish
 permissions:
   contents: read
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - '**'
 
 jobs:
   publish-docker-image:
@@ -28,6 +29,7 @@ jobs:
           password: ${{ secrets.SOUNDBOARD_GHCR }}
 
       # Generate tags + labels for BOTH registries
+      # master -> latest, other branches -> branch name
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -36,7 +38,8 @@ jobs:
             davefurrer/discordsoundboard
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
 
       # Build & push using metadata
       - name: Build and push Docker images
