@@ -47,7 +47,7 @@ test {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -59,11 +59,18 @@ tasks.named("bootJar") {
 }
 
 dependencies {
-    implementation 'net.dv8tion:JDA:6.1.1'
+    implementation 'net.dv8tion:JDA:6.3.0'
     //implementation 'com.github.walkyst:lavaplayer-fork:1.4.0'
     implementation 'com.sedmelluq:lavaplayer:1.3.78'
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation 'pw.chew:jda-chewtils:1.24.1'
+
+    // JDAVE for Discord Audio Video Encryption (DAVE) protocol - required for JDA 6.3.0+
+    implementation 'club.minnced:jdave-api:0.1.5'
+    runtimeOnly 'club.minnced:jdave-native-linux-x86-64:0.1.5'
+    runtimeOnly 'club.minnced:jdave-native-linux-aarch64:0.1.5'
+    runtimeOnly 'club.minnced:jdave-native-win-x86-64:0.1.5'
+    runtimeOnly 'club.minnced:jdave-native-darwin:0.1.5'
 
     implementation 'commons-io:commons-io:2.14.0'
     compileOnly 'org.projectlombok:lombok'
@@ -87,8 +94,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testImplementation "org.mockito:mockito-core:4.4.0"
-    testCompileOnly 'org.projectlombok:lombok:1.18.22'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 node {

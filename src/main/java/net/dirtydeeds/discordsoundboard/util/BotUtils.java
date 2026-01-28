@@ -6,7 +6,6 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
-import net.dv8tion.jda.internal.utils.PermissionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +17,7 @@ public class BotUtils {
         if (messageReceivedEvent.getMember() == null) {
             return false;
         }
-        return PermissionUtil.checkPermission(messageReceivedEvent.getMember(), Permission.MANAGE_SERVER);
+        return messageReceivedEvent.getMember().hasPermission(Permission.MANAGE_SERVER);
     }
 
     public static void replyByPrivateMessage(@NotNull MessageReceivedEvent messageReceivedEvent, String message) {

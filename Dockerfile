@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-FROM gradle:7.4.2-jdk17 AS builder
+FROM gradle:8.12-jdk25-alpine AS builder
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
@@ -25,7 +25,7 @@ RUN unzip DiscordSoundboard.zip
 RUN rm DiscordSoundboard.zip
 
 # ---- Runtime Stage ----
-FROM bellsoft/liberica-openjdk-alpine:17.0.2-9
+FROM eclipse-temurin:25-jdk-alpine
 
 WORKDIR /etc/DiscordSoundboard
 

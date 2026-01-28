@@ -4,8 +4,10 @@ import lombok.Getter;
 import net.dirtydeeds.discordsoundboard.listeners.OnReadyListener;
 import net.dirtydeeds.discordsoundboard.handlers.PlayerManager;
 import net.dirtydeeds.discordsoundboard.service.PlaybackService;
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -38,6 +40,10 @@ public class JDABot {
                 return;
             }
             LOG.debug("Bot Token: {}", botToken);
+            // Configure DAVE (Discord Audio Video Encryption) protocol for JDA 6.3.0+
+            AudioModuleConfig audioConfig = new AudioModuleConfig()
+                    .withDaveSessionFactory(new JDaveSessionFactory());
+
             jda = JDABuilder.createDefault(botToken, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                             GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES,
                             GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES)
@@ -45,6 +51,7 @@ public class JDABot {
                     .enableCache(CacheFlag.ACTIVITY)
                     .setMemberCachePolicy(MemberCachePolicy.ALL)
                     .setAutoReconnect(true)
+                    .setAudioModuleConfig(audioConfig)
                     .addEventListeners(new OnReadyListener(this))
                     .build();
             jda.awaitReady();
