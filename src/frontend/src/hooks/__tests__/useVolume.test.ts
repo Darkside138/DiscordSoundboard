@@ -80,7 +80,6 @@ describe('useVolume', () => {
   })
 
   it('handles API errors gracefully', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
 
     const { result } = renderHook(() => useVolume())
@@ -89,10 +88,8 @@ describe('useVolume', () => {
       await result.current.updateVolume(80, 'user123')
     })
 
-    expect(result.current.volume).toBe(80) // Volume still updates locally
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error updating volume:', expect.any(Error))
-
-    consoleErrorSpy.mockRestore()
+    // Volume still updates locally even when API fails
+    expect(result.current.volume).toBe(80)
   })
 
   it('persists volume across remounts', () => {

@@ -78,20 +78,16 @@ export function ContextMenu({
 
     // Block if we just sent a request within the last 300ms
     if (now - lastUpdateTimeRef.current < 300) {
-      console.log('Blocked duplicate API call (too soon)');
       return;
     }
 
     // Block if this exact value was already sent
     if (lastSentValueRef.current === newValue) {
-      console.log('Blocked duplicate API call (same value)');
       return;
     }
 
     lastUpdateTimeRef.current = now;
     setIsUpdating(true);
-
-    console.log(`Calling API to update volume offset to ${newValue}%`);
 
     try {
       const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`, window.location.origin);
@@ -107,17 +103,13 @@ export function ContextMenu({
       });
 
       if (!response.ok) {
-        console.error('Failed to update volume offset:', response.status, response.statusText);
-        // Revert to original value on error
         setLocalVolumeOffset(volumeOffset ?? 0);
         toast.error('Failed to update volume offset');
       } else {
         lastSentValueRef.current = newValue;
         toast.success('Volume offset updated');
       }
-    } catch (error) {
-      console.error('Error updating volume offset:', error);
-      // Revert to original value on error
+    } catch {
       setLocalVolumeOffset(volumeOffset ?? 0);
       toast.error('Failed to update volume offset');
     } finally {
@@ -130,20 +122,14 @@ export function ContextMenu({
   };
 
   const handleVolumeRelease = () => {
-    console.log('handleVolumeRelease called');
-
-    // Only update if the value has changed from what we last sent
     if (localVolumeOffset !== lastSentValueRef.current) {
       updateVolumeOffset(localVolumeOffset);
-    } else {
-      console.log('No change in volume, skipping API call');
     }
   };
 
   // Update display name on the backend
   const updateDisplayName = async (newName: string) => {
     setIsUpdatingName(true);
-    console.log(`Calling API to update display name to: ${newName}`);
 
     try {
       const url = new URL(`${API_BASE_URL}/api/soundFiles/${soundId}`, window.location.origin);
@@ -159,18 +145,13 @@ export function ContextMenu({
       });
 
       if (!response.ok) {
-        console.error('Failed to update display name:', response.status, response.statusText);
-        // Revert to original value on error
         setEditedDisplayName(displayName || '');
         toast.error('Failed to update display name');
       } else {
-        console.log('Display name updated successfully');
         setSavedDisplayName(newName);
         toast.success('Display name updated');
       }
-    } catch (error) {
-      console.error('Error updating display name:', error);
-      // Revert to original value on error
+    } catch {
       setEditedDisplayName(displayName || '');
       toast.error('Failed to update display name');
     } finally {
