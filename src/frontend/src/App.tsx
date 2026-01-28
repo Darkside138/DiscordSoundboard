@@ -239,6 +239,7 @@ export default function App() {
                   <div className="relative">
                     <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
                     <input
+                      id="soundSearch"
                       type="text"
                       placeholder="Search sounds..."
                       value={searchQuery}
@@ -263,8 +264,9 @@ export default function App() {
 
                 {/* Category Filter and Playback Info */}
                 <div className="mb-4 flex items-center gap-3 flex-wrap">
-                  <label className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>Category</label>
+                  <label for="categorySelect" className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>Category</label>
                   <select
+                    id="categorySelect"
                     value={selectedCategory}
                     onChange={(e) => {
                       setSelectedCategory(e.target.value);
