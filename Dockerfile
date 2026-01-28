@@ -24,7 +24,8 @@ RUN unzip DiscordSoundboard.zip
 RUN rm DiscordSoundboard.zip
 
 # ---- Runtime Stage ----
-FROM eclipse-temurin:25-jdk-alpine
+# Using Debian-based image (not alpine) for glibc compatibility with jDave native libraries
+FROM eclipse-temurin:25-jre
 
 WORKDIR /etc/DiscordSoundboard
 
