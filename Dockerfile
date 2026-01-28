@@ -1,10 +1,9 @@
 # ---- Build Stage ----
-FROM gradle:8.12-jdk25-alpine AS builder
+FROM eclipse-temurin:25-jdk AS builder
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
-USER root
-RUN apt-get update && apt-get install -y nodejs npm
+RUN apt-get update && apt-get install -y nodejs npm unzip
 
 WORKDIR /app
 
