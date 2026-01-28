@@ -60,9 +60,8 @@ tasks.named("bootJar") {
 
 dependencies {
     implementation 'net.dv8tion:JDA:6.3.0'
-    //implementation 'com.github.walkyst:lavaplayer-fork:1.4.0'
-    implementation 'com.sedmelluq:lavaplayer:1.3.78'
-    implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
+    // Using Lavalink's actively maintained lavaplayer fork for JDK 25 compatibility
+    implementation 'dev.arbjerg:lavaplayer:2.2.3'
     implementation 'pw.chew:jda-chewtils:1.24.1'
 
     // JDAVE for Discord Audio Video Encryption (DAVE) protocol - required for JDA 6.3.0+
