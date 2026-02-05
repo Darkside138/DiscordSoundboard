@@ -35,6 +35,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -212,8 +213,7 @@ public class SoundPlayer {
         try {
             Map<String, SoundFile> sounds = getAvailableSoundFiles();
             List<String> keysAsArray = new ArrayList<>(sounds.keySet());
-            Random r = new Random();
-            SoundFile randomValue = sounds.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
+            SoundFile randomValue = sounds.get(keysAsArray.get(ThreadLocalRandom.current().nextInt(keysAsArray.size())));
 
             LOG.info("Attempting to play random file: {}, requested by : {}", randomValue.getSoundFileId(), requestingUser);
             try {
@@ -371,11 +371,7 @@ public class SoundPlayer {
      */
     public String stop(String user, String voiceChannelId) {
         Guild guild = getGuildForUserOrChannelId(user, voiceChannelId);
-        String soundFileId = stopPlayback(guild);
-
-        if (soundFileId != null) return soundFileId;
-
-        return null;
+        return stopPlayback(guild);
     }
 
     @Nullable
@@ -482,7 +478,12 @@ public class SoundPlayer {
         try {
             return bot.retrieveUserById(idOrName).complete();
         } catch (Exception e) {
-            return bot.getUsersByName(idOrName, true).get(0);
+            try {
+                return bot.getUsersByName(idOrName, true).getFirst();
+            } catch (Exception ex) {
+                LOG.error(ex.getMessage(), ex);
+                return null;
+            }
         }
     }
 
