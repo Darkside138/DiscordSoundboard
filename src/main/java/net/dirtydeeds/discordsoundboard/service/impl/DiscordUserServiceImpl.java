@@ -46,8 +46,8 @@ public class DiscordUserServiceImpl implements DiscordUserService {
     public void delete(DiscordUser discordUser) { discordUserRepository.delete(discordUser); }
 
     @Override
-    public Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable) {
-        return discordUserRepository.findByInVoiceIsTrueOrSelectedIsTrue(pageable);
+    public Page<DiscordUser> findByInVoiceIsTrue(Pageable pageable) {
+        return discordUserRepository.findByInVoiceIsTrue(pageable);
     }
 
     @Override

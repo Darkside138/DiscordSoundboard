@@ -9,5 +9,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface DiscordUserRepository extends PagingAndSortingRepository<DiscordUser, String>, CrudRepository<DiscordUser, String> {
     DiscordUser findOneByIdOrUsernameIgnoreCase(String id, String userName);
 
-    Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable);
+    Page<DiscordUser> findByInVoiceIsTrue(Pageable pageable);
 }

@@ -70,9 +70,9 @@ public class DiscordUserController {
     }
 
     @GetMapping("/invoiceorselected")
-    public Page<DiscordUser> getInvoiceOrSelected(@RequestParam(defaultValue = "0") int page,
+    public Page<DiscordUser> getInvoice(@RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "200") int size) {
-        return discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(Pageable.ofSize(size).withPage(page));
+        return discordUserService.findByInVoiceIsTrue(Pageable.ofSize(size).withPage(page));
     }
 
     @PatchMapping("/{userId}")
@@ -100,7 +100,7 @@ public class DiscordUserController {
     }
 
     @GetMapping(value = "/invoiceorselected/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamInvoiceOrSelected(HttpServletResponse response) {
+    public SseEmitter streamInVoiceOrSelected(HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
         response.setHeader("X-Accel-Buffering", "no");
@@ -123,7 +123,7 @@ public class DiscordUserController {
 
         // Send initial data immediately
         try {
-            Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(
+            Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrue(
                     Pageable.ofSize(200).withPage(0));
             emitter.send(SseEmitter.event()
                     .name("discordUsers")
@@ -138,7 +138,7 @@ public class DiscordUserController {
     // Helper method to broadcast updates to all connected clients
     public void broadcastUpdate() {
         List<SseEmitter> deadEmitters = new CopyOnWriteArrayList<>();
-        Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(
+        Page<DiscordUser> discordUsers = discordUserService.findByInVoiceIsTrue(
                 Pageable.ofSize(200).withPage(0));
         emitters.forEach(emitter -> {
             try {

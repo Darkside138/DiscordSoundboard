@@ -97,14 +97,14 @@ class DiscordUserControllerTest {
     void getInvoiceOrSelected_returnsFilteredUsers() {
         // Arrange
         Page<DiscordUser> expectedPage = new PageImpl<>(Collections.singletonList(testUser));
-        when(discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class))).thenReturn(expectedPage);
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class))).thenReturn(expectedPage);
 
         // Act
-        Page<DiscordUser> result = discordUserController.getInvoiceOrSelected(0, 200);
+        Page<DiscordUser> result = discordUserController.getInvoice(0, 200);
 
         // Assert
         assertEquals(expectedPage, result);
-        verify(discordUserService).findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class));
+        verify(discordUserService).findByInVoiceIsTrue(any(Pageable.class));
     }
 
     @Test
@@ -151,7 +151,7 @@ class DiscordUserControllerTest {
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("authUser123");
         when(userRoleConfig.hasPermission("authUser123", "manage-users")).thenReturn(true);
         when(discordUserService.updateSounds(userId, newEntranceSound, newLeaveSound)).thenReturn(testUser);
-        when(discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class)))
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         // Act
@@ -193,7 +193,7 @@ class DiscordUserControllerTest {
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("authUser123");
         when(userRoleConfig.hasPermission("authUser123", "manage-users")).thenReturn(true);
         when(discordUserService.updateSounds(userId, null, newLeaveSound)).thenReturn(testUser);
-        when(discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class)))
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         // Act
@@ -215,7 +215,7 @@ class DiscordUserControllerTest {
         when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("authUser123");
         when(userRoleConfig.hasPermission("authUser123", "manage-users")).thenReturn(true);
         when(discordUserService.updateSounds(userId, newEntranceSound, null)).thenReturn(testUser);
-        when(discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class)))
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         // Act
@@ -230,7 +230,7 @@ class DiscordUserControllerTest {
     @Test
     void broadcastUpdate_sendsUpdateToEmitters() {
         // Arrange
-        when(discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(any(Pageable.class)))
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(Collections.singletonList(testUser)));
 
         // Act & Assert - should not throw exception

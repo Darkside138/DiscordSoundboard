@@ -19,7 +19,7 @@ public interface DiscordUserService {
 
     void delete(DiscordUser discordUser);
 
-    Page<DiscordUser> findByInVoiceIsTrueOrSelectedIsTrue(Pageable pageable);
+    Page<DiscordUser> findByInVoiceIsTrue(Pageable pageable);
 
     void setSoundPlayer(SoundPlayer soundPlayer);
 
