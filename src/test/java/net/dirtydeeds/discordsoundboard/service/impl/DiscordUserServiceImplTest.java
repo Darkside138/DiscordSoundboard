@@ -110,14 +110,14 @@ class DiscordUserServiceImplTest {
         // Arrange
         Pageable pageable = Pageable.unpaged();
         Page<DiscordUser> expectedPage = new PageImpl<>(Collections.singletonList(discordUser));
-        when(discordUserRepository.findByInVoiceIsTrueOrSelectedIsTrue(pageable)).thenReturn(expectedPage);
+        when(discordUserRepository.findByInVoiceIsTrue(pageable)).thenReturn(expectedPage);
 
         // Act
-        Page<DiscordUser> result = discordUserService.findByInVoiceIsTrueOrSelectedIsTrue(pageable);
+        Page<DiscordUser> result = discordUserService.findByInVoiceIsTrue(pageable);
 
         // Assert
         assertEquals(expectedPage, result);
-        verify(discordUserRepository).findByInVoiceIsTrueOrSelectedIsTrue(pageable);
+        verify(discordUserRepository).findByInVoiceIsTrue(pageable);
     }
 
     @Test
