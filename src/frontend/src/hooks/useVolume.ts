@@ -39,12 +39,10 @@ export function useVolume() {
       );
 
       if (!response.ok) {
-        console.error('Failed to update volume:', response.status);
-      } else {
-        console.log(`Volume updated successfully: ${newVolume}%`);
+        // Volume update failed silently
       }
-    } catch (error) {
-      console.error('Error updating volume:', error);
+    } catch {
+      // Volume update failed silently
     }
   };
 

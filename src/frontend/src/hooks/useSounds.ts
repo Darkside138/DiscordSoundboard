@@ -71,22 +71,16 @@ export function useSounds() {
         }
       });
       
-      console.log('🔄 SSE Update - Favorites from backend:', Array.from(newFavorites));
-      console.log('🔄 SSE Update - Total sounds received:', transformedSounds.length);
-      console.log('🔄 SSE Update - Favorited sounds:', transformedSounds.filter(s => s.favorite).map(s => ({ id: s.id, favorite: s.favorite })));
-      
       setFavorites(newFavorites);
       setLoading(false);
       setConnectionStatus('connected');
     };
 
     try {
-      console.log('📡 Connecting to SSE endpoint:', API_ENDPOINTS.SOUNDS_STREAM);
       eventSource = new EventSource(API_ENDPOINTS.SOUNDS_STREAM);
-      
+
       eventSource.onopen = () => {
         if (!isMounted) return;
-        console.log('✅ SSE connection established');
         setConnectionStatus('connected');
       };
 

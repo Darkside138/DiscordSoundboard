@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   loadAuth,
   initiateDiscordLogin,
@@ -8,12 +8,70 @@ import {
   handleOAuthRedirect,
   refreshToken,
   fetchDefaultPermissions,
+  isTokenExpired,
+  getTokenExpirationTime,
   type DiscordUser
 } from '../utils/auth';
+import { TOKEN_EXPIRED_EVENT } from '../utils/api';
 
 export function useAuth() {
   const [authUser, setAuthUser] = useState<DiscordUser | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  // Handle token expiration - switch to guest user
+  const handleTokenExpired = useCallback(async () => {
+    const guestUser = await fetchDefaultPermissions();
+    setAuthUser(guestUser);
+  }, []);
+
+  // Listen for token expired events from API calls
+  useEffect(() => {
+    const handleExpiredEvent = () => {
+      handleTokenExpired();
+    };
+
+    window.addEventListener(TOKEN_EXPIRED_EVENT, handleExpiredEvent);
+    return () => {
+      window.removeEventListener(TOKEN_EXPIRED_EVENT, handleExpiredEvent);
+    };
+  }, [handleTokenExpired]);
+
+  // Periodic token expiration check
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const storedAuth = loadAuth();
+      if (storedAuth.accessToken && isTokenExpired(storedAuth.accessToken)) {
+        clearAuth();
+        handleTokenExpired();
+      }
+    };
+
+    // Check every minute
+    const interval = setInterval(checkTokenExpiration, 60000);
+
+    // Also set up a timer for exact expiration time
+    const storedAuth = loadAuth();
+    if (storedAuth.accessToken) {
+      const expirationTime = getTokenExpirationTime(storedAuth.accessToken);
+      if (expirationTime) {
+        const timeUntilExpiry = expirationTime - Date.now();
+        if (timeUntilExpiry > 0) {
+          const timeout = setTimeout(() => {
+            clearAuth();
+            handleTokenExpired();
+          }, timeUntilExpiry);
+          return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+          };
+        }
+      }
+    }
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [authUser, handleTokenExpired]);
 
   // Handle Discord OAuth callback
   useEffect(() => {

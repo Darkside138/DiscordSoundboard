@@ -53,12 +53,7 @@ export function usePlaybackTracking({ selectedUserGuildId }: UsePlaybackTracking
     };
 
     try {
-      console.log('📡 Connecting to playback SSE endpoint:', API_ENDPOINTS.PLAYBACK_STREAM);
       playbackEventSource = new EventSource(API_ENDPOINTS.PLAYBACK_STREAM);
-      
-      playbackEventSource.onopen = () => {
-        console.log('✅ Playback SSE connection established');
-      };
 
       playbackEventSource.onerror = () => {
         // Let EventSource auto-reconnect silently
@@ -68,10 +63,9 @@ export function usePlaybackTracking({ selectedUserGuildId }: UsePlaybackTracking
         if (!isMounted) return;
         try {
           const data = JSON.parse(event.data);
-          console.log('🎵 Track started:', data);
           handleTrackStart(data);
-        } catch (error) {
-          console.error('Error parsing trackStart event:', error);
+        } catch {
+          // Ignore parse errors
         }
       });
 
@@ -79,20 +73,18 @@ export function usePlaybackTracking({ selectedUserGuildId }: UsePlaybackTracking
         if (!isMounted) return;
         try {
           const data = JSON.parse(event.data);
-          console.log('🎵 Track ended:', data);
           handleTrackEnd(data);
-        } catch (error) {
-          console.error('Error parsing trackEnd event:', error);
+        } catch {
+          // Ignore parse errors
         }
       });
-    } catch (error) {
-      console.error('Failed to create playback SSE connection:', error);
+    } catch {
+      // SSE connection failed, will retry on next mount
     }
 
     return () => {
       isMounted = false;
       if (playbackEventSource) {
-        console.log('🧹 Closing playback SSE connection');
         playbackEventSource.close();
       }
     };

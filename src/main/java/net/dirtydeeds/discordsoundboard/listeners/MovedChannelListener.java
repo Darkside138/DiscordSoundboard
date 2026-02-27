@@ -97,6 +97,9 @@ public class MovedChannelListener extends ListenerAdapter {
                     LOG.debug("Could not find entrance or disconnect sound for {}, so ignoring GuildVoiceMoveEvent.", users);
                 }
             }
+            if (isAlone(event.getGuild()) && botConfig.isLeaveOnEmptyChannel()) {
+                soundPlayer.disconnectFromChannel(event.getGuild());
+            }
             soundPlayer.updateUsersInDb();
             discordUserController.broadcastUpdate();
         }

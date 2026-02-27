@@ -86,10 +86,38 @@ function decodeJWT(token: string): any {
     const payload = parts[1];
     const decoded = atob(payload);
     return JSON.parse(decoded);
-  } catch (error) {
-    console.error('Error decoding JWT:', error);
+  } catch {
     return null;
   }
+}
+
+/**
+ * Check if a JWT token is expired
+ * Returns true if expired or invalid, false if still valid
+ */
+export function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+
+  const payload = decodeJWT(token);
+  if (!payload || !payload.exp) return true;
+
+  // exp is in seconds, Date.now() is in milliseconds
+  // Add 30 second buffer to handle clock skew
+  const expirationTime = payload.exp * 1000;
+  return Date.now() >= expirationTime - 30000;
+}
+
+/**
+ * Get the expiration time of a JWT token in milliseconds
+ * Returns null if token is invalid
+ */
+export function getTokenExpirationTime(token: string | null): number | null {
+  if (!token) return null;
+
+  const payload = decodeJWT(token);
+  if (!payload || !payload.exp) return null;
+
+  return payload.exp * 1000;
 }
 
 export function saveAuth(authState: AuthState): void {

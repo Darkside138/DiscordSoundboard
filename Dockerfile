@@ -1,10 +1,9 @@
 # ---- Build Stage ----
-FROM gradle:7.4.2-jdk17 AS builder
+FROM eclipse-temurin:25-jdk AS builder
 
 LABEL org.opencontainers.image.source = https://github.com/Darkside138/DiscordSoundboard
 
-USER root
-RUN apt-get update && apt-get install -y nodejs npm
+RUN apt-get update && apt-get install -y nodejs npm unzip
 
 WORKDIR /app
 
@@ -25,7 +24,8 @@ RUN unzip DiscordSoundboard.zip
 RUN rm DiscordSoundboard.zip
 
 # ---- Runtime Stage ----
-FROM bellsoft/liberica-openjdk-alpine:17.0.2-9
+# Using Debian-based image (not alpine) for glibc compatibility with jDave native libraries
+FROM eclipse-temurin:25-jre
 
 WORKDIR /etc/DiscordSoundboard
 

@@ -1,5 +1,15 @@
-import { loadAuth } from './auth';
+import { loadAuth, isTokenExpired, clearAuth } from './auth';
 import Cookies from 'js-cookie';
+
+// Custom event for token expiration
+export const TOKEN_EXPIRED_EVENT = 'auth:token-expired';
+
+/**
+ * Dispatch token expired event to notify the app
+ */
+function dispatchTokenExpiredEvent(): void {
+  window.dispatchEvent(new CustomEvent(TOKEN_EXPIRED_EVENT));
+}
 
 /**
  * Get the CSRF token from cookie
@@ -51,6 +61,13 @@ export function getAuthHeadersWithCsrf(): HeadersInit {
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const auth = loadAuth();
 
+  // Check if token is expired before making request
+  if (auth.accessToken && isTokenExpired(auth.accessToken)) {
+    clearAuth();
+    dispatchTokenExpiredEvent();
+    throw new Error('Token expired');
+  }
+
   const headers: HeadersInit = {
     ...options.headers,
   };
@@ -68,11 +85,19 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     }
   }
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     credentials: 'include', // Always include cookies for CSRF token
     headers,
   });
+
+  // If we get a 401, the token is invalid/expired
+  if (response.status === 401) {
+    clearAuth();
+    dispatchTokenExpiredEvent();
+  }
+
+  return response;
 }
 
 /**

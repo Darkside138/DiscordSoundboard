@@ -1,10 +1,10 @@
 #This Dockerfile is for general use (Unraid dockerfiles are in the root of the project
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 #Install required packages
 RUN apt update && \
     apt upgrade -y && \
-    apt install wget openjdk-17-jdk dos2unix unzip jq curl -y \
+    apt install wget openjdk-25-jdk dos2unix unzip jq curl -y \
 
 #Set working dir
 WORKDIR "/etc"

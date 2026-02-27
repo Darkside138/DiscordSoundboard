@@ -48,6 +48,7 @@ public class UserRoleConfig {
     /**
      * Get roles for a specific user
      * Database roles take precedence over configuration file roles
+     * Default "user" role is only assigned to authenticated users (non-null/non-empty userId)
      */
     public List<String> getUserRoles(String userId) {
         List<String> returnRoles = new ArrayList<>();
@@ -76,6 +77,12 @@ public class UserRoleConfig {
 
         // 3. Fallback to YAML roles map
         returnRoles.addAll(roles.getOrDefault(userId, new ArrayList<>()));
+
+        // If the user is not authenticated then return the configured roles. This is intended to just skip the defaulting
+        // of the "user" role.
+        if (userId == null || userId.isEmpty()) {
+            return returnRoles;
+        }
 
         // 4. If no roles assigned, give default "user" role
         if (returnRoles.isEmpty()) {

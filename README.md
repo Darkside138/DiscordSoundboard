@@ -8,18 +8,18 @@
 Simple soundboard for discord. You can trigger sounds by commands typed in discord chat, or you can
 choose the sound from the web UI. You will need to create a bot account that the bot will use to join
 and play sounds. The bot can only play sounds/respond to commands for servers it has been given access to.
-Requires java 8 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library.
+Requires Java 25 or higher. This bot uses the [DiscordJDA](https://github.com/DV8FromTheWorld/JDA) library (version 6.3.0) with DAVE protocol support for Discord audio encryption.
 
 
 [4.1.9.zip](https://github.com/Darkside138/DiscordSoundboard/releases/latest)
 
-## Must have Java 17+ 64bit version installed in order for the soundboard to work properly
+## Must have Java 25+ 64bit version installed in order for the soundboard to work properly
 
 Join the official discord: [https://discord.gg/kZTNtfW](https://discord.gg/kZTNtfW)
 
 ## 4.* Releases
 **If you're updating from any version prior to 4.0 you will need to delete your old DB file.** The release of 4.* updates
-the JDA library to 6.1.1 and some updates to the legacy UI. In 4.1.* and above, I added a new UI available at {BASE_URL}/indexV2.html.
+the JDA library to 6.3.0 with DAVE (Discord Audio Video Encryption) protocol support and some updates to the legacy UI. In 4.1.* and above, I added a new UI available at {BASE_URL}/indexV2.html.
 The new UI allows OAuth through Discord. The UI should work fine without configuring OAuth but will give extra functionality
 if you do configure it for users you grant roles to (Admin, Moderator, or DJ). To configure, you'll need to go to the [Discord
 developer portal](https://discord.com/developers/applications/), click your application, select OAuth2. From this screen

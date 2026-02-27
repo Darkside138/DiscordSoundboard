@@ -1,10 +1,11 @@
-name: Master Branch Publish
+name: Docker Publish
 permissions:
   contents: read
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - '**'
 
 jobs:
   publish-docker-image:
@@ -28,6 +29,7 @@ jobs:
           password: ${{ secrets.SOUNDBOARD_GHCR }}
 
       # Generate tags + labels for BOTH registries
+      # master -> latest, other branches -> branch name
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -36,7 +38,8 @@ jobs:
             davefurrer/discordsoundboard
             ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
 
       # Build & push using metadata
       - name: Build and push Docker images
@@ -47,9 +50,20 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Get Docker tag and version
+        id: docker_info
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+          VERSION=$(grep '^projectVersion=' gradle.properties | cut -d'=' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Actions for Discord
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
-          args: '{{ EVENT_PAYLOAD.repository.full_name }} Unraid/Docker image has been updated.'
+          args: '{{ EVENT_PAYLOAD.repository.full_name }} v${{ steps.docker_info.outputs.version }} Docker image updated: `${{ steps.docker_info.outputs.tag }}`'

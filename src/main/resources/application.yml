@@ -23,7 +23,6 @@ spring:
             authorizationGrantType: authorization_code
             scope:
               - identify
-              - email
             redirectUri: "{baseUrl}/login/oauth2/code/{registrationId}"
             clientName: Discord Soundboard
         provider:
