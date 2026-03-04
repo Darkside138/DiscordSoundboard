@@ -58,6 +58,7 @@ class RolePermissionControllerTest {
         ResponseEntity<Set<String>> response = controller.getConfiguredRoles(AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
     }
 
@@ -72,6 +73,7 @@ class RolePermissionControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         Set<String> roles = response.getBody();
+        assertNotNull(roles);
         assertEquals(2, roles.size());
         assertTrue(roles.contains("dj"));
         assertTrue(roles.contains("user"));
@@ -101,6 +103,7 @@ class RolePermissionControllerTest {
         List<RolePermission> body = response.getBody();
         // Sentinel is filtered out, real permission is included
         // Plus YAML defaults for roles without DB customization (but YAML map is empty)
+        assertNotNull(body);
         assertTrue(body.stream().noneMatch(rp -> "__EMPTY__".equals(rp.getPermission())));
         assertTrue(body.stream().anyMatch(rp -> "play-sounds".equals(rp.getPermission())));
     }
@@ -119,6 +122,7 @@ class RolePermissionControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         // "user" role (no DB customization) should get YAML defaults
+        assertNotNull(response.getBody());
         long userPermsCount = response.getBody().stream()
                 .filter(rp2 -> "user".equals(rp2.getRole()))
                 .count();
@@ -136,6 +140,7 @@ class RolePermissionControllerTest {
         ResponseEntity<List<RolePermission>> response = controller.getAllRolePermissions(AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         long defaultPermsCount = response.getBody().stream()
                 .filter(rp -> "default".equals(rp.getRole()))
                 .count();
@@ -161,6 +166,7 @@ class RolePermissionControllerTest {
         ResponseEntity<Set<String>> response = controller.getPermissionsForRole("dj", AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("play-sounds"));
         assertTrue(response.getBody().contains("upload"));
     }
@@ -173,6 +179,7 @@ class RolePermissionControllerTest {
         ResponseEntity<Set<String>> response = controller.getPermissionsForRole("user", AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("play-sounds"));
     }
 
@@ -184,6 +191,7 @@ class RolePermissionControllerTest {
         ResponseEntity<Set<String>> response = controller.getPermissionsForRole("dj", AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("play-sounds"));
     }
 
@@ -228,6 +236,7 @@ class RolePermissionControllerTest {
         ResponseEntity<List<RolePermission>> response = controller.setPermissionsForRole("dj", perms, AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
     }
 
@@ -287,6 +296,7 @@ class RolePermissionControllerTest {
                 "dj", Map.of("permission", "play-sounds"), AUTH);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals("play-sounds", response.getBody().getPermission());
     }
 

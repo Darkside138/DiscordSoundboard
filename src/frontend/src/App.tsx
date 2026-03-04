@@ -6,7 +6,7 @@ import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
 import { RoleManagementDialog } from './components/RoleManagementDialog';
 import { AuthButton } from './components/AuthButton';
-import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings } from 'lucide-react';
+import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings, X } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 
 // Custom hooks
@@ -249,13 +249,22 @@ export default function App() {
                           playSoundWithBot(filteredSounds[0].id);
                         }
                       }}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${searchQuery ? 'pr-9' : 'pr-4'} ${
                         theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                       }`}
                       ref={searchInputRef}
                     />
+                    {searchQuery && (
+                      <button
+                        onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                        aria-label="Clear search"
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                   <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                     Search from {filteredSounds.length} sound{filteredSounds.length !== 1 ? 's' : ''}
@@ -265,27 +274,38 @@ export default function App() {
                 {/* Category Filter and Playback Info */}
                 <div className="mb-4 flex items-center gap-3 flex-wrap">
                   <label for="categorySelect" className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>Category</label>
-                  <select
-                    id="categorySelect"
-                    value={selectedCategory}
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      if (e.target.value !== 'all') {
-                        setActiveFilter('none');
-                      }
-                    }}
-                    className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      theme === 'dark'
-                        ? 'bg-gray-700 border-gray-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-900'
-                    }`}
-                  >
-                    {categories.map(category => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative flex-1">
+                    <select
+                      id="categorySelect"
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        if (e.target.value !== 'all') {
+                          setActiveFilter('none');
+                        }
+                      }}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${selectedCategory !== 'all' ? 'pr-10' : ''} ${
+                        theme === 'dark'
+                          ? 'bg-gray-700 border-gray-600 text-white'
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    >
+                      {categories.map(category => (
+                        <option key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedCategory !== 'all' && (
+                      <button
+                        onClick={() => setSelectedCategory('all')}
+                        aria-label="Clear category filter"
+                        className={`absolute right-7 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Current Playback Info */}
                   <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border w-[320px] ${

@@ -244,9 +244,7 @@ class DiscordUserServiceImplTest {
         when(discordUserRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        Exception exception = assertThrows(Exception.class, () -> {
-            discordUserService.updateSounds(userId, "entrance.mp3", "leave.mp3");
-        });
+        Exception exception = assertThrows(Exception.class, () -> discordUserService.updateSounds(userId, "entrance.mp3", "leave.mp3"));
 
         assertEquals("Could not load discord user", exception.getMessage());
         verify(discordUserRepository, never()).save(any());

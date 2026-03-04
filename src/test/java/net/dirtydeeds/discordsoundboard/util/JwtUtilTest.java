@@ -3,7 +3,6 @@ package net.dirtydeeds.discordsoundboard.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,8 +61,8 @@ class JwtUtilTest {
         // Create a token signed with a DIFFERENT key
         String differentSecret = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
         String badToken = Jwts.builder()
-                .setSubject("user-3")
-                .signWith(Keys.hmacShaKeyFor(differentSecret.getBytes()), SignatureAlgorithm.HS256)
+                .subject("user-3")
+                .signWith(Keys.hmacShaKeyFor(differentSecret.getBytes()))
                 .compact();
 
         assertFalse(jwtUtil.validateToken(badToken));
@@ -105,7 +104,7 @@ class JwtUtilTest {
                 // no subject
                 .signWith(Keys.hmacShaKeyFor(
                         ("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef").getBytes()
-                ), SignatureAlgorithm.HS256)
+                ))
                 .compact();
 
         // Since we used the same secret as the test context, JwtUtil should validate this token,

@@ -9,7 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -45,7 +44,7 @@ class RolePermissionServiceImplTest {
         List<RolePermission> result = service.getPermissionsForRole("dj");
 
         assertEquals(1, result.size());
-        assertEquals("play-sounds", result.get(0).getPermission());
+        assertEquals("play-sounds", result.getFirst().getPermission());
     }
 
     @Test
@@ -56,7 +55,7 @@ class RolePermissionServiceImplTest {
         List<RolePermission> result = service.getPermissionsForRole("user");
 
         assertEquals(1, result.size());
-        assertEquals("__EMPTY__", result.get(0).getPermission());
+        assertEquals("__EMPTY__", result.getFirst().getPermission());
     }
 
     // ──────────────────────── getPermissionNamesForRole ────────────────────────
@@ -202,8 +201,8 @@ class RolePermissionServiceImplTest {
 
         List<RolePermission> result = service.setPermissionsForRole("dj", Set.of("play-sounds"), "admin123");
 
-        assertNotNull(result.get(0).getAssignedAt());
-        assertEquals("admin123", result.get(0).getAssignedBy());
+        assertNotNull(result.getFirst().getAssignedAt());
+        assertEquals("admin123", result.getFirst().getAssignedBy());
     }
 
     // ──────────────────────── hasCustomPermissions ────────────────────────

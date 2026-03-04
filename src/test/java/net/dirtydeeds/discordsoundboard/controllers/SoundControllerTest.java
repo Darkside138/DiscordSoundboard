@@ -23,7 +23,6 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -144,6 +143,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().toString().contains("Sound file not found"));
     }
 
@@ -163,7 +163,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(testSoundFile.getFavorite());
+        assertEquals(true, testSoundFile.getFavorite());
         verify(soundService).save(testSoundFile);
     }
 
@@ -184,7 +184,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertFalse(testSoundFile.getFavorite());
+        assertEquals(false, testSoundFile.getFavorite());
         verify(soundService).save(testSoundFile);
     }
 
@@ -306,6 +306,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("Invalid file extension"));
     }
 
@@ -328,6 +329,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("Invalid file type"));
     }
 
@@ -351,6 +353,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("File size exceeds 10 MB limit"));
     }
 
@@ -432,6 +435,7 @@ class SoundControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("File content is not a valid audio file"));
     }
 

@@ -4,9 +4,6 @@ import net.dirtydeeds.discordsoundboard.SoundPlayer;
 import net.dv8tion.jda.api.entities.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 

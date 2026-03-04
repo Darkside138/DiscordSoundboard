@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '3.5.7'
+        springBootVersion = '3.5.11'
     }
 
     dependencies {
@@ -14,7 +14,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'distribution'
-    id 'org.springframework.boot' version '3.5.7'
+    id 'org.springframework.boot' version '3.5.11'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.asciidoctor.jvm.convert' version '4.0.5'
     id 'application'
@@ -59,7 +59,7 @@ tasks.named("bootJar") {
 }
 
 dependencies {
-    implementation 'net.dv8tion:JDA:6.3.0'
+    implementation 'net.dv8tion:JDA:6.3.1'
     // Using Lavalink's actively maintained lavaplayer fork for JDK 25 compatibility
     implementation 'dev.arbjerg:lavaplayer:2.2.6'
     implementation 'pw.chew:jda-chewtils:1.24.1'
@@ -80,14 +80,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-rest'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.security:spring-security-oauth2-client'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5:3.0.4.RELEASE'
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     runtimeOnly 'com.h2database:h2'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -191,9 +191,9 @@ tasks.register("bumpPatchVersion") {
                 }
 
                 // Explicitly convert to String, then to int
-                def major = matcher[0][1].toString().toInteger()
-                def minor = matcher[0][2].toString().toInteger()
-                def patch = matcher[0][3].toString().toInteger() + 1
+                def major = matcher[0][1 as String].toString().toInteger()
+                def minor = matcher[0][2 as String].toString().toInteger()
+                def patch = matcher[0][3 as String].toString().toInteger() + 1
 
                 def newVersion = "projectVersion=$major.$minor.$patch"
 

@@ -420,17 +420,16 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                         className="w-8 h-8 rounded-full object-cover"
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
-                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.classList.add('hidden');
                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = 'flex';
+                          if (fallback) fallback.classList.remove('hidden');
                         }}
                       />
                     ) : null}
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${user.avatarUrl ? 'hidden' : ''} ${
                         theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
                       }`}
-                      style={{ display: user.avatarUrl ? 'none' : 'flex' }}
                     >
                       <Users className="w-4 h-4" />
                     </div>
