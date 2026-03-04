@@ -370,4 +370,58 @@ class BotCommandControllerTest {
         assertEquals(expectedVersion, result);
         verify(soundPlayer).getVersion();
     }
+
+    // ──────────────────────── Volume boundary tests ────────────────────────
+
+    @Test
+    void setVolume_atZero_isAccepted() {
+        // Arrange
+        when(userRoleConfig.hasPermission(null, "update-volume")).thenReturn(true);
+
+        // Act
+        ResponseEntity<?> response = botCommandController.setVolume(0, "testuser", "", null);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(soundPlayer).setGlobalVolume(0, "testuser", null);
+    }
+
+    @Test
+    void setVolume_atHundred_isAccepted() {
+        // Arrange
+        when(userRoleConfig.hasPermission(null, "update-volume")).thenReturn(true);
+
+        // Act
+        ResponseEntity<?> response = botCommandController.setVolume(100, "testuser", "", null);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(soundPlayer).setGlobalVolume(100, "testuser", null);
+    }
+
+    @Test
+    void playSoundFile_withRepeatCountZero_callsPlayerWithZero() {
+        // Arrange
+        when(userRoleConfig.hasPermission(null, "play-sounds")).thenReturn(true);
+
+        // Act
+        ResponseEntity<?> response = botCommandController.playSoundFile(
+                "sound123", "testuser", 0, "", null);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(soundPlayer).playForUser("sound123", "testuser", 0, "", "anonymous");
+    }
+
+    @Test
+    void getVoiceChannels_whenNoChannels_returnsEmptyList() {
+        // Arrange
+        when(soundPlayer.getVoiceChannels()).thenReturn(List.of());
+
+        // Act
+        List<ChannelResponse> result = botCommandController.getVoiceChannels();
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
 }

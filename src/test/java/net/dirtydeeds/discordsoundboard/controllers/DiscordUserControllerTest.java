@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -241,5 +242,120 @@ class DiscordUserControllerTest {
     void shutdownHeartbeat_completesSuccessfully() {
         // Act & Assert - should not throw exception
         assertDoesNotThrow(() -> discordUserController.shutdownHeartbeat());
+    }
+
+    // ──────────────────────── Role management endpoints ────────────────────────
+
+    @Test
+    void getRoles_withPermission_returnsUsersPage() {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("admin123");
+        when(userRoleConfig.hasPermission("admin123", "manage-users")).thenReturn(true);
+        Page<DiscordUser> expectedPage = new PageImpl<>(List.of(testUser));
+        when(discordUserService.findAll(any(Pageable.class))).thenReturn(expectedPage);
+
+        // Act
+        ResponseEntity<Page<DiscordUser>> response = discordUserController.getUsersWithRoles(0, 50, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedPage, response.getBody());
+    }
+
+    @Test
+    void getRoles_withoutPermission_returns403() {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "manage-users")).thenReturn(false);
+
+        // Act
+        ResponseEntity<Page<DiscordUser>> response = discordUserController.getUsersWithRoles(0, 50, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(discordUserService, never()).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void assignRole_withoutPermission_returns403() {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "manage-users")).thenReturn(false);
+
+        // Act
+        ResponseEntity<DiscordUser> response = discordUserController.assignRole("other-user", "dj", authorization);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void assignRole_withPermission_assignsRoleAndReturnsUser() throws Exception {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("admin123");
+        when(userRoleConfig.hasPermission("admin123", "manage-users")).thenReturn(true);
+        // admin123 != user123, no self-demotion check needed
+        when(discordUserService.assignRole("user123", "dj", "admin123")).thenReturn(testUser);
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        ResponseEntity<DiscordUser> response = discordUserController.assignRole("user123", "dj", authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testUser, response.getBody());
+        verify(discordUserService).assignRole("user123", "dj", "admin123");
+    }
+
+    @Test
+    void removeRole_withoutPermission_returns403() {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "manage-users")).thenReturn(false);
+
+        // Act
+        ResponseEntity<DiscordUser> response = discordUserController.removeRole("other-user", authorization);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
+    void removeRole_withPermission_removesRoleAndReturnsUser() throws Exception {
+        // Arrange
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("admin123");
+        when(userRoleConfig.hasPermission("admin123", "manage-users")).thenReturn(true);
+        // admin123 != user123, so self-removal guard never fires
+        when(discordUserService.removeRole("user123", "admin123")).thenReturn(testUser);
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        ResponseEntity<DiscordUser> response = discordUserController.removeRole("user123", authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(testUser, response.getBody());
+    }
+
+    @Test
+    void getInvoice_whenNoUsersInVoice_returnsEmptyPage() {
+        // Arrange
+        when(discordUserService.findByInVoiceIsTrue(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        Page<DiscordUser> result = discordUserController.getInvoice(0, 200);
+
+        // Assert
+        assertEquals(0, result.getTotalElements());
+        assertTrue(result.getContent().isEmpty());
     }
 }

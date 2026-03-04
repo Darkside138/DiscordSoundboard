@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew.bat build --console=plain)",
+      "Bash(npm run build:*)",
+      "Bash(./gradlew build:*)"
+    ]
+  }
+}

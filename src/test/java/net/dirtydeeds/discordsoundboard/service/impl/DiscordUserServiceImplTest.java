@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -263,5 +264,89 @@ class DiscordUserServiceImplTest {
 
         // Assert
         assertSame(discordUser, result);
+    }
+
+    // ──────────────────────── assignRole ────────────────────────
+
+    @Test
+    void assignRole_setsRoleTimestampAndAssignedBy() throws Exception {
+        // Arrange
+        when(discordUserRepository.findById("user123")).thenReturn(Optional.of(discordUser));
+        when(discordUserRepository.save(any(DiscordUser.class))).thenReturn(discordUser);
+
+        // Act
+        DiscordUser result = discordUserService.assignRole("user123", "dj", "admin123");
+
+        // Assert
+        assertEquals("dj", result.getAssignedRole());
+        assertNotNull(result.getRoleAssignedAt());
+        assertEquals("admin123", result.getRoleAssignedBy());
+        verify(discordUserRepository).save(discordUser);
+    }
+
+    @Test
+    void assignRole_whenUserNotFound_throwsException() {
+        // Arrange
+        when(discordUserRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception ex = assertThrows(Exception.class,
+                () -> discordUserService.assignRole("nonexistent", "dj", "admin123"));
+        assertEquals("Could not load discord user", ex.getMessage());
+        verify(discordUserRepository, never()).save(any());
+    }
+
+    @Test
+    void assignRole_withInvalidRole_throwsException() {
+        // Act & Assert
+        Exception ex = assertThrows(Exception.class,
+                () -> discordUserService.assignRole("user123", "invalidrole", "admin123"));
+        assertTrue(ex.getMessage().contains("Invalid role"));
+    }
+
+    @Test
+    void assignRole_withAdminRole_isValid() throws Exception {
+        // Arrange
+        when(discordUserRepository.findById("user123")).thenReturn(Optional.of(discordUser));
+        when(discordUserRepository.save(any(DiscordUser.class))).thenReturn(discordUser);
+
+        // Act
+        DiscordUser result = discordUserService.assignRole("user123", "admin", "admin123");
+
+        // Assert
+        assertEquals("admin", result.getAssignedRole());
+    }
+
+    // ──────────────────────── removeRole ────────────────────────
+
+    @Test
+    void removeRole_clearsAllRoleFields() throws Exception {
+        // Arrange
+        discordUser.setAssignedRole("dj");
+        discordUser.setRoleAssignedAt(Instant.now());
+        discordUser.setRoleAssignedBy("admin123");
+        when(discordUserRepository.findById("user123")).thenReturn(Optional.of(discordUser));
+        when(discordUserRepository.save(any(DiscordUser.class))).thenReturn(discordUser);
+
+        // Act
+        DiscordUser result = discordUserService.removeRole("user123", "admin123");
+
+        // Assert
+        assertNull(result.getAssignedRole());
+        assertNull(result.getRoleAssignedAt());
+        assertNull(result.getRoleAssignedBy());
+        verify(discordUserRepository).save(discordUser);
+    }
+
+    @Test
+    void removeRole_whenUserNotFound_throwsException() {
+        // Arrange
+        when(discordUserRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception ex = assertThrows(Exception.class,
+                () -> discordUserService.removeRole("nonexistent", "admin123"));
+        assertEquals("Could not load discord user", ex.getMessage());
+        verify(discordUserRepository, never()).save(any());
     }
 }

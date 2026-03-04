@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -367,5 +368,144 @@ class SoundControllerTest {
     void shutdownHeartbeat_completesSuccessfully() {
         // Act & Assert - should not throw exception
         assertDoesNotThrow(() -> soundController.shutdownHeartbeat());
+    }
+
+    // ──────────────────────── Additional scenarios ────────────────────────
+
+    @Test
+    void deleteSoundFile_withPermission_successfullyDeletes() throws IOException {
+        // Arrange - create a real temp file so soundFileToDelete.delete() returns true
+        File tempFile = File.createTempFile("test-sound", ".mp3");
+        testSoundFile.setSoundFileLocation(tempFile.getAbsolutePath());
+
+        String soundId = "test-sound";
+        String authorization = "Bearer token";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "delete-sounds")).thenReturn(true);
+        when(soundService.findOneBySoundFileIdIgnoreCase(soundId)).thenReturn(testSoundFile);
+
+        // Act
+        ResponseEntity<?> response = soundController.deleteSoundFile(soundId, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(soundService).delete(testSoundFile);
+    }
+
+    @Test
+    void uploadFile_atExactly10MB_doesNotRejectForSize() {
+        // Arrange - exactly 10MB with valid ID3 MP3 magic bytes
+        byte[] content = new byte[10 * 1024 * 1024];
+        content[0] = 'I'; content[1] = 'D'; content[2] = '3';
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.mp3", "audio/mpeg", content);
+        String authorization = "Bearer token";
+
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "upload")).thenReturn(true);
+        when(soundPlayer.getSoundsDirectory()).thenReturn(System.getProperty("java.io.tmpdir"));
+        when(soundService.save(any())).thenReturn(new SoundFile());
+        when(soundService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        ResponseEntity<String> response = soundController.uploadFile(file, authorization);
+
+        // Assert - should NOT be rejected for size (may be 200 or 500 due to filesystem, but not 400)
+        assertNotEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody() != null && response.getBody().contains("File size exceeds 10 MB limit"));
+    }
+
+    @Test
+    void uploadFile_validExtensionButWrongMagicBytes_returns400() {
+        // Arrange - .mp3 extension with PDF magic bytes
+        byte[] pdfContent = new byte[100];
+        pdfContent[0] = '%'; pdfContent[1] = 'P'; pdfContent[2] = 'D'; pdfContent[3] = 'F';
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.mp3", "audio/mpeg", pdfContent);
+        String authorization = "Bearer token";
+
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "upload")).thenReturn(true);
+
+        // Act
+        ResponseEntity<String> response = soundController.uploadFile(file, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().contains("File content is not a valid audio file"));
+    }
+
+    @Test
+    void patchSoundFile_withNullDisplayName_updatesOnlyVolume() {
+        // Arrange
+        String soundId = "test-sound";
+        String authorization = "Bearer token";
+        testSoundFile.setDisplayName("Original Name");
+
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
+        when(soundService.findOneBySoundFileIdIgnoreCase(soundId)).thenReturn(testSoundFile);
+        when(soundService.save(any(SoundFile.class))).thenReturn(testSoundFile);
+        when(soundService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        ResponseEntity<Void> response = soundController.patchSoundFile(soundId, 10, null, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Original Name", testSoundFile.getDisplayName()); // Unchanged
+        assertEquals(10, testSoundFile.getVolumeOffsetPercentage());
+    }
+
+    @Test
+    void patchSoundFile_withZeroVolumeOffset_isAccepted() {
+        // Arrange
+        String soundId = "test-sound";
+        String authorization = "Bearer token";
+
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(true);
+        when(soundService.findOneBySoundFileIdIgnoreCase(soundId)).thenReturn(testSoundFile);
+        when(soundService.save(any(SoundFile.class))).thenReturn(testSoundFile);
+        when(soundService.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // Act
+        ResponseEntity<Void> response = soundController.patchSoundFile(soundId, 0, "Sound Name", authorization);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(0, testSoundFile.getVolumeOffsetPercentage());
+    }
+
+    @Test
+    void setFavorite_withoutPermission_returns403() {
+        // Arrange
+        String authorization = "Bearer token";
+        String soundId = "test-sound";
+        when(userRoleConfig.getUserIdFromAuth(authorization)).thenReturn("user123");
+        when(userRoleConfig.hasPermission("user123", "edit-sounds")).thenReturn(false);
+
+        // Act
+        ResponseEntity<Void> response = soundController.setFavorite(soundId, true, authorization);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(soundService, never()).save(any());
+    }
+
+    @Test
+    void getSoundCategories_whenAllSoundsHaveNullCategory_returnsSetWithNull() {
+        // Arrange — new SoundFile() leaves category null via no-arg constructor (Lombok @NoArgsConstructor)
+        SoundFile sound = new SoundFile();
+        Map<String, SoundFile> soundMap = new HashMap<>();
+        soundMap.put("sound1", sound);
+        when(soundPlayer.getAvailableSoundFiles()).thenReturn(soundMap);
+
+        // Act
+        Set<String> categories = soundController.getSoundCategories();
+
+        // Assert — null category is collected into the set
+        assertEquals(1, categories.size());
+        assertTrue(categories.contains(null));
     }
 }
