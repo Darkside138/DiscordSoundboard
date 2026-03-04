@@ -93,6 +93,16 @@ export function SettingsMenu({
     zIndex: 1000,
   };
 
+  const divider = (
+    <hr className={`mt-4 mb-3 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} />
+  );
+
+  const sectionLabel = (text: string) => (
+    <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+      {text}
+    </p>
+  );
+
   return (
     <div
       ref={menuRef}
@@ -105,10 +115,42 @@ export function SettingsMenu({
         Settings
       </h3>
 
-      {/* Popular Count */}
-      <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-          Popular Sounds Count
+      {/* Display */}
+      {sectionLabel('Display')}
+      <div className="flex gap-2 mb-1">
+        <button
+          onClick={() => onThemeChange('light')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            theme === 'light'
+              ? 'bg-blue-600 text-white'
+              : theme === 'dark'
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <Sun className="w-5 h-5" />
+          Light
+        </button>
+        <button
+          onClick={() => onThemeChange('dark')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            theme === 'dark'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <Moon className="w-5 h-5" />
+          Dark
+        </button>
+      </div>
+
+      {divider}
+
+      {/* Filters */}
+      {sectionLabel('Filters')}
+      <div className="mb-3">
+        <label className={`block text-sm mb-1.5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          Popular sounds count
         </label>
         <input
           type="number"
@@ -127,15 +169,10 @@ export function SettingsMenu({
               : 'bg-white border-gray-300 text-gray-900'
           } focus:outline-none focus:ring-2 focus:ring-blue-500`}
         />
-        <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          Number of sounds to mark as popular (1-100)
-        </p>
       </div>
-
-      {/* Recent Count */}
-      <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-          Recently Added Count
+      <div className="mb-1">
+        <label className={`block text-sm mb-1.5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+          Recently added count
         </label>
         <input
           type="number"
@@ -154,104 +191,67 @@ export function SettingsMenu({
               : 'bg-white border-gray-300 text-gray-900'
           } focus:outline-none focus:ring-2 focus:ring-blue-500`}
         />
-        <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          Number of sounds to mark as recently added (1-100)
-        </p>
       </div>
 
-      {/* Theme Toggle */}
-      <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-          Theme
-        </label>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onThemeChange('light')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              theme === 'light'
-                ? 'bg-blue-600 text-white'
-                : theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            <Sun className="w-5 h-5" />
-            Light
-          </button>
-          <button
-            onClick={() => onThemeChange('dark')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              theme === 'dark'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            <Moon className="w-5 h-5" />
-            Dark
-          </button>
-        </div>
+      {divider}
+
+      {/* About */}
+      {sectionLabel('About')}
+      <div className="mb-1 flex items-center justify-between">
+        <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Bot version</span>
+        <span className={`text-sm font-mono ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{botVersion}</span>
       </div>
 
-      {/* Bot Version */}
-      <div className="mb-4">
-        <label className={`block text-sm mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-          Bot Version
-        </label>
-        <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-          {botVersion}
-        </p>
-      </div>
-
-      {/* Upload Button */}
-      {canUpload && onUploadClick && (
-        <button
-          onClick={onUploadClick}
-          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
-            theme === 'dark'
-              ? 'bg-blue-700 text-white hover:bg-blue-600'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          <Upload className="w-5 h-5 mr-2" />
-          Upload Sound
-        </button>
+      {/* Administration */}
+      {(canUpload || canManageUsers) && (
+        <>
+          {divider}
+          {sectionLabel('Administration')}
+          <div className="flex flex-col gap-2">
+            {canUpload && onUploadClick && (
+              <button
+                onClick={onUploadClick}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
+                  theme === 'dark'
+                    ? 'bg-blue-700 text-white hover:bg-blue-600'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <Upload className="w-5 h-5 mr-2" />
+                Upload Sound
+              </button>
+            )}
+            {canManageUsers && onUsersClick && (
+              <button
+                onClick={() => { onUsersClick(); onClose(); }}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Manage Users
+              </button>
+            )}
+            {canManageUsers && onRolesClick && (
+              <button
+                onClick={() => { onRolesClick(); onClose(); }}
+                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                Manage Roles
+              </button>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Manage Users Button */}
-      {canManageUsers && onUsersClick && (
-        <button
-          onClick={() => {
-            onUsersClick();
-            onClose();
-          }}
-          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
-            theme === 'dark'
-              ? 'bg-blue-700 text-white hover:bg-blue-600'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          <Users className="w-5 h-5 mr-2" />
-          Manage Users
-        </button>
-      )}
-
-      {/* Manage Roles Button */}
-      {canManageUsers && onRolesClick && (
-        <button
-          onClick={() => {
-            onRolesClick();
-            onClose();
-          }}
-          className={`w-full px-4 py-2 rounded-lg transition-colors mb-2 flex items-center justify-center ${
-            theme === 'dark'
-              ? 'bg-blue-700 text-white hover:bg-blue-600'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-        >
-          <Shield className="w-5 h-5 mr-2" />
-          Manage Roles
-        </button>
-      )}
+      {divider}
 
       {/* Close Button */}
       <button

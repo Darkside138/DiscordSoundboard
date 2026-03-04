@@ -1,5 +1,15 @@
 import '@testing-library/jest-dom'
 
+// Provide a minimal ResizeObserver mock for JSDOM environment (used by Radix UI Slider)
+if (!(globalThis as any).ResizeObserver) {
+  class MockResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  ;(globalThis as any).ResizeObserver = MockResizeObserver
+}
+
 // Provide a minimal EventSource mock for JSDOM environment (used by DiscordUsersList)
 if (!(globalThis as any).EventSource) {
   class MockEventSource {

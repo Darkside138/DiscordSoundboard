@@ -5,8 +5,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Some components import this pinned specifier; map it to the real package for tests
+      // Some components import pinned specifiers; map them to the real packages for tests
       'sonner@2.0.3': 'sonner',
+      '@radix-ui/react-slider@1.2.3': '@radix-ui/react-slider',
     }
   },
   test: {

@@ -6,7 +6,7 @@ import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
 import { RoleManagementDialog } from './components/RoleManagementDialog';
 import { AuthButton } from './components/AuthButton';
-import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings, X } from 'lucide-react';
+import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings, X, Music } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 
 // Custom hooks
@@ -159,21 +159,10 @@ export default function App() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-blue-50 to-blue-100'} flex items-center justify-center`}>
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Loading sounds...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-blue-50 to-blue-100'} p-6`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gray-50'} p-6`}>
       <div>
-        <header className="mb-4 flex items-start justify-between">
+        <header className="mb-4 flex items-center justify-between">
           <div>
             <h1 className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-900'} mb-2 flex items-center gap-3`}>
               <img
@@ -234,81 +223,82 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               {/* Left side - Search and filters */}
               <div>
-                {/* Search */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
-                    <input
-                      id="soundSearch"
-                      type="text"
-                      placeholder="Search sounds..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && filteredSounds.length === 1) {
-                          playSoundWithBot(filteredSounds[0].id);
-                        }
-                      }}
-                      className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${searchQuery ? 'pr-9' : 'pr-4'} ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                      }`}
-                      ref={searchInputRef}
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
-                        aria-label="Clear search"
-                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+                {/* Search and Category - side by side on sm+ */}
+                <div className="mb-4 flex flex-col sm:flex-row gap-3">
+                  {/* Search */}
+                  <div className="flex-1 min-w-0">
+                    <div className="relative">
+                      <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <input
+                        id="soundSearch"
+                        type="text"
+                        placeholder={`Search ${filteredSounds.length} sound${filteredSounds.length !== 1 ? 's' : ''}...`}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && filteredSounds.length === 1) {
+                            playSoundWithBot(filteredSounds[0].id);
+                          }
+                        }}
+                        className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${searchQuery ? 'pr-9' : 'pr-4'} ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        }`}
+                        ref={searchInputRef}
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                          aria-label="Clear search"
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Search from {filteredSounds.length} sound{filteredSounds.length !== 1 ? 's' : ''}
-                  </p>
+
+                  {/* Category */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <label htmlFor="categorySelect" className={`shrink-0 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Category</label>
+                    <div className="relative flex-1">
+                      <select
+                        id="categorySelect"
+                        value={selectedCategory}
+                        onChange={(e) => {
+                          setSelectedCategory(e.target.value);
+                          if (e.target.value !== 'all') {
+                            setActiveFilter('none');
+                          }
+                        }}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${selectedCategory !== 'all' ? 'pr-10' : ''} ${
+                          theme === 'dark'
+                            ? 'bg-gray-700 border-gray-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
+                      >
+                        {categories.map(category => (
+                          <option key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedCategory !== 'all' && (
+                        <button
+                          onClick={() => setSelectedCategory('all')}
+                          aria-label="Clear category filter"
+                          className={`absolute right-7 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Category Filter and Playback Info */}
-                <div className="mb-4 flex items-center gap-3 flex-wrap">
-                  <label for="categorySelect" className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>Category</label>
-                  <div className="relative flex-1">
-                    <select
-                      id="categorySelect"
-                      value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value);
-                        if (e.target.value !== 'all') {
-                          setActiveFilter('none');
-                        }
-                      }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${selectedCategory !== 'all' ? 'pr-10' : ''} ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-900'
-                      }`}
-                    >
-                      {categories.map(category => (
-                        <option key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedCategory !== 'all' && (
-                      <button
-                        onClick={() => setSelectedCategory('all')}
-                        aria-label="Clear category filter"
-                        className={`absolute right-7 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Current Playback Info */}
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border w-[320px] ${
+                {/* Current Playback Info */}
+                <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg border ${
                     currentPlayback
                       ? theme === 'dark'
                         ? 'bg-blue-900/30 border-blue-700 text-blue-300'
@@ -334,7 +324,6 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                </div>
 
                 {/* Filter Buttons and Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
@@ -493,38 +482,70 @@ export default function App() {
             </div>
           </div>
 
-          {/* Sound Grid */}
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
-            {filteredSounds.map(sound => (
-              <SoundButton
-                key={sound.id}
-                sound={sound}
-                isFavorite={favorites.has(sound.id)}
-                isTopPlayed={top10SoundIds.has(sound.id)}
-                isRecentlyAdded={recentlyAddedIds.has(sound.id)}
-                onPlay={() => playSoundWithBot(sound.id)}
-                onToggleFavorite={() => toggleFavorite(sound.id)}
-                onContextMenu={(e) => handleContextMenu(e, sound.id)}
-                theme={theme}
-                disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
-                disabledReason={
-                  !authUser?.permissions?.playSounds
-                    ? "You don't have permission to play sounds"
-                    : !isPlaybackEnabled
-                    ? 'User must be in voice channel to play sounds'
-                    : undefined
-                }
-                isCurrentlyPlaying={currentlyPlayingSoundId === sound.id}
-                isLocallyPlaying={locallyPlayingSoundId === sound.id}
-                onStopLocalPlayback={stopLocalSound}
-              />
-            ))}
-          </div>
-
-          {/* No results */}
-          {filteredSounds.length === 0 && (
-            <div className="text-center py-12">
-              <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>No sounds found matching your filters</p>
+          {/* Sound Grid / Skeleton / Empty State */}
+          {loading ? (
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
+              {Array.from({ length: 48 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-14 rounded-lg animate-pulse ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}
+                />
+              ))}
+            </div>
+          ) : filteredSounds.length === 0 ? (
+            <div className={`flex flex-col items-center justify-center py-16 rounded-lg border-2 border-dashed ${
+              theme === 'dark' ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'
+            }`}>
+              <Music className="w-12 h-12 mb-4 opacity-40" />
+              <p className={`text-lg font-semibold mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No sounds found</p>
+              <p className="text-sm mb-4">
+                {searchQuery || selectedCategory !== 'all' || activeFilter !== 'none'
+                  ? 'Try adjusting your filters'
+                  : 'No sounds have been added yet'}
+              </p>
+              {(searchQuery || selectedCategory !== 'all' || activeFilter !== 'none') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                    setActiveFilter('none');
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
+              {filteredSounds.map(sound => (
+                <SoundButton
+                  key={sound.id}
+                  sound={sound}
+                  isFavorite={favorites.has(sound.id)}
+                  isTopPlayed={top10SoundIds.has(sound.id)}
+                  isRecentlyAdded={recentlyAddedIds.has(sound.id)}
+                  onPlay={() => playSoundWithBot(sound.id)}
+                  onToggleFavorite={() => toggleFavorite(sound.id)}
+                  onContextMenu={(e) => handleContextMenu(e, sound.id)}
+                  theme={theme}
+                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                  disabledReason={
+                    !authUser?.permissions?.playSounds
+                      ? "You don't have permission to play sounds"
+                      : !isPlaybackEnabled
+                      ? 'User must be in voice channel to play sounds'
+                      : undefined
+                  }
+                  isCurrentlyPlaying={currentlyPlayingSoundId === sound.id}
+                  isLocallyPlaying={locallyPlayingSoundId === sound.id}
+                  onStopLocalPlayback={stopLocalSound}
+                />
+              ))}
             </div>
           )}
         </div>

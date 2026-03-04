@@ -347,12 +347,12 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   }
 
   return (
-    <div className={`rounded-lg border max-h-[229px] flex flex-col ${
+    <div className={`rounded-lg border max-h-[40vh] flex flex-col ${
       theme === 'dark'
         ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     }`}>
-      <div className={`p-4 border-b flex-shrink-0 ${
+      <div className={`px-3 py-2 border-b flex-shrink-0 ${
         theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
       }`}>
         <div className="flex items-center gap-2">
@@ -394,7 +394,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                     // Update guild ID when user is selected/deselected
                     onGuildIdChange(willBeSelected ? (user.guildInAudioId || null) : null);
                   }}
-                  className={`p-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                  className={`py-2 px-3 flex items-center gap-2 transition-colors cursor-pointer ${
                     isSelected
                       ? theme === 'dark'
                         ? 'bg-blue-900/30 border-l-4 border-blue-500'
@@ -417,7 +417,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                       <img
                         src={user.avatarUrl}
                         alt={user.username}
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-6 h-6 rounded-full object-cover"
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
                           e.currentTarget.classList.add('hidden');
@@ -427,14 +427,14 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                       />
                     ) : null}
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${user.avatarUrl ? 'hidden' : ''} ${
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${user.avatarUrl ? 'hidden' : ''} ${
                         theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
                       }`}
                     >
-                      <Users className="w-4 h-4" />
+                      <Users className="w-3 h-3" />
                     </div>
                     <div
-                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 ${
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${
                         theme === 'dark' ? 'border-gray-800' : 'border-white'
                       } ${getOnlineStatusColor(user.onlineStatus)}`}
                     />
@@ -442,41 +442,30 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
 
                   {/* Username */}
                   <div className="flex-1 min-w-0">
-                    <p className={`truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    <p className={`text-sm truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                       {user.username}
                       {user.guildInAudioName && (
-                        <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                           {' '}({user.guildInAudioName})
                         </span>
                       )}
                     </p>
                     {user.entranceSound && user.leaveSound ? (
-                      <>
-                        <p className={`text-xs truncate hidden sm:block ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          Entrance: {user.entranceSound} | Leave: {user.leaveSound}
-                        </p>
-                        <p className={`text-xs truncate sm:hidden ${
-                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          Entrance: {user.entranceSound}
-                        </p>
-                      </>
+                      <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {user.entranceSound} | {user.leaveSound}
+                      </p>
                     ) : (user.entranceSound || user.leaveSound) && (
-                      <p className={`text-xs truncate ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        {user.entranceSound ? `Entrance: ${user.entranceSound}` : `Leave: ${user.leaveSound}`}
+                      <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {user.entranceSound ?? user.leaveSound}
                       </p>
                     )}
                   </div>
 
                   {/* Status Badges */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     {user.selected && (
                       <div
-                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                        className={`p-1 rounded ${
                           theme === 'dark'
                             ? 'bg-blue-900/50 text-blue-400'
                             : 'bg-blue-100 text-blue-700'
@@ -488,7 +477,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                     )}
                     {user.inVoice && user.channelName && (
                       <div
-                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                        className={`p-1 rounded ${
                           theme === 'dark'
                             ? 'bg-green-900/50 text-green-400'
                             : 'bg-green-100 text-green-700'
@@ -496,7 +485,6 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                         title={`In Voice Channel: ${user.channelName}`}
                       >
                         <Mic className="w-3 h-3" />
-                        <span className="truncate max-w-[80px]">{user.channelName}</span>
                       </div>
                     )}
                   </div>

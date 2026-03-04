@@ -18,6 +18,31 @@ vi.mock('../../utils/api', () => ({
   fetchWithAuth: (...args: any[]) => fetchWithAuthMock(...args),
 }))
 
+// Mock Radix Slider with a native <input type="range"> so tests can use fireEvent.change / mouseUp
+vi.mock('@radix-ui/react-slider', () => {
+  const React = require('react')
+  return {
+    Root: React.forwardRef(({ onValueChange, onValueCommit, value, min, max, disabled }: any, ref: any) =>
+      React.createElement('span', { ref },
+        React.createElement('input', {
+          role: 'slider',
+          type: 'range',
+          min,
+          max,
+          value: value?.[0] ?? 0,
+          onChange: (e: any) => onValueChange?.([Number(e.target.value)]),
+          onMouseUp: (e: any) => onValueCommit?.([Number(e.target.value)]),
+          disabled,
+          readOnly: false,
+        })
+      )
+    ),
+    Track: ({ children }: any) => React.createElement('div', null, children),
+    Range: () => null,
+    Thumb: () => null,
+  }
+})
+
 const baseProps = () => ({
   x: 100,
   y: 100,

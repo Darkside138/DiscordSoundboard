@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Heart, Download, Play, Clock, Calendar, Volume2, Edit2, Check, X, Trash2, FolderOpen, FileText } from 'lucide-react';
+import * as SliderPrimitive from '@radix-ui/react-slider@1.2.3';
 import { API_BASE_URL } from '../config';
 import { fetchWithAuth } from '../utils/api';
 import { toast } from 'sonner@2.0.3';
@@ -117,13 +118,13 @@ export function ContextMenu({
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalVolumeOffset(Number(e.target.value));
+  const handleVolumeChange = (values: number[]) => {
+    setLocalVolumeOffset(values[0]);
   };
 
-  const handleVolumeRelease = () => {
-    if (localVolumeOffset !== lastSentValueRef.current) {
-      updateVolumeOffset(localVolumeOffset);
+  const handleVolumeCommit = (values: number[]) => {
+    if (values[0] !== lastSentValueRef.current) {
+      updateVolumeOffset(values[0]);
     }
   };
 
@@ -368,26 +369,34 @@ export function ContextMenu({
                 </span>
               </div>
               <div className="pl-7">
-                <input
-                  type="range"
-                  min="-100"
-                  max="100"
-                  value={localVolumeOffset}
-                  onChange={handleVolumeChange}
-                  onMouseUp={handleVolumeRelease}
-                  onTouchEnd={handleVolumeRelease}
+                <SliderPrimitive.Root
+                  min={-100}
+                  max={100}
+                  value={[localVolumeOffset]}
+                  onValueChange={handleVolumeChange}
+                  onValueCommit={handleVolumeCommit}
                   disabled={isUpdating}
-                  className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${
-                    theme === 'dark'
-                      ? 'bg-gray-600 accent-blue-500'
-                      : 'bg-gray-300 accent-blue-600'
-                  }`}
-                  style={{
-                    background: theme === 'dark'
-                      ? `linear-gradient(to right, #4b5563 0%, #4b5563 ${(localVolumeOffset + 100) / 2}%, #6b7280 ${(localVolumeOffset + 100) / 2}%, #6b7280 100%)`
-                      : `linear-gradient(to right, #9333ea 0%, #9333ea ${(localVolumeOffset + 100) / 2}%, #d1d5db ${(localVolumeOffset + 100) / 2}%, #d1d5db 100%)`
-                  }}
-                />
+                  className="relative flex w-full touch-none items-center"
+                >
+                  <SliderPrimitive.Track
+                    className={`relative h-2 w-full grow overflow-hidden rounded-full ${
+                      theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <SliderPrimitive.Range
+                      className={`absolute h-full ${
+                        theme === 'dark' ? 'bg-purple-500' : 'bg-purple-600'
+                      }`}
+                    />
+                  </SliderPrimitive.Track>
+                  <SliderPrimitive.Thumb
+                    className={`block h-4 w-4 rounded-full border-2 shadow transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+                      theme === 'dark'
+                        ? 'bg-gray-200 border-gray-500'
+                        : 'bg-white border-gray-400'
+                    }`}
+                  />
+                </SliderPrimitive.Root>
               </div>
             </div>
           )}

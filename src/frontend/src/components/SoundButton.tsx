@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Star, Trophy, Sparkles, Volume2, CircleStop } from 'lucide-react';
 
 interface Sound {
@@ -27,6 +27,35 @@ interface SoundButtonProps {
 }
 
 export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, disabledReason, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    longPressTimer.current = setTimeout(() => {
+      onContextMenu({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => {} } as unknown as React.MouseEvent);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPos.current || !longPressTimer.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+    if (dx > 8 || dy > 8) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   const formatSoundName = (name: string) => {
     return name
       // Replace underscores and hyphens with spaces
@@ -52,6 +81,9 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
         theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'
       }`}
       onContextMenu={onContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
       {isFavorite && (
         <div className="absolute -top-1.5 -right-1.5 z-20 bg-yellow-500 rounded-full p-1 shadow-lg" title="Favorite">
