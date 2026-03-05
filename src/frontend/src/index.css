@@ -661,6 +661,10 @@
     min-height: 100vh;
   }
 
+  .w-px {
+    width: 1px;
+  }
+
   .w-2\.5 {
     width: calc(var(--spacing) * 2.5);
   }
@@ -786,6 +790,10 @@
     align-items: flex-start;
   }
 
+  .self-stretch {
+    align-self: stretch;
+  }
+
   .justify-between {
     justify-content: space-between;
   }
@@ -805,6 +813,10 @@
   .gap-3 {
     gap: calc(var(--spacing) * 3);
   }
+
+  .gap-4 {
+      gap: calc(var(--spacing) * 4);
+    }
 
   .gap-6 {
     gap: calc(var(--spacing) * 6);
@@ -888,6 +900,10 @@
   .border-b {
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
+  }
+
+  .border-l {
+    border-left-width: 1px;
   }
 
   .border-l-4 {
@@ -1164,6 +1180,10 @@
     padding: calc(var(--spacing) * 6);
   }
 
+  .px-1.5 {
+      padding-inline: calc(var(--spacing) * 1.5);
+    }
+
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
   }
@@ -1210,6 +1230,10 @@
 
   .pr-10 {
     padding-right: calc(var(--spacing) * 10);
+  }
+
+  .pl-4 {
+    padding-left: calc(var(--spacing) * 4);
   }
 
   .pl-7 {
@@ -1647,6 +1671,10 @@
   }
 
   @media (width >= 48rem) {
+    .md\:grid-cols-\[1fr_280px\] {
+      grid-template-columns: 1fr 280px;
+    }
+
     .md\:grid-cols-8 {
       grid-template-columns: repeat(8, minmax(0, 1fr));
     }
@@ -1708,6 +1736,43 @@
 
   .\[\&\:\:-webkit-scrollbar-track\]\:bg-gray-700::-webkit-scrollbar-track {
     background-color: var(--color-gray-700);
+  }
+
+  .h-\[155px\] {
+    height: 155px;
+  }
+
+  .h-\[51px\] {
+    height: 51px;
+  }
+
+  /* Playback history panel additions */
+  .max-h-\[300px\] {
+    max-height: 300px;
+  }
+
+  .last\:border-b-0:last-child {
+    border-bottom-width: 0px;
+  }
+
+  .bg-purple-600 {
+    background-color: oklch(.558 .288 302.321);
+  }
+
+  .bg-purple-700 {
+    background-color: oklch(.496 .265 301.924);
+  }
+
+  .hover\:bg-purple-600:hover {
+    background-color: oklch(.558 .288 302.321);
+  }
+
+  .bg-white\/20 {
+    background-color: color-mix(in srgb, #fff 20%, transparent);
+  }
+
+  .border-b-0 {
+    border-bottom-width: 0px;
   }
 }
 
@@ -1791,6 +1856,7 @@
 
 html {
   font-size: var(--font-size);
+  scrollbar-gutter: stable;
 }
 
 @property --tw-translate-x {

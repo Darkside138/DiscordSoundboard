@@ -6,7 +6,7 @@ import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
 import { RoleManagementDialog } from './components/RoleManagementDialog';
 import { AuthButton } from './components/AuthButton';
-import { Search, Star, Grid3x3, Volume2, Shuffle, StopCircle, Settings, X, Music } from 'lucide-react';
+import { Search, Star, Trophy, Sparkles, Volume2, Shuffle, StopCircle, Settings, X, Music, History, PlayCircle } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 
 // Custom hooks
@@ -19,6 +19,7 @@ import { usePlaybackTracking } from './hooks/usePlaybackTracking';
 import { useLocalPlayback } from './hooks/useLocalPlayback';
 import { useSoundActions } from './hooks/useSoundActions';
 import { useFilters } from './hooks/useFilters';
+import { usePlaybackHistory } from './hooks/usePlaybackHistory';
 
 export default function App() {
   // Authentication
@@ -26,6 +27,11 @@ export default function App() {
 
   // Theme
   const { theme, setTheme } = useTheme();
+
+  // Sync html background to theme so scrollbar-gutter matches page color
+  useEffect(() => {
+    document.documentElement.style.backgroundColor = theme === 'dark' ? '#111827' : '#f9fafb';
+  }, [theme]);
 
   // Sounds data
   const { sounds, setSounds, favorites, setFavorites, loading, connectionStatus } = useSounds();
@@ -85,6 +91,38 @@ export default function App() {
     setFavorites
   });
 
+  // Playback history
+  const { history, recordPlay, clearHistory } = usePlaybackHistory();
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Record bot plays whenever currentPlayback changes
+  useEffect(() => {
+    if (currentPlayback) {
+      const name = currentPlayback.displayName && currentPlayback.displayName.trim() !== ''
+        ? currentPlayback.displayName
+        : formatSoundFileId(currentPlayback.soundFileId);
+      recordPlay(currentPlayback.soundFileId, name);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPlayback]);
+
+  // Tick every 5s to refresh relative timestamps in history
+  const [, setTimeTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTimeTick(t => t + 1), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Wrapped local play that also records history
+  const playLocalSoundWithHistory = (soundId: string) => {
+    const sound = sounds.find(s => s.id === soundId);
+    const name = sound?.displayName && sound.displayName.trim() !== ''
+      ? sound.displayName
+      : formatSoundFileId(soundId);
+    recordPlay(soundId, name);
+    playLocalSound(soundId);
+  };
+
   // UI state
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -99,8 +137,23 @@ export default function App() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const formatTimeAgo = (timestamp: number): string => {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 10) return '5s ago';
+    if (seconds < 30) return '10s ago';
+    if (seconds < 45) return '30s ago';
+    if (seconds < 60) return '45s ago';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
   // Format sound file ID to be human-readable
   const formatSoundFileId = (name: string) => {
+
     return name
       .replace(/[_-]/g, ' ')
       .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -160,7 +213,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gray-50'} p-6`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gray-50'} p-4`}>
       <div>
         <header className="mb-4 flex items-center justify-between">
           <div>
@@ -219,14 +272,15 @@ export default function App() {
         {/* Main Content Area */}
         <div>
           {/* Filters */}
-          <div className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-lg shadow-md p-6 mb-6 ${theme === 'dark' ? 'border' : ''}`}>
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-lg shadow-md p-4 mb-6 ${theme === 'dark' ? 'border' : ''}`}>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
               {/* Left side - Search and filters */}
               <div>
-                {/* Search and Category - side by side on sm+ */}
-                <div className="mb-4 flex flex-col sm:flex-row gap-3">
-                  {/* Search */}
-                  <div className="flex-1 min-w-0">
+                {/* Top: Search+Category (left) | Playback+History (right) */}
+                <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_280px] gap-4">
+                  {/* Left: search stacked above category */}
+                  <div className="flex flex-col gap-3">
+                    {/* Search */}
                     <div className="relative">
                       <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
                       <input
@@ -257,12 +311,9 @@ export default function App() {
                         </button>
                       )}
                     </div>
-                  </div>
 
-                  {/* Category */}
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <label htmlFor="categorySelect" className={`shrink-0 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Category</label>
-                    <div className="relative flex-1">
+                    {/* Category */}
+                    <div className="relative">
                       <select
                         id="categorySelect"
                         value={selectedCategory}
@@ -280,7 +331,7 @@ export default function App() {
                       >
                         {categories.map(category => (
                           <option key={category} value={category}>
-                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category === 'all' ? 'Select Category to Filter By' : category.charAt(0).toUpperCase() + category.slice(1)}
                           </option>
                         ))}
                       </select>
@@ -295,99 +346,192 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Current Playback Info */}
-                <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                    currentPlayback
-                      ? theme === 'dark'
-                        ? 'bg-blue-900/30 border-blue-700 text-blue-300'
-                        : 'bg-blue-50 border-blue-300 text-blue-800'
-                      : theme === 'dark'
-                      ? 'bg-gray-800 border-gray-700 text-gray-500'
-                      : 'bg-gray-50 border-gray-300 text-gray-500'
-                  }`}>
-                    <div className="text-sm flex items-center gap-1 overflow-hidden min-w-0 flex-1">
-                      {currentPlayback ? (
-                        <>
-                          <span className="shrink-0">🎵</span>
-                          <span className="font-semibold truncate">
-                            {currentPlayback.displayName && currentPlayback.displayName.trim() !== ''
-                              ? currentPlayback.displayName
-                              : formatSoundFileId(currentPlayback.soundFileId)}
-                          </span>
-                          <span className={`shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>by</span>
-                          <span className="font-semibold truncate">{currentPlayback.user}</span>
-                        </>
-                      ) : (
-                        <span>No playback active</span>
-                      )}
+                  {/* Right: current playback + history */}
+                  <div className={`flex flex-col gap-2`}>
+                    {/* Current Playback Info */}
+                    <div className={`flex items-center h-[51px] gap-2 px-3 py-2 rounded-lg border ${
+                      currentPlayback
+                        ? theme === 'dark'
+                          ? 'bg-blue-900/30 border-blue-700 text-blue-300'
+                          : 'bg-blue-50 border-blue-300 text-blue-800'
+                        : theme === 'dark'
+                        ? 'bg-gray-800 border-gray-700 text-gray-500'
+                        : 'bg-gray-50 border-gray-300 text-gray-500'
+                    }`}>
+                      <div className="text-sm flex items-center gap-1 overflow-hidden min-w-0 flex-1">
+                        {currentPlayback ? (
+                          <>
+                            <span className="shrink-0">🎵</span>
+                            <span className="font-semibold truncate">
+                              {currentPlayback.displayName && currentPlayback.displayName.trim() !== ''
+                                ? currentPlayback.displayName
+                                : formatSoundFileId(currentPlayback.soundFileId)}
+                            </span>
+                            <span className={`shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>by</span>
+                            <span className="font-semibold truncate">{currentPlayback.user}</span>
+                          </>
+                        ) : (
+                          <span>No playback active</span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* History Toggle Button */}
+                    <button
+                      onClick={() => setShowHistory(h => !h)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full ${
+                        showHistory
+                          ? theme === 'dark'
+                            ? 'bg-purple-700 text-white'
+                            : 'bg-purple-600 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                      title="Toggle playback history"
+                    >
+                      <History className="w-4 h-4" />
+                      <span className="text-sm">History</span>
+                      {history.length > 0 && (
+                        <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                          showHistory
+                            ? 'bg-white/20 text-white'
+                            : theme === 'dark'
+                            ? 'bg-gray-600 text-gray-300'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {history.length}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* History List */}
+                    {showHistory && (
+                      <div className={`overflow-y-auto max-h-[200px] rounded-lg border ${
+                        theme === 'dark' ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'
+                      }`}>
+                        {history.length === 0 ? (
+                          <div className={`px-3 py-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                            No playback history yet
+                          </div>
+                        ) : (
+                          <>
+                            {history.map((entry, i) => (
+                              <div
+                                key={`${entry.soundId}-${entry.timestamp}-${i}`}
+                                className={`flex items-center gap-2 px-3 py-1.5 border-b last:border-b-0 text-sm ${
+                                  theme === 'dark' ? 'border-gray-700/50 text-gray-300' : 'border-gray-100 text-gray-700'
+                                }`}
+                              >
+                                <button
+                                  onClick={() => playSoundWithBot(entry.soundId)}
+                                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                                  className={`shrink-0 p-0.5 rounded transition-colors ${
+                                    !isPlaybackEnabled || !authUser?.permissions?.playSounds
+                                      ? 'opacity-30 cursor-not-allowed'
+                                      : theme === 'dark'
+                                      ? 'text-gray-400 hover:text-blue-400'
+                                      : 'text-gray-400 hover:text-blue-600'
+                                  }`}
+                                  title="Play again"
+                                >
+                                  <PlayCircle className="w-4 h-4" />
+                                </button>
+                                {entry.count > 1 && (
+                                  <span className={`shrink-0 text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                                    theme === 'dark' ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'
+                                  }`}>
+                                    ×{entry.count}
+                                  </span>
+                                )}
+                                <span className="truncate flex-1">
+                                  {(() => {
+                                    const s = sounds.find(s => s.id === entry.soundId);
+                                    return s?.displayName && s.displayName.trim() !== ''
+                                      ? s.displayName
+                                      : formatSoundFileId(entry.soundId);
+                                  })()}
+                                </span>
+                                <span className={`shrink-0 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                  {formatTimeAgo(entry.timestamp)}
+                                </span>
+                              </div>
+                            ))}
+                            <div className={`border-t px-3 py-1.5 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                              <button
+                                onClick={clearHistory}
+                                className={`text-xs ${theme === 'dark' ? 'text-gray-500 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+                              >
+                                Clear history
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
+                </div>
 
                 {/* Filter Buttons and Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
-                  {/* Favorites Filter */}
-                  <button
-                    onClick={() => {
-                      setActiveFilter(activeFilter === 'favorites' ? 'none' : 'favorites');
-                      if (activeFilter !== 'favorites') {
-                        setSelectedCategory('all');
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      activeFilter === 'favorites'
-                        ? 'bg-yellow-600 text-white'
-                        : theme === 'dark'
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Star className={`w-5 h-5 ${activeFilter === 'favorites' ? 'fill-current' : ''}`} />
-                    Favorites
-                  </button>
+                  {/* Filter toggle group — connected segmented control */}
+                  <div className={`flex rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`}>
+                    <button
+                      onClick={() => {
+                        setActiveFilter(activeFilter === 'favorites' ? 'none' : 'favorites');
+                        if (activeFilter !== 'favorites') setSelectedCategory('all');
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 transition-colors ${
+                        activeFilter === 'favorites'
+                          ? 'bg-yellow-600 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Star className={`w-4 h-4 ${activeFilter === 'favorites' ? 'fill-current' : ''}`} />
+                      Favorites
+                    </button>
 
-                  {/* Popular Filter */}
-                  <button
-                    onClick={() => {
-                      setActiveFilter(activeFilter === 'popular' ? 'none' : 'popular');
-                      if (activeFilter !== 'popular') {
-                        setSelectedCategory('all');
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      activeFilter === 'popular'
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white'
-                        : theme === 'dark'
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Grid3x3 className="w-5 h-5" />
-                    Popular
-                  </button>
+                    <div className={`w-px self-stretch ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
 
-                  {/* Recent Filter */}
-                  <button
-                    onClick={() => {
-                      setActiveFilter(activeFilter === 'recent' ? 'none' : 'recent');
-                      if (activeFilter !== 'recent') {
-                        setSelectedCategory('all');
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      activeFilter === 'recent'
-                        ? 'bg-green-600 text-white'
-                        : theme === 'dark'
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Recent
-                  </button>
+                    <button
+                      onClick={() => {
+                        setActiveFilter(activeFilter === 'popular' ? 'none' : 'popular');
+                        if (activeFilter !== 'popular') setSelectedCategory('all');
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 transition-colors ${
+                        activeFilter === 'popular'
+                          ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Trophy className="w-4 h-4" />
+                      Popular
+                    </button>
+
+                    <div className={`w-px self-stretch ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
+
+                    <button
+                      onClick={() => {
+                        setActiveFilter(activeFilter === 'recent' ? 'none' : 'recent');
+                        if (activeFilter !== 'recent') setSelectedCategory('all');
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 transition-colors ${
+                        activeFilter === 'recent'
+                          ? 'bg-green-600 text-white'
+                          : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Recent
+                    </button>
+                  </div>
 
                   {/* Volume Slider */}
                   <div className={`flex items-center gap-3 flex-1 min-w-[200px] ${selectedUserId && isPlaybackEnabled ? '' : 'invisible'}`}>
@@ -493,7 +637,7 @@ export default function App() {
               ))}
             </div>
           ) : filteredSounds.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-16 rounded-lg border-2 border-dashed ${
+            <div className={`flex flex-col items-center justify-center py-12 rounded-lg border-2 border-dashed ${
               theme === 'dark' ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'
             }`}>
               <Music className="w-12 h-12 mb-4 opacity-40" />
@@ -564,7 +708,7 @@ export default function App() {
             onFavorite={() => toggleFavorite(contextMenu.soundId)}
             onDelete={() => deleteSound(contextMenu.soundId)}
             onDownload={() => downloadSound(contextMenu.soundId)}
-            onPlayLocally={() => playLocalSound(contextMenu.soundId)}
+            onPlayLocally={() => playLocalSoundWithHistory(contextMenu.soundId)}
             isFavorite={favorites.has(contextMenu.soundId)}
             theme={theme}
             timesPlayed={sound.timesPlayed}

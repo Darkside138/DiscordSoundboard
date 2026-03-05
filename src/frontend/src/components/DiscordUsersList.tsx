@@ -330,7 +330,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
 
   if (error) {
     return (
-      <div className={`rounded-lg border p-4 ${
+      <div className={`rounded-lg h-[152px] border p-4 ${
         theme === 'dark'
           ? 'bg-gray-800 border-gray-700'
           : 'bg-white border-gray-200'
@@ -347,12 +347,12 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   }
 
   return (
-    <div className={`rounded-lg border max-h-[40vh] flex flex-col ${
+    <div className={`rounded-lg border h-[155px] flex flex-col ${
       theme === 'dark'
         ? 'bg-gray-800 border-gray-700'
         : 'bg-white border-gray-200'
     }`}>
-      <div className={`px-3 py-2 border-b flex-shrink-0 ${
+      <div className={`px-3 py-1 border-b flex-shrink-0 ${
         theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
       }`}>
         <div className="flex items-center gap-2">
@@ -394,7 +394,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                     // Update guild ID when user is selected/deselected
                     onGuildIdChange(willBeSelected ? (user.guildInAudioId || null) : null);
                   }}
-                  className={`py-2 px-3 flex items-center gap-2 transition-colors cursor-pointer ${
+                  className={`py-0.5 px-3 flex items-center gap-2 transition-colors cursor-pointer ${
                     isSelected
                       ? theme === 'dark'
                         ? 'bg-blue-900/30 border-l-4 border-blue-500'
