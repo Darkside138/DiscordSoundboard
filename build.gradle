@@ -45,6 +45,15 @@ test {
     useJUnitPlatform()
 }
 
+// Allow Lavaplayer's native library loader to run on Java 21+
+application {
+    applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
+}
+
+bootRun {
+    jvmArgs = ['--enable-native-access=ALL-UNNAMED']
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)

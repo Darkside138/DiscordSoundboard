@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Download, Play, Clock, Calendar, Volume2, Edit2, Check, X, Trash2, FolderOpen, FileText } from 'lucide-react';
+import { Star, Download, Play, Clock, Calendar, Volume2, Edit2, Check, X, Trash2, FolderOpen, FileText } from 'lucide-react';
 import * as SliderPrimitive from '@radix-ui/react-slider@1.2.3';
 import { API_BASE_URL } from '../config';
 import { fetchWithAuth } from '../utils/api';
@@ -286,7 +286,7 @@ export function ContextMenu({
               : 'hover:bg-gray-100 text-gray-700'
           }`}
         >
-          <Heart
+          <Star
             className={`w-4 h-4 ${
               isFavorite ? 'fill-yellow-500 text-yellow-500' : ''
             }`}

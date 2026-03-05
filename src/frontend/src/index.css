@@ -1180,7 +1180,7 @@
     padding: calc(var(--spacing) * 6);
   }
 
-  .px-1.5 {
+  .px-1\.5 {
       padding-inline: calc(var(--spacing) * 1.5);
     }
 

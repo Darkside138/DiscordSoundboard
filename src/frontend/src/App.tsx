@@ -409,7 +409,9 @@ export default function App() {
                     {/* History List */}
                     {showHistory && (
                       <div className={`overflow-y-auto max-h-[200px] rounded-lg border ${
-                        theme === 'dark' ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'
+                        theme === 'dark'
+                          ? 'border-gray-700 bg-gray-800/50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
+                          : 'border-gray-200 bg-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
                       }`}>
                         {history.length === 0 ? (
                           <div className={`px-3 py-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
