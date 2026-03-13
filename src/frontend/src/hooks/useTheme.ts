@@ -11,9 +11,10 @@ export function useTheme() {
     }
   }, []);
 
-  // Save theme to localStorage when it changes
+  // Save theme to localStorage and apply .dark class to <html> when it changes
   useEffect(() => {
     localStorage.setItem('soundboard-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   return { theme, setTheme };

@@ -14,7 +14,6 @@ interface ContextMenuProps {
   onDownload: () => void;
   onPlayLocally: () => void;
   isFavorite: boolean;
-  theme: 'light' | 'dark';
   timesPlayed: number;
   dateAdded: string;
   volumeOffset: number | null;
@@ -34,7 +33,6 @@ export function ContextMenu({
   onDownload,
   onPlayLocally,
   isFavorite,
-  theme,
   timesPlayed,
   dateAdded,
   volumeOffset,
@@ -56,10 +54,8 @@ export function ContextMenu({
   const [adjustedPosition, setAdjustedPosition] = useState({ x, y });
   const [savedDisplayName, setSavedDisplayName] = useState<string | null>(null);
 
-  // Use the saved display name if it exists, otherwise use the prop
   const currentDisplayName = savedDisplayName !== null ? savedDisplayName : displayName;
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -73,16 +69,13 @@ export function ContextMenu({
     }
   };
 
-  // Update volume offset on the backend
   const updateVolumeOffset = async (newValue: number) => {
     const now = Date.now();
 
-    // Block if we just sent a request within the last 300ms
     if (now - lastUpdateTimeRef.current < 300) {
       return;
     }
 
-    // Block if this exact value was already sent
     if (lastSentValueRef.current === newValue) {
       return;
     }
@@ -128,7 +121,6 @@ export function ContextMenu({
     }
   };
 
-  // Update display name on the backend
   const updateDisplayName = async (newName: string) => {
     setIsUpdatingName(true);
 
@@ -184,7 +176,6 @@ export function ContextMenu({
     }
   };
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditingName && nameInputRef.current) {
       nameInputRef.current.focus();
@@ -206,14 +197,12 @@ export function ContextMenu({
     };
 
     const handleContextMenu = (event: MouseEvent) => {
-      // Close the menu if right-clicking outside of it
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         event.preventDefault();
         onClose();
       }
     };
 
-    // Use setTimeout to avoid closing immediately on the same event that opened the menu
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
@@ -228,7 +217,6 @@ export function ContextMenu({
     };
   }, [onClose]);
 
-  // Adjust position to keep menu within viewport
   useEffect(() => {
     const currentRef = menuRef.current;
     if (currentRef) {
@@ -239,22 +227,18 @@ export function ContextMenu({
       let newX = x;
       let newY = y;
 
-      // Check if menu would be within 50px of right edge
       if (x + rect.width > windowWidth - 50) {
         newX = windowWidth - rect.width - 50;
       }
 
-      // Check if menu overflows bottom edge
       if (y + rect.height > windowHeight) {
-        newY = windowHeight - rect.height - 10; // 10px padding from edge
+        newY = windowHeight - rect.height - 10;
       }
 
-      // Ensure menu doesn't go off left edge
       if (newX < 10) {
         newX = 10;
       }
 
-      // Ensure menu doesn't go off top edge
       if (newY < 10) {
         newY = 10;
       }
@@ -268,101 +252,73 @@ export function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className={`fixed z-50 min-w-[280px] rounded-lg shadow-2xl border ${
-        theme === 'dark'
-          ? 'bg-gray-800 border-gray-700'
-          : 'bg-white border-gray-200'
-      }`}
+      className="fixed z-50 min-w-[280px] rounded-lg shadow-2xl border bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700"
       style={{ left: `${adjustedPosition.x}px`, top: `${adjustedPosition.y}px` }}
     >
       <div className="py-1">
         <button
-          onClick={() => {
-            onFavorite();
-          }}
-          className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
-            theme === 'dark'
-              ? 'hover:bg-gray-700 text-gray-200'
-              : 'hover:bg-gray-100 text-gray-700'
-          }`}
+          onClick={() => { onFavorite(); }}
+          className="w-full px-4 py-2 text-left flex items-center gap-3 transition-colors hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-700 dark:text-gray-200"
         >
-          <Star
-            className={`w-4 h-4 ${
-              isFavorite ? 'fill-yellow-500 text-yellow-500' : ''
-            }`}
-          />
+          <Star className={`w-4 h-4 ${isFavorite ? 'fill-yellow-500 text-yellow-500' : ''}`} />
           {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
         </button>
 
         <button
-          onClick={() => {
-            onDownload();
-            onClose();
-          }}
-          className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
-            theme === 'dark'
-              ? 'hover:bg-gray-700 text-gray-200'
-              : 'hover:bg-gray-100 text-gray-700'
-          }`}
+          onClick={() => { onDownload(); onClose(); }}
+          className="w-full px-4 py-2 text-left flex items-center gap-3 transition-colors hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-700 dark:text-gray-200"
         >
           <Download className="w-4 h-4" />
           Download Sound
         </button>
 
         <button
-          onClick={() => {
-            onPlayLocally();
-            onClose();
-          }}
-          className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
-            theme === 'dark'
-              ? 'hover:bg-gray-700 text-gray-200'
-              : 'hover:bg-gray-100 text-gray-700'
-          }`}
+          onClick={() => { onPlayLocally(); onClose(); }}
+          className="w-full px-4 py-2 text-left flex items-center gap-3 transition-colors hover:bg-gray-100 text-gray-700 dark:hover:bg-gray-700 dark:text-gray-200"
         >
           <Play className="w-4 h-4" />
           Play Locally
         </button>
 
-        <div className={`my-1 h-px ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`} />
+        <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
 
         {/* Sound Information Section */}
-        <div className={`px-4 py-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+        <div className="px-4 py-2 text-gray-600 dark:text-gray-300">
           <div className="flex items-center gap-3 py-1.5">
             <Clock className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">
-              Played: <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>{timesPlayed}</span> {timesPlayed === 1 ? 'time' : 'times'}
+              Played: <span className="text-gray-900 dark:text-white">{timesPlayed}</span> {timesPlayed === 1 ? 'time' : 'times'}
             </span>
           </div>
 
           <div className="flex items-center gap-3 py-1.5">
             <FolderOpen className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">
-              Category: <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>{category}</span>
+              Category: <span className="text-gray-900 dark:text-white">{category}</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3 py-1.5">
             <Calendar className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">
-              Added: <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>{formatDate(dateAdded)}</span>
+              Added: <span className="text-gray-900 dark:text-white">{formatDate(dateAdded)}</span>
             </span>
           </div>
 
           <div className="flex items-center gap-3 py-1.5">
             <FileText className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">
-              ID: <span className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} font-mono text-xs`}>{soundId}</span>
+              ID: <span className="text-gray-900 dark:text-white font-mono text-xs">{soundId}</span>
             </span>
           </div>
 
-          {/* Volume Offset - Only visible with edit-sounds permission */}
+          {/* Volume Offset */}
           {canEditSounds && (
             <div className="py-1.5">
               <div className="flex items-center gap-3 mb-2">
                 <Volume2 className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">
-                  Volume: <span className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} font-medium`}>
+                  Volume: <span className="text-gray-900 dark:text-white font-medium">
                     {localVolumeOffset > 0 ? '+' : ''}{localVolumeOffset}%
                   </span>
                   {isUpdating && <span className="ml-2 text-xs">(saving...)</span>}
@@ -378,30 +334,16 @@ export function ContextMenu({
                   disabled={isUpdating}
                   className="relative flex w-full touch-none items-center"
                 >
-                  <SliderPrimitive.Track
-                    className={`relative h-2 w-full grow overflow-hidden rounded-full ${
-                      theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <SliderPrimitive.Range
-                      className={`absolute h-full ${
-                        theme === 'dark' ? 'bg-purple-500' : 'bg-purple-600'
-                      }`}
-                    />
+                  <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-gray-300 dark:bg-gray-600">
+                    <SliderPrimitive.Range className="absolute h-full bg-purple-600 dark:bg-purple-500" />
                   </SliderPrimitive.Track>
-                  <SliderPrimitive.Thumb
-                    className={`block h-4 w-4 rounded-full border-2 shadow transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 ${
-                      theme === 'dark'
-                        ? 'bg-gray-200 border-gray-500'
-                        : 'bg-white border-gray-400'
-                    }`}
-                  />
+                  <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border-2 shadow transition-colors focus:outline-none disabled:pointer-events-none disabled:opacity-50 bg-white border-gray-400 dark:bg-gray-200 dark:border-gray-500" />
                 </SliderPrimitive.Root>
               </div>
             </div>
           )}
 
-          {/* Display Name - Only visible with edit-sounds permission */}
+          {/* Display Name */}
           {canEditSounds && (
             <div className="py-1.5">
               <div className="flex items-center gap-3 mb-2">
@@ -421,21 +363,13 @@ export function ContextMenu({
                       onChange={(e) => setEditedDisplayName(e.target.value)}
                       onKeyDown={handleNameKeyDown}
                       disabled={isUpdatingName}
-                      className={`flex-1 px-2 py-1 rounded border text-sm ${
-                        theme === 'dark'
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-white border-gray-300 text-gray-900'
-                      }`}
+                      className="flex-1 px-2 py-1 rounded border text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       placeholder="Enter display name"
                     />
                     <button
                       onClick={handleSaveDisplayName}
                       disabled={isUpdatingName}
-                      className={`p-1 rounded transition-colors ${
-                        theme === 'dark'
-                          ? 'hover:bg-gray-700 text-green-400'
-                          : 'hover:bg-gray-100 text-green-600'
-                      }`}
+                      className="p-1 rounded transition-colors hover:bg-gray-100 text-green-600 dark:hover:bg-gray-700 dark:text-green-400"
                       title="Save"
                     >
                       <Check className="w-4 h-4" />
@@ -443,11 +377,7 @@ export function ContextMenu({
                     <button
                       onClick={handleCancelEditName}
                       disabled={isUpdatingName}
-                      className={`p-1 rounded transition-colors ${
-                        theme === 'dark'
-                          ? 'hover:bg-gray-700 text-red-400'
-                          : 'hover:bg-gray-100 text-red-600'
-                      }`}
+                      className="p-1 rounded transition-colors hover:bg-gray-100 text-red-600 dark:hover:bg-gray-700 dark:text-red-400"
                       title="Cancel"
                     >
                       <X className="w-4 h-4" />
@@ -456,11 +386,7 @@ export function ContextMenu({
                 ) : (
                   <div
                     onClick={() => setIsEditingName(true)}
-                    className={`px-2 py-1 rounded cursor-pointer transition-colors text-sm ${
-                      theme === 'dark'
-                        ? 'hover:bg-gray-700 text-white'
-                        : 'hover:bg-gray-100 text-gray-900'
-                    }`}
+                    className="px-2 py-1 rounded cursor-pointer transition-colors text-sm hover:bg-gray-100 text-gray-900 dark:hover:bg-gray-700 dark:text-white"
                   >
                     {currentDisplayName || <span className="italic opacity-50">Click to set name</span>}
                   </div>
@@ -470,20 +396,13 @@ export function ContextMenu({
           )}
         </div>
 
-        {/* Delete Button - Only visible with delete-sounds permission */}
+        {/* Delete Button */}
         {canDeleteSounds && (
           <>
-            <div className={`my-1 h-px ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`} />
+            <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
             <button
-              onClick={() => {
-                onDelete();
-                onClose();
-              }}
-              className={`w-full px-4 py-2 text-left flex items-center gap-3 transition-colors ${
-                theme === 'dark'
-                  ? 'hover:bg-red-900/30 text-red-400'
-                  : 'hover:bg-red-50 text-red-600'
-              }`}
+              onClick={() => { onDelete(); onClose(); }}
+              className="w-full px-4 py-2 text-left flex items-center gap-3 transition-colors hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30 dark:text-red-400"
             >
               <Trash2 className="w-4 h-4" />
               Delete Sound

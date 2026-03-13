@@ -14,11 +14,10 @@ interface DiscordUser {
 interface UsersOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  theme: 'light' | 'dark';
   sounds: Array<{ id: string; name: string }>;
 }
 
-export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayProps) {
+export function UsersOverlay({ isOpen, onClose, sounds }: UsersOverlayProps) {
   const [users, setUsers] = useState<DiscordUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -167,21 +166,13 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className={`w-full max-w-5xl h-[90vh] rounded-lg shadow-2xl flex flex-col ${
-        theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-      }`}>
+      <div className="w-full max-w-5xl h-[90vh] rounded-lg shadow-2xl flex flex-col bg-white text-gray-900 dark:bg-gray-800 dark:text-white">
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl">Discord Users</h2>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
-              theme === 'dark'
-                ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
+            className="p-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 hover:text-gray-900 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -189,11 +180,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
         </div>
 
         {/* Content */}
-        <div className={`flex-1 overflow-auto p-6 ${
-          theme === 'dark'
-            ? '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-            : '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-        }`}>
+        <div className="flex-1 overflow-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 dark:[&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -202,29 +189,21 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className={`border-b ${
-                    theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                  }`}>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th
-                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
-                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                      }`}
+                      className="px-4 py-3 text-left cursor-pointer select-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => handleSort('username')}
                     >
                       Username {getSortIcon('username')}
                     </th>
                     <th
-                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
-                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                      }`}
+                      className="px-4 py-3 text-left cursor-pointer select-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => handleSort('entranceSound')}
                     >
                       Entrance Sound {getSortIcon('entranceSound')}
                     </th>
                     <th
-                      className={`px-4 py-3 text-left cursor-pointer select-none transition-colors ${
-                        theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
-                      }`}
+                      className="px-4 py-3 text-left cursor-pointer select-none transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => handleSort('leaveSound')}
                     >
                       Leave Sound {getSortIcon('leaveSound')}
@@ -235,11 +214,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                   {users.map(user => (
                     <tr
                       key={user.id}
-                      className={`border-b cursor-pointer transition-colors ${
-                        theme === 'dark'
-                          ? 'border-gray-700 hover:bg-gray-700'
-                          : 'border-gray-100 hover:bg-gray-50'
-                      }`}
+                      className="border-b cursor-pointer transition-colors border-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                       onClick={() => {
                         if (!editingUserId) {
                           startEditing(user.id, 'entranceSound', user.entranceSound);
@@ -253,11 +228,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                             <select
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
-                              className={`flex-1 px-2 py-1 border rounded text-sm ${
-                                theme === 'dark'
-                                  ? 'bg-gray-700 border-gray-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
+                              className="flex-1 px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               autoFocus
                             >
                               <option value="">None</option>
@@ -275,11 +246,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                             </button>
                             <button
                               onClick={cancelEditing}
-                              className={`px-3 py-1 rounded text-sm ${
-                                theme === 'dark'
-                                  ? 'bg-gray-600 text-white hover:bg-gray-500'
-                                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                              }`}
+                              className="px-3 py-1 rounded text-sm bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
                             >
                               Cancel
                             </button>
@@ -287,9 +254,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                         ) : (
                           <button
                             onClick={() => startEditing(user.id, 'entranceSound', user.entranceSound)}
-                            className={`text-left w-full px-2 py-1 rounded hover:bg-opacity-50 ${
-                              theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
-                            }`}
+                            className="text-left w-full px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 hover:bg-opacity-50"
                           >
                             {user.entranceSound || <span className="text-gray-500 italic">None</span>}
                           </button>
@@ -301,11 +266,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                             <select
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
-                              className={`flex-1 px-2 py-1 border rounded text-sm ${
-                                theme === 'dark'
-                                  ? 'bg-gray-700 border-gray-600 text-white'
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
+                              className="flex-1 px-2 py-1 border rounded text-sm bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               autoFocus
                             >
                               <option value="">None</option>
@@ -323,11 +284,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                             </button>
                             <button
                               onClick={cancelEditing}
-                              className={`px-3 py-1 rounded text-sm ${
-                                theme === 'dark'
-                                  ? 'bg-gray-600 text-white hover:bg-gray-500'
-                                  : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-                              }`}
+                              className="px-3 py-1 rounded text-sm bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
                             >
                               Cancel
                             </button>
@@ -335,9 +292,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
                         ) : (
                           <button
                             onClick={() => startEditing(user.id, 'leaveSound', user.leaveSound)}
-                            className={`text-left w-full px-2 py-1 rounded hover:bg-opacity-50 ${
-                              theme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
-                            }`}
+                            className="text-left w-full px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 hover:bg-opacity-50"
                           >
                             {user.leaveSound || <span className="text-gray-500 italic">None</span>}
                           </button>
@@ -358,9 +313,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
         </div>
 
         {/* Footer with Pagination */}
-        <div className={`flex items-center justify-between p-6 border-t ${
-          theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
           <div className="text-sm text-gray-500">
             Page {currentPage + 1} of {totalPages || 1}
           </div>
@@ -371,9 +324,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
               className={`p-2 rounded-lg transition-colors ${
                 currentPage === 0
                   ? 'opacity-50 cursor-not-allowed'
-                  : theme === 'dark'
-                  ? 'hover:bg-gray-700 text-gray-400'
-                  : 'hover:bg-gray-100 text-gray-600'
+                  : 'hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-400'
               }`}
               aria-label="Previous page"
             >
@@ -385,9 +336,7 @@ export function UsersOverlay({ isOpen, onClose, theme, sounds }: UsersOverlayPro
               className={`p-2 rounded-lg transition-colors ${
                 currentPage >= totalPages - 1
                   ? 'opacity-50 cursor-not-allowed'
-                  : theme === 'dark'
-                  ? 'hover:bg-gray-700 text-gray-400'
-                  : 'hover:bg-gray-100 text-gray-600'
+                  : 'hover:bg-gray-100 text-gray-600 dark:hover:bg-gray-700 dark:text-gray-400'
               }`}
               aria-label="Next page"
             >

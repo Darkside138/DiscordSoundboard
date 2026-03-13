@@ -94,11 +94,11 @@ export function SettingsMenu({
   };
 
   const divider = (
-    <hr className={`mt-4 mb-3 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} />
+    <hr className="mt-4 mb-3 border-gray-200 dark:border-gray-700" />
   );
 
   const sectionLabel = (text: string) => (
-    <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+    <p className="text-xs font-semibold uppercase tracking-wider mb-3 text-gray-400 dark:text-gray-500">
       {text}
     </p>
   );
@@ -107,11 +107,9 @@ export function SettingsMenu({
     <div
       ref={menuRef}
       style={menuStyle}
-      className={`${
-        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      } border rounded-lg shadow-2xl p-4 min-w-[280px]`}
+      className="bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-lg shadow-2xl p-4 min-w-[280px]"
     >
-      <h3 className={`${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'} mb-4`}>
+      <h3 className="text-gray-800 dark:text-gray-200 mb-4">
         Settings
       </h3>
 
@@ -123,9 +121,7 @@ export function SettingsMenu({
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
             theme === 'light'
               ? 'bg-blue-600 text-white'
-              : theme === 'dark'
-              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           }`}
         >
           <Sun className="w-5 h-5" />
@@ -149,7 +145,7 @@ export function SettingsMenu({
       {/* Filters */}
       {sectionLabel('Filters')}
       <div className="mb-3">
-        <label className={`block text-sm mb-1.5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <label className="block text-sm mb-1.5 text-gray-700 dark:text-gray-300">
           Popular sounds count
         </label>
         <input
@@ -163,15 +159,11 @@ export function SettingsMenu({
               onPopularCountChange(value);
             }
           }}
-          className={`w-full px-3 py-2 rounded border ${
-            theme === 'dark'
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-300 text-gray-900'
-          } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          className="w-full px-3 py-2 rounded border bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div className="mb-1">
-        <label className={`block text-sm mb-1.5 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        <label className="block text-sm mb-1.5 text-gray-700 dark:text-gray-300">
           Recently added count
         </label>
         <input
@@ -185,11 +177,7 @@ export function SettingsMenu({
               onRecentCountChange(value);
             }
           }}
-          className={`w-full px-3 py-2 rounded border ${
-            theme === 'dark'
-              ? 'bg-gray-700 border-gray-600 text-white'
-              : 'bg-white border-gray-300 text-gray-900'
-          } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          className="w-full px-3 py-2 rounded border bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -198,8 +186,8 @@ export function SettingsMenu({
       {/* About */}
       {sectionLabel('About')}
       <div className="mb-1 flex items-center justify-between">
-        <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Bot version</span>
-        <span className={`text-sm font-mono ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{botVersion}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">Bot version</span>
+        <span className="text-sm font-mono text-gray-500 dark:text-gray-400">{botVersion}</span>
       </div>
 
       {/* Administration */}
@@ -211,11 +199,7 @@ export function SettingsMenu({
             {canUpload && onUploadClick && (
               <button
                 onClick={onUploadClick}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                  theme === 'dark'
-                    ? 'bg-blue-700 text-white hover:bg-blue-600'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
               >
                 <Upload className="w-5 h-5 mr-2" />
                 Upload Sound
@@ -224,11 +208,7 @@ export function SettingsMenu({
             {canManageUsers && onUsersClick && (
               <button
                 onClick={() => { onUsersClick(); onClose(); }}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               >
                 <Users className="w-5 h-5 mr-2" />
                 Manage Users
@@ -237,11 +217,7 @@ export function SettingsMenu({
             {canManageUsers && onRolesClick && (
               <button
                 onClick={() => { onRolesClick(); onClose(); }}
-                className={`w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
-                  theme === 'dark'
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className="w-full px-4 py-2 rounded-lg transition-colors flex items-center justify-center bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               >
                 <Shield className="w-5 h-5 mr-2" />
                 Manage Roles
@@ -256,11 +232,7 @@ export function SettingsMenu({
       {/* Close Button */}
       <button
         onClick={onClose}
-        className={`w-full px-4 py-2 rounded-lg transition-colors ${
-          theme === 'dark'
-            ? 'bg-blue-700 text-white hover:bg-blue-600'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
+        className="w-full px-4 py-2 rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
       >
         Done
       </button>

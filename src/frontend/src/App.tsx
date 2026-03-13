@@ -28,11 +28,6 @@ export default function App() {
   // Theme
   const { theme, setTheme } = useTheme();
 
-  // Sync html background to theme so scrollbar-gutter matches page color
-  useEffect(() => {
-    document.documentElement.style.backgroundColor = theme === 'dark' ? '#111827' : '#f9fafb';
-  }, [theme]);
-
   // Sounds data
   const { sounds, setSounds, favorites, setFavorites, loading, connectionStatus } = useSounds();
 
@@ -213,11 +208,11 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gray-50'} p-4`}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 p-4">
       <div>
         <header className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className={`${theme === 'dark' ? 'text-blue-400' : 'text-blue-900'} mb-2 flex items-center gap-3`}>
+            <h1 className="text-blue-900 dark:text-blue-400 mb-2 flex items-center gap-3">
               <img
                 src="/favicon.png"
                 alt="Discord Soundboard Logo"
@@ -245,7 +240,6 @@ export default function App() {
               user={authUser}
               onLogin={handleLogin}
               onLogout={handleLogout}
-              theme={theme}
             />
 
             {/* Settings Button */}
@@ -257,11 +251,7 @@ export default function App() {
                   y: rect.bottom + 8,
                 });
               }}
-              className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md'
-              }`}
+              className="flex items-center justify-center p-2 rounded-lg transition-colors bg-white text-gray-700 hover:bg-gray-100 shadow-md dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
@@ -272,7 +262,7 @@ export default function App() {
         {/* Main Content Area */}
         <div>
           {/* Filters */}
-          <div className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-lg shadow-md p-4 mb-6 ${theme === 'dark' ? 'border' : ''}`}>
+          <div className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg shadow-md p-4 mb-6">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
               {/* Left side - Search and filters */}
               <div>
@@ -282,7 +272,7 @@ export default function App() {
                   <div className="flex flex-col gap-3">
                     {/* Search */}
                     <div className="relative">
-                      <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
                       <input
                         id="soundSearch"
                         type="text"
@@ -294,18 +284,14 @@ export default function App() {
                             playSoundWithBot(filteredSounds[0].id);
                           }
                         }}
-                        className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${searchQuery ? 'pr-9' : 'pr-4'} ${
-                          theme === 'dark'
-                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                        }`}
+                        className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${searchQuery ? 'pr-9' : 'pr-4'}`}
                         ref={searchInputRef}
                       />
                       {searchQuery && (
                         <button
                           onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
                           aria-label="Clear search"
-                          className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-200 dark:hover:bg-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -323,11 +309,7 @@ export default function App() {
                             setActiveFilter('none');
                           }
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${selectedCategory !== 'all' ? 'pr-10' : ''} ${
-                          theme === 'dark'
-                            ? 'bg-gray-700 border-gray-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-900'
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white border-gray-300 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${selectedCategory !== 'all' ? 'pr-10' : ''}`}
                       >
                         {categories.map(category => (
                           <option key={category} value={category}>
@@ -339,7 +321,7 @@ export default function App() {
                         <button
                           onClick={() => setSelectedCategory('all')}
                           aria-label="Clear category filter"
-                          className={`absolute right-7 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'}`}
+                          className="absolute right-7 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-200 dark:hover:bg-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -352,12 +334,8 @@ export default function App() {
                     {/* Current Playback Info */}
                     <div className={`flex items-center h-[51px] gap-2 px-3 py-2 rounded-lg border ${
                       currentPlayback
-                        ? theme === 'dark'
-                          ? 'bg-blue-900/30 border-blue-700 text-blue-300'
-                          : 'bg-blue-50 border-blue-300 text-blue-800'
-                        : theme === 'dark'
-                        ? 'bg-gray-800 border-gray-700 text-gray-500'
-                        : 'bg-gray-50 border-gray-300 text-gray-500'
+                        ? 'bg-blue-50 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
+                        : 'bg-gray-50 border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-700'
                     }`}>
                       <div className="text-sm flex items-center gap-1 overflow-hidden min-w-0 flex-1">
                         {currentPlayback ? (
@@ -368,7 +346,7 @@ export default function App() {
                                 ? currentPlayback.displayName
                                 : formatSoundFileId(currentPlayback.soundFileId)}
                             </span>
-                            <span className={`shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>by</span>
+                            <span className="shrink-0 text-gray-600 dark:text-gray-400">by</span>
                             <span className="font-semibold truncate">{currentPlayback.user}</span>
                           </>
                         ) : (
@@ -382,12 +360,8 @@ export default function App() {
                       onClick={() => setShowHistory(h => !h)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full ${
                         showHistory
-                          ? theme === 'dark'
-                            ? 'bg-purple-700 text-white'
-                            : 'bg-purple-600 text-white'
-                          : theme === 'dark'
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'bg-purple-600 dark:bg-purple-700 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:border-0'
                       }`}
                       title="Toggle playback history"
                     >
@@ -397,9 +371,7 @@ export default function App() {
                         <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full font-semibold ${
                           showHistory
                             ? 'bg-white/20 text-white'
-                            : theme === 'dark'
-                            ? 'bg-gray-600 text-gray-300'
-                            : 'bg-gray-200 text-gray-600'
+                            : 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
                         }`}>
                           {history.length}
                         </span>
@@ -408,13 +380,9 @@ export default function App() {
 
                     {/* History List */}
                     {showHistory && (
-                      <div className={`overflow-y-auto max-h-[200px] rounded-lg border ${
-                        theme === 'dark'
-                          ? 'border-gray-700 bg-gray-800/50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-                          : 'border-gray-200 bg-white [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-                      }`}>
+                      <div className="overflow-y-auto max-h-[200px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800/50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 dark:[&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500">
                         {history.length === 0 ? (
-                          <div className={`px-3 py-4 text-center text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <div className="px-3 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
                             No playback history yet
                           </div>
                         ) : (
@@ -422,9 +390,7 @@ export default function App() {
                             {history.map((entry, i) => (
                               <div
                                 key={`${entry.soundId}-${entry.timestamp}-${i}`}
-                                className={`flex items-center gap-2 px-3 py-1.5 border-b last:border-b-0 text-sm ${
-                                  theme === 'dark' ? 'border-gray-700/50 text-gray-300' : 'border-gray-100 text-gray-700'
-                                }`}
+                                className="flex items-center gap-2 px-3 py-1.5 border-b last:border-b-0 text-sm border-gray-100 text-gray-700 dark:border-gray-700/50 dark:text-gray-300"
                               >
                                 <button
                                   onClick={() => playSoundWithBot(entry.soundId)}
@@ -432,18 +398,14 @@ export default function App() {
                                   className={`shrink-0 p-0.5 rounded transition-colors ${
                                     !isPlaybackEnabled || !authUser?.permissions?.playSounds
                                       ? 'opacity-30 cursor-not-allowed'
-                                      : theme === 'dark'
-                                      ? 'text-gray-400 hover:text-blue-400'
-                                      : 'text-gray-400 hover:text-blue-600'
+                                      : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
                                   }`}
                                   title="Play again"
                                 >
                                   <PlayCircle className="w-4 h-4" />
                                 </button>
                                 {entry.count > 1 && (
-                                  <span className={`shrink-0 text-xs font-bold px-1.5 py-0.5 rounded-full ${
-                                    theme === 'dark' ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-700'
-                                  }`}>
+                                  <span className="shrink-0 text-xs font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
                                     ×{entry.count}
                                   </span>
                                 )}
@@ -455,15 +417,15 @@ export default function App() {
                                       : formatSoundFileId(entry.soundId);
                                   })()}
                                 </span>
-                                <span className={`shrink-0 text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
                                   {formatTimeAgo(entry.timestamp)}
                                 </span>
                               </div>
                             ))}
-                            <div className={`border-t px-3 py-1.5 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <div className="border-t px-3 py-1.5 border-gray-200 dark:border-gray-700">
                               <button
                                 onClick={clearHistory}
-                                className={`text-xs ${theme === 'dark' ? 'text-gray-500 hover:text-red-400' : 'text-gray-400 hover:text-red-500'}`}
+                                className="text-xs text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                               >
                                 Clear history
                               </button>
@@ -478,7 +440,7 @@ export default function App() {
                 {/* Filter Buttons and Action Buttons */}
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Filter toggle group — connected segmented control */}
-                  <div className={`flex rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'}`}>
+                  <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
                     <button
                       onClick={() => {
                         setActiveFilter(activeFilter === 'favorites' ? 'none' : 'favorites');
@@ -487,16 +449,14 @@ export default function App() {
                       className={`flex items-center gap-2 px-4 py-2 transition-colors ${
                         activeFilter === 'favorites'
                           ? 'bg-yellow-600 text-white'
-                          : theme === 'dark'
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Star className={`w-4 h-4 ${activeFilter === 'favorites' ? 'fill-current' : ''}`} />
                       Favorites
                     </button>
 
-                    <div className={`w-px self-stretch ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
+                    <div className="w-px self-stretch bg-gray-300 dark:bg-gray-600" />
 
                     <button
                       onClick={() => {
@@ -506,16 +466,14 @@ export default function App() {
                       className={`flex items-center gap-2 px-4 py-2 transition-colors ${
                         activeFilter === 'popular'
                           ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-white'
-                          : theme === 'dark'
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Trophy className="w-4 h-4" />
                       Popular
                     </button>
 
-                    <div className={`w-px self-stretch ${theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'}`} />
+                    <div className="w-px self-stretch bg-gray-300 dark:bg-gray-600" />
 
                     <button
                       onClick={() => {
@@ -525,9 +483,7 @@ export default function App() {
                       className={`flex items-center gap-2 px-4 py-2 transition-colors ${
                         activeFilter === 'recent'
                           ? 'bg-green-600 text-white'
-                          : theme === 'dark'
-                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Sparkles className="w-4 h-4" />
@@ -537,7 +493,7 @@ export default function App() {
 
                   {/* Volume Slider */}
                   <div className={`flex items-center gap-3 flex-1 min-w-[200px] ${selectedUserId && isPlaybackEnabled ? '' : 'invisible'}`}>
-                    <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <Volume2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <input
                       type="range"
                       min="0"
@@ -561,21 +517,19 @@ export default function App() {
                           : 'Adjust volume'
                       }
                     />
-                    <span className={`min-w-[3rem] text-right ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className="min-w-[3rem] text-right text-gray-700 dark:text-gray-300">
                       {volume}%
                     </span>
                   </div>
 
                   {/* Play Random Sound Button */}
                   <button
-                    onClick={() => playRandomSound(filteredSounds)}
-                    disabled={!isPlaybackEnabled || filteredSounds.length === 0 || !authUser?.permissions?.playSounds}
+                    onClick={() => playRandomSound()}
+                    disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      !isPlaybackEnabled || filteredSounds.length === 0 || !authUser?.permissions?.playSounds
+                      !isPlaybackEnabled || !authUser?.permissions?.playSounds
                         ? 'opacity-50 cursor-not-allowed bg-gray-600 text-gray-400'
-                        : theme === 'dark'
-                        ? 'bg-blue-700 text-white hover:bg-blue-600'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600'
                     }`}
                     title={
                       !authUser?.permissions?.playSounds
@@ -596,9 +550,7 @@ export default function App() {
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       !isPlaybackEnabled || !authUser?.permissions?.playSounds
                         ? 'opacity-50 cursor-not-allowed bg-gray-600 text-gray-400'
-                        : theme === 'dark'
-                        ? 'bg-red-700 text-white hover:bg-red-600'
-                        : 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'
                     }`}
                     title={
                       !authUser?.permissions?.playSounds
@@ -617,7 +569,6 @@ export default function App() {
               {/* Right side - Discord Users */}
               <div>
                 <DiscordUsersList
-                  theme={theme}
                   onUserSelect={setSelectedUserId}
                   selectedUserId={selectedUserId}
                   onVolumeUpdate={setVolume}
@@ -634,16 +585,14 @@ export default function App() {
               {Array.from({ length: 48 }).map((_, i) => (
                 <div
                   key={i}
-                  className={`h-14 rounded-lg animate-pulse ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'}`}
+                  className="h-14 rounded-lg animate-pulse bg-gray-200 dark:bg-gray-700"
                 />
               ))}
             </div>
           ) : filteredSounds.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-12 rounded-lg border-2 border-dashed ${
-              theme === 'dark' ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'
-            }`}>
+            <div className="flex flex-col items-center justify-center py-12 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 dark:border-gray-700 dark:text-gray-500">
               <Music className="w-12 h-12 mb-4 opacity-40" />
-              <p className={`text-lg font-semibold mb-1 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>No sounds found</p>
+              <p className="text-lg font-semibold mb-1 text-gray-500 dark:text-gray-400">No sounds found</p>
               <p className="text-sm mb-4">
                 {searchQuery || selectedCategory !== 'all' || activeFilter !== 'none'
                   ? 'Try adjusting your filters'
@@ -656,11 +605,7 @@ export default function App() {
                     setSelectedCategory('all');
                     setActiveFilter('none');
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className="px-4 py-2 rounded-lg text-sm transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   Clear all filters
                 </button>
@@ -668,6 +613,34 @@ export default function App() {
             </div>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
+              {(searchQuery || selectedCategory !== 'all' || activeFilter !== 'none') && <div
+                className={`col-span-2 rounded-lg shadow-xl transition-shadow bg-blue-600 dark:bg-blue-700 dark:border dark:border-blue-600 ${
+                  !isPlaybackEnabled || !authUser?.permissions?.playSounds ? 'opacity-50' : 'hover:shadow-2xl'
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    const randomSound = filteredSounds[Math.floor(Math.random() * filteredSounds.length)];
+                    if (randomSound) playSoundWithBot(randomSound.id);
+                  }}
+                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                  className={`w-full h-full p-2 flex items-center justify-center gap-2 text-xs rounded-lg transition-all text-white ${
+                    !isPlaybackEnabled || !authUser?.permissions?.playSounds
+                      ? 'cursor-not-allowed'
+                      : 'hover:bg-blue-700 dark:hover:bg-blue-600'
+                  }`}
+                  title={
+                    !authUser?.permissions?.playSounds
+                      ? "You don't have permission to play sounds"
+                      : !isPlaybackEnabled
+                      ? 'User must be in voice channel'
+                      : 'Play a random sound from the current results'
+                  }
+                >
+                  <Shuffle className="w-4 h-4" />
+                  <span>Random From Results</span>
+                </button>
+              </div>}
               {filteredSounds.map(sound => (
                 <SoundButton
                   key={sound.id}
@@ -712,7 +685,6 @@ export default function App() {
             onDownload={() => downloadSound(contextMenu.soundId)}
             onPlayLocally={() => playLocalSoundWithHistory(contextMenu.soundId)}
             isFavorite={favorites.has(contextMenu.soundId)}
-            theme={theme}
             timesPlayed={sound.timesPlayed}
             dateAdded={sound.dateAdded}
             volumeOffset={sound.volumeOffset}
@@ -730,7 +702,6 @@ export default function App() {
         <UsersOverlay
           isOpen={showUsersOverlay}
           onClose={() => setShowUsersOverlay(false)}
-          theme={theme}
           sounds={sounds}
         />
       )}
@@ -759,7 +730,6 @@ export default function App() {
       <RoleManagementDialog
         isOpen={showRoleDialog}
         onClose={() => setShowRoleDialog(false)}
-        theme={theme}
         currentUserId={authUser?.id || ''}
         onRoleChanged={handleRoleChanged}
         canManageUsers={authUser?.permissions?.manageUsers || false}

@@ -1,8 +1,8 @@
-
 {
       "name": "Discord Soundboard",
       "version": "0.1.0",
       "private": true,
+      "type": "module",
       "dependencies": {
             "@radix-ui/react-accordion": "^1.2.3",
             "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -49,6 +49,7 @@
             "vaul": "^1.1.2"
       },
       "devDependencies": {
+            "@tailwindcss/vite": "^4.2.1",
             "@testing-library/jest-dom": "^6.1.5",
             "@testing-library/react": "^14.1.2",
             "@testing-library/user-event": "^14.5.1",
@@ -58,6 +59,7 @@
             "@types/react-dom": "^18.2.18",
             "@vitejs/plugin-react-swc": "^3.10.2",
             "jsdom": "^23.0.1",
+            "tailwindcss": "^4.2.1",
             "typescript": "^5.3.3",
             "vite": "6.4.1",
             "vitest": "^4.0.16"

@@ -263,9 +263,9 @@ Bot requires specific Discord Developer Portal settings:
 - **Bot Permissions:** Connect, Speak, Use Voice Activity (minimum)
 - **OAuth2 Redirect:** `https://your_soundboard_url/login/oauth2/code/discord`
 
-### Tailwind CSS (Static Pre-built File)
+### Tailwind CSS
 
-`src/frontend/src/index.css` is a **committed, pre-built Tailwind v4.1.3 output** — there is no `tailwindcss` npm package or Vite plugin configured. When adding new utility classes to JSX/TSX files, you **must manually add** the corresponding CSS rule to `index.css`, otherwise the style will silently be missing. Find the sorted location in the file and insert the rule alongside existing similar utilities.
+Tailwind v4 is configured via the `@tailwindcss/vite` plugin. `src/frontend/src/index.css` contains only `@import "tailwindcss"` plus custom CSS variables (`:root`/`.dark` theme tokens and the `html` base rule). Any utility class used in JSX/TSX is automatically included in the build — no manual CSS additions needed.
 
 ### Frontend Build Integration
 

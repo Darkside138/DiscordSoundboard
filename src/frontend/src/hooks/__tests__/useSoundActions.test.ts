@@ -226,7 +226,7 @@ describe('useSoundActions', () => {
       const { result } = renderHook(() => useSoundActions(defaultProps()))
 
       await act(async () => {
-        await result.current.playRandomSound([makeSound()])
+        await result.current.playRandomSound()
       })
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -242,22 +242,12 @@ describe('useSoundActions', () => {
       const { result } = renderHook(() => useSoundActions(props))
 
       await act(async () => {
-        await result.current.playRandomSound([makeSound()])
+        await result.current.playRandomSound()
       })
 
       expect(global.fetch).not.toHaveBeenCalled()
     })
 
-    it('shows warning toast when filtered sounds array is empty', async () => {
-      const useSoundActions = await useSoundActionsHook()
-      const { result } = renderHook(() => useSoundActions(defaultProps()))
-
-      await act(async () => {
-        await result.current.playRandomSound([]) // empty array
-      })
-
-      expect(global.fetch).not.toHaveBeenCalled()
-    })
   })
 
   // ── stopCurrentSound ───────────────────────────────────────────────────

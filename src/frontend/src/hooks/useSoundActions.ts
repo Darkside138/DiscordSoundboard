@@ -113,8 +113,8 @@ export function useSoundActions({
     }
   };
 
-  const playRandomSound = async (filteredSounds: Sound[]) => {
-    if (!isPlaybackEnabled || filteredSounds.length === 0) {
+  const playRandomSound = async () => {
+    if (!isPlaybackEnabled) {
       toast.warning('Please select a user from the Active Users list before playing a sound.', { duration: 3000 });
       return;
     }

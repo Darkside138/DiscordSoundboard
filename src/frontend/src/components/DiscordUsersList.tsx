@@ -30,7 +30,6 @@ interface DiscordUsersResponse {
 }
 
 interface DiscordUsersListProps {
-  theme: 'light' | 'dark';
   onUserSelect: (userId: string | null) => void;
   selectedUserId: string | null;
   onVolumeUpdate: (volume: number) => void;
@@ -38,7 +37,7 @@ interface DiscordUsersListProps {
   onGuildIdChange: (guildId: string | null) => void;
 }
 
-export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolumeUpdate, onPlaybackEnabledChange, onGuildIdChange }: DiscordUsersListProps) {
+export function DiscordUsersList({ onUserSelect, selectedUserId, onVolumeUpdate, onPlaybackEnabledChange, onGuildIdChange }: DiscordUsersListProps) {
   const [users, setUsers] = useState<DiscordUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +87,6 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
           return;
         }
 
-        // Selected user not found
         onPlaybackEnabledChange(false);
         onGuildIdChange(null);
         previousInVoiceRef.current = null;
@@ -290,38 +288,28 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   }, [onUserSelect, onVolumeUpdate, onPlaybackEnabledChange, onGuildIdChange]);
 
   const getStatusColor = (user: DiscordUser) => {
-    if (user.inVoice) {
-      return theme === 'dark' ? 'text-green-400' : 'text-green-600';
-    }
-    return theme === 'dark' ? 'text-gray-400' : 'text-gray-500';
+    if (user.inVoice) return 'text-green-600 dark:text-green-400';
+    return 'text-gray-500 dark:text-gray-400';
   };
 
   const getOnlineStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
-      case 'ONLINE':
-        return 'bg-green-500';
-      case 'IDLE':
-        return 'bg-yellow-500';
-      case 'DND':
-        return 'bg-red-500';
+      case 'ONLINE': return 'bg-green-500';
+      case 'IDLE': return 'bg-yellow-500';
+      case 'DND': return 'bg-red-500';
       case 'OFFLINE':
-      default:
-        return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
   if (loading) {
     return (
-      <div className={`rounded-lg border p-4 ${
-        theme === 'dark'
-          ? 'bg-gray-800 border-gray-700'
-          : 'bg-white border-gray-200'
-      }`}>
+      <div className="rounded-lg border p-4 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-5 h-5" />
           <h2 className="font-semibold">Active Users</h2>
         </div>
-        <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+        <p className="text-gray-500 dark:text-gray-400">
           Loading users...
         </p>
       </div>
@@ -330,16 +318,12 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
 
   if (error) {
     return (
-      <div className={`rounded-lg h-[152px] border p-4 ${
-        theme === 'dark'
-          ? 'bg-gray-800 border-gray-700'
-          : 'bg-white border-gray-200'
-      }`}>
+      <div className="rounded-lg h-[152px] border p-4 bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-5 h-5" />
           <h2 className="font-semibold">Active Users</h2>
         </div>
-        <p className={theme === 'dark' ? 'text-red-400' : 'text-red-600'}>
+        <p className="text-red-600 dark:text-red-400">
           {error}
         </p>
       </div>
@@ -347,40 +331,26 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
   }
 
   return (
-    <div className={`rounded-lg border h-[155px] flex flex-col ${
-      theme === 'dark'
-        ? 'bg-gray-800 border-gray-700'
-        : 'bg-white border-gray-200'
-    }`}>
-      <div className={`px-3 py-1 border-b flex-shrink-0 ${
-        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-      }`}>
+    <div className="rounded-lg border h-[155px] flex flex-col bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+      <div className="px-3 py-1 border-b flex-shrink-0 border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <Users className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} />
-          <h2 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Active Users</h2>
-          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs ${
-            theme === 'dark'
-              ? 'bg-blue-900 text-blue-200'
-              : 'bg-blue-100 text-blue-700'
-          }`}>
+          <Users className="w-5 h-5 text-gray-900 dark:text-white" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Active Users</h2>
+          <span className="ml-auto px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
             {users.length}
           </span>
         </div>
       </div>
 
-      <div className={`flex-1 overflow-y-auto min-h-0 ${
-        theme === 'dark'
-          ? '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-          : '[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 [&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500'
-      }`}>
+      <div className="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-200 dark:[&::-webkit-scrollbar-track]:bg-gray-700 [&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-500">
         {users.length === 0 ? (
           <div className="p-4 text-center">
-            <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+            <p className="text-gray-500 dark:text-gray-400">
               No active users
             </p>
           </div>
         ) : (
-          <div className={`divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {users.map(user => {
               const isSelected = selectedUserId === user.id;
               return (
@@ -396,12 +366,8 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                   }}
                   className={`py-0.5 px-3 flex items-center gap-2 transition-colors cursor-pointer ${
                     isSelected
-                      ? theme === 'dark'
-                        ? 'bg-blue-900/30 border-l-4 border-blue-500'
-                        : 'bg-blue-100 border-l-4 border-blue-600'
-                      : theme === 'dark'
-                      ? 'hover:bg-gray-700'
-                      : 'hover:bg-gray-50'
+                      ? 'bg-blue-100 border-l-4 border-blue-600 dark:bg-blue-900/30 dark:border-blue-500'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                   title={
                     [
@@ -426,36 +392,30 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                         }}
                       />
                     ) : null}
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center ${user.avatarUrl ? 'hidden' : ''} ${
-                        theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
-                      }`}
-                    >
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${user.avatarUrl ? 'hidden' : ''} bg-gray-200 dark:bg-gray-700`}>
                       <Users className="w-3 h-3" />
                     </div>
                     <div
-                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${
-                        theme === 'dark' ? 'border-gray-800' : 'border-white'
-                      } ${getOnlineStatusColor(user.onlineStatus)}`}
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800 ${getOnlineStatusColor(user.onlineStatus)}`}
                     />
                   </div>
 
                   {/* Username */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    <p className="text-sm truncate text-gray-900 dark:text-white">
                       {user.username}
                       {user.guildInAudioName && (
-                        <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {' '}({user.guildInAudioName})
                         </span>
                       )}
                     </p>
                     {user.entranceSound && user.leaveSound ? (
-                      <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <p className="text-xs truncate text-gray-500 dark:text-gray-400">
                         {user.entranceSound} | {user.leaveSound}
                       </p>
                     ) : (user.entranceSound || user.leaveSound) && (
-                      <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <p className="text-xs truncate text-gray-500 dark:text-gray-400">
                         {user.entranceSound ?? user.leaveSound}
                       </p>
                     )}
@@ -465,11 +425,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                   <div className="flex items-center gap-1">
                     {user.selected && (
                       <div
-                        className={`p-1 rounded ${
-                          theme === 'dark'
-                            ? 'bg-blue-900/50 text-blue-400'
-                            : 'bg-blue-100 text-blue-700'
-                        }`}
+                        className="p-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
                         title="Selected"
                       >
                         <CheckCircle className="w-3 h-3" />
@@ -477,11 +433,7 @@ export function DiscordUsersList({ theme, onUserSelect, selectedUserId, onVolume
                     )}
                     {user.inVoice && user.channelName && (
                       <div
-                        className={`p-1 rounded ${
-                          theme === 'dark'
-                            ? 'bg-green-900/50 text-green-400'
-                            : 'bg-green-100 text-green-700'
-                        }`}
+                        className="p-1 rounded bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400"
                         title={`In Voice Channel: ${user.channelName}`}
                       >
                         <Mic className="w-3 h-3" />

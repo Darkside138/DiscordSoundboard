@@ -10,7 +10,6 @@ interface PermissionGuardProps {
   fallback?: React.ReactNode;
   showLocked?: boolean;
   lockedMessage?: string;
-  theme?: 'light' | 'dark';
 }
 
 /**
@@ -28,7 +27,6 @@ export function PermissionGuard({
   fallback,
   showLocked = false,
   lockedMessage,
-  theme = 'dark',
 }: PermissionGuardProps) {
   const hasAccess = hasPermission(user, permission);
 
@@ -43,11 +41,7 @@ export function PermissionGuard({
   if (showLocked) {
     return (
       <div
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg opacity-50 cursor-not-allowed ${
-          theme === 'dark'
-            ? 'bg-gray-700 text-gray-400'
-            : 'bg-gray-200 text-gray-500'
-        }`}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg opacity-50 cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
         title={lockedMessage || `This feature requires the ${permission} permission`}
       >
         <Lock className="w-4 h-4" />

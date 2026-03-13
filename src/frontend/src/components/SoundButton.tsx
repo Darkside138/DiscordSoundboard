@@ -18,7 +18,7 @@ interface SoundButtonProps {
   onPlay: () => void;
   onToggleFavorite: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
-  theme: 'light' | 'dark';
+  theme?: 'light' | 'dark';
   disabled?: boolean;
   disabledReason?: string;
   isCurrentlyPlaying?: boolean;
@@ -26,7 +26,7 @@ interface SoundButtonProps {
   onStopLocalPlayback?: () => void;
 }
 
-export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, theme, disabled, disabledReason, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
+export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, onPlay, onToggleFavorite, onContextMenu, disabled, disabledReason, isCurrentlyPlaying, isLocallyPlaying, onStopLocalPlayback }: SoundButtonProps) {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
 
@@ -73,12 +73,8 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
 
   return (
     <div
-      className={`rounded-lg shadow-xl transition-shadow group relative ${
-        disabled
-          ? 'opacity-50 cursor-not-allowed'
-          : 'hover:shadow-2xl'
-      } ${
-        theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+      className={`rounded-lg shadow-xl transition-shadow group relative bg-white dark:bg-gray-800 dark:border dark:border-gray-700 ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-2xl'
       }`}
       onContextMenu={onContextMenu}
       onTouchStart={handleTouchStart}
@@ -108,14 +104,10 @@ export function SoundButton({ sound, isFavorite, isTopPlayed, isRecentlyAdded, o
 
       <button
         onClick={disabled ? undefined : onPlay}
-        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg relative ${
+        className={`w-full h-full p-2 text-center transition-all group whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg relative text-gray-900 dark:text-white ${
           disabled
             ? 'cursor-not-allowed'
-            : theme === 'dark'
-            ? 'text-white hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-400'
-            : 'text-gray-900 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-300 hover:text-white'
-        } ${
-          theme === 'dark' ? 'text-white' : 'text-gray-900'
+            : 'hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-300 hover:text-white dark:hover:from-blue-600 dark:hover:to-blue-400'
         } ${
           isCurrentlyPlaying ? 'bg-gradient-to-br from-blue-600 to-blue-400 text-white' : ''
         }`}
