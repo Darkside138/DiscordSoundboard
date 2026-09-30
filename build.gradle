@@ -107,8 +107,8 @@ dependencies {
 }
 
 node {
-    version = '20.11.0'
-    npmVersion = '10.2.4'
+    version = '22.20.0'
+    npmVersion = '10.9.3'
     download = true
     nodeProjectDir = file("${project.projectDir}/src/frontend")
 }
