@@ -18,7 +18,8 @@ export const AVAILABLE_PERMISSIONS = [
   'manage-users',
   'play-sounds',
   'download-sounds',
-  'update-volume'
+  'update-volume',
+  'use-tts'
 ];
 
 export function usePermissionManagement(canManageUsers: boolean = false) {

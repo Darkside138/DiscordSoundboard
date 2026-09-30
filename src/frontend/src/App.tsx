@@ -5,8 +5,9 @@ import { DiscordUsersList } from './components/DiscordUsersList';
 import { UsersOverlay } from './components/UsersOverlay';
 import { SettingsMenu } from './components/SettingsMenu';
 import { RoleManagementDialog } from './components/RoleManagementDialog';
+import { TtsPanel } from './components/TtsPanel';
 import { AuthButton } from './components/AuthButton';
-import { Search, Star, Trophy, Sparkles, Volume2, Shuffle, StopCircle, Settings, X, Music, History, PlayCircle } from 'lucide-react';
+import { Search, Star, Trophy, Sparkles, Volume2, Shuffle, StopCircle, Settings, X, Music, History, PlayCircle, Mic } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 
 // Custom hooks
@@ -20,6 +21,7 @@ import { useLocalPlayback } from './hooks/useLocalPlayback';
 import { useSoundActions } from './hooks/useSoundActions';
 import { useFilters } from './hooks/useFilters';
 import { usePlaybackHistory } from './hooks/usePlaybackHistory';
+import { useTts } from './hooks/useTts';
 
 export default function App() {
   // Authentication
@@ -86,6 +88,9 @@ export default function App() {
     setFavorites
   });
 
+  // TTS status (used to show the menu button regardless of stale JWT permissions)
+  const { ttsEnabled } = useTts();
+
   // Playback history
   const { history, recordPlay, clearHistory } = usePlaybackHistory();
   const [showHistory, setShowHistory] = useState(false);
@@ -118,6 +123,14 @@ export default function App() {
     playLocalSound(soundId);
   };
 
+  // Local playback mode — persisted to localStorage
+  const [localPlaybackMode, setLocalPlaybackMode] = useState<boolean>(() => {
+    return localStorage.getItem('soundboard-local-playback-mode') === 'true';
+  });
+  useEffect(() => {
+    localStorage.setItem('soundboard-local-playback-mode', String(localPlaybackMode));
+  }, [localPlaybackMode]);
+
   // UI state
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -126,6 +139,7 @@ export default function App() {
   } | null>(null);
   const [showUsersOverlay, setShowUsersOverlay] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showTtsPanel, setShowTtsPanel] = useState(false);
   const [settingsMenu, setSettingsMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Refs
@@ -281,7 +295,7 @@ export default function App() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && filteredSounds.length === 1) {
-                            playSoundWithBot(filteredSounds[0].id);
+                            localPlaybackMode ? playLocalSoundWithHistory(filteredSounds[0].id) : playSoundWithBot(filteredSounds[0].id);
                           }
                         }}
                         className={`w-full pl-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white border-gray-300 text-gray-900 placeholder-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 ${searchQuery ? 'pr-9' : 'pr-4'}`}
@@ -393,10 +407,10 @@ export default function App() {
                                 className="flex items-center gap-2 px-3 py-1.5 border-b last:border-b-0 text-sm border-gray-100 text-gray-700 dark:border-gray-700/50 dark:text-gray-300"
                               >
                                 <button
-                                  onClick={() => playSoundWithBot(entry.soundId)}
-                                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                                  onClick={() => localPlaybackMode ? playLocalSoundWithHistory(entry.soundId) : playSoundWithBot(entry.soundId)}
+                                  disabled={!localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds)}
                                   className={`shrink-0 p-0.5 rounded transition-colors ${
-                                    !isPlaybackEnabled || !authUser?.permissions?.playSounds
+                                    !localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds)
                                       ? 'opacity-30 cursor-not-allowed'
                                       : 'text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
                                   }`}
@@ -522,6 +536,22 @@ export default function App() {
                     </span>
                   </div>
 
+                  {/* TTS Button */}
+                  {ttsEnabled && authUser && (
+                    <button
+                      onClick={() => setShowTtsPanel(p => !p)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        showTtsPanel
+                          ? 'bg-purple-700 text-white dark:bg-purple-600'
+                          : 'bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+                      }`}
+                      title="Text to Speech"
+                    >
+                      <Mic className="w-5 h-5" />
+                      TTS
+                    </button>
+                  )}
+
                   {/* Play Random Sound Button */}
                   <button
                     onClick={() => playRandomSound()}
@@ -579,6 +609,15 @@ export default function App() {
             </div>
           </div>
 
+          {/* TTS Panel */}
+          {showTtsPanel && (
+            <TtsPanel
+              onClose={() => setShowTtsPanel(false)}
+              username={authUser?.username ?? ''}
+              voiceChannelId={selectedUserId ?? undefined}
+            />
+          )}
+
           {/* Sound Grid / Skeleton / Empty State */}
           {loading ? (
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
@@ -615,22 +654,26 @@ export default function App() {
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14 gap-2">
               {(searchQuery || selectedCategory !== 'all' || activeFilter !== 'none') && <div
                 className={`col-span-2 rounded-lg shadow-xl transition-shadow bg-blue-600 dark:bg-blue-700 dark:border dark:border-blue-600 ${
-                  !isPlaybackEnabled || !authUser?.permissions?.playSounds ? 'opacity-50' : 'hover:shadow-2xl'
+                  !localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds) ? 'opacity-50' : 'hover:shadow-2xl'
                 }`}
               >
                 <button
                   onClick={() => {
                     const randomSound = filteredSounds[Math.floor(Math.random() * filteredSounds.length)];
-                    if (randomSound) playSoundWithBot(randomSound.id);
+                    if (randomSound) {
+                      localPlaybackMode ? playLocalSoundWithHistory(randomSound.id) : playSoundWithBot(randomSound.id);
+                    }
                   }}
-                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                  disabled={!localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds)}
                   className={`w-full h-full p-2 flex items-center justify-center gap-2 text-xs rounded-lg transition-all text-white ${
-                    !isPlaybackEnabled || !authUser?.permissions?.playSounds
+                    !localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds)
                       ? 'cursor-not-allowed'
                       : 'hover:bg-blue-700 dark:hover:bg-blue-600'
                   }`}
                   title={
-                    !authUser?.permissions?.playSounds
+                    localPlaybackMode
+                      ? 'Play a random sound from the current results (local)'
+                      : !authUser?.permissions?.playSounds
                       ? "You don't have permission to play sounds"
                       : !isPlaybackEnabled
                       ? 'User must be in voice channel'
@@ -648,13 +691,14 @@ export default function App() {
                   isFavorite={favorites.has(sound.id)}
                   isTopPlayed={top10SoundIds.has(sound.id)}
                   isRecentlyAdded={recentlyAddedIds.has(sound.id)}
-                  onPlay={() => playSoundWithBot(sound.id)}
+                  onPlay={() => localPlaybackMode ? playLocalSoundWithHistory(sound.id) : playSoundWithBot(sound.id)}
                   onToggleFavorite={() => toggleFavorite(sound.id)}
                   onContextMenu={(e) => handleContextMenu(e, sound.id)}
                   theme={theme}
-                  disabled={!isPlaybackEnabled || !authUser?.permissions?.playSounds}
+                  disabled={!localPlaybackMode && (!isPlaybackEnabled || !authUser?.permissions?.playSounds)}
                   disabledReason={
-                    !authUser?.permissions?.playSounds
+                    localPlaybackMode ? undefined
+                      : !authUser?.permissions?.playSounds
                       ? "You don't have permission to play sounds"
                       : !isPlaybackEnabled
                       ? 'User must be in voice channel to play sounds'
@@ -682,7 +726,7 @@ export default function App() {
             onClose={() => setContextMenu(null)}
             onFavorite={() => toggleFavorite(contextMenu.soundId)}
             onDelete={() => deleteSound(contextMenu.soundId)}
-            onDownload={() => downloadSound(contextMenu.soundId)}
+            onDownload={() => downloadSound(sound)}
             onPlayLocally={() => playLocalSoundWithHistory(contextMenu.soundId)}
             isFavorite={favorites.has(contextMenu.soundId)}
             timesPlayed={sound.timesPlayed}
@@ -721,6 +765,8 @@ export default function App() {
           recentCount={recentCount}
           onPopularCountChange={setPopularCount}
           onRecentCountChange={setRecentCount}
+          localPlaybackMode={localPlaybackMode}
+          onLocalPlaybackModeChange={setLocalPlaybackMode}
           canUpload={authUser?.permissions?.upload}
           canManageUsers={authUser?.permissions?.manageUsers}
         />

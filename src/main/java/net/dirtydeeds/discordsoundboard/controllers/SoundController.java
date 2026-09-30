@@ -149,7 +149,7 @@ public class SoundController {
         }
     }
 
-    @GetMapping(value = "/download/{soundId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/download/{soundId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Resource> downloadFile(
             @PathVariable String soundId,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
@@ -161,6 +161,9 @@ public class SoundController {
             }
 
             SoundFile soundFile = soundService.findOneBySoundFileIdIgnoreCase(soundId);
+            if (soundFile == null) {
+                return ResponseEntity.notFound().build();
+            }
 
             Path filePath = Paths.get("files").resolve(soundFile.getSoundFileLocation()).normalize();
             Resource resource = new UrlResource(filePath.toUri());

@@ -16,6 +16,7 @@ export interface DiscordUser {
     playSounds: boolean;
     downloadSounds: boolean;
     updateVolume: boolean;
+    useTts: boolean;
   };
 }
 
@@ -48,6 +49,8 @@ function transformPermissions(backendPermissions: any): DiscordUser['permissions
     'downloadSounds': 'downloadSounds',
     'update-volume': 'updateVolume',
     'updateVolume': 'updateVolume',
+    'use-tts': 'useTts',
+    'useTts': 'useTts',
   };
 
   const transformed: any = {};

@@ -42,20 +42,24 @@ app:
         - play-sounds
         - download-sounds
         - update-volume
+        - use-tts
       dj:
         - upload
         - edit-sounds
         - play-sounds
         - download-sounds
+        - use-tts
       moderator:
         - delete-sounds
         - edit-sounds
         - play-sounds
         - download-sounds
         - update-volume
+        - use-tts
       user:
         - play-sounds
         - download-sounds
+        - use-tts
 
       # Default permissions for unauthenticated users
       default-permissions:

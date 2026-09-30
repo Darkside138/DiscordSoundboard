@@ -13,6 +13,8 @@ interface SettingsMenuProps {
   onPopularCountChange: (count: number) => void;
   onRecentCountChange: (count: number) => void;
   onThemeChange: (theme: 'light' | 'dark') => void;
+  localPlaybackMode: boolean;
+  onLocalPlaybackModeChange: (enabled: boolean) => void;
   canUpload?: boolean;
   canManageUsers?: boolean;
   onUploadClick?: () => void;
@@ -30,6 +32,8 @@ export function SettingsMenu({
   onPopularCountChange,
   onRecentCountChange,
   onThemeChange,
+  localPlaybackMode,
+  onLocalPlaybackModeChange,
   canUpload,
   canManageUsers,
   onUploadClick,
@@ -183,6 +187,28 @@ export function SettingsMenu({
 
       {divider}
 
+      {/* Playback */}
+      {sectionLabel('Playback')}
+      <label className="flex items-center justify-between cursor-pointer mb-1">
+        <div>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Local playback mode</span>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Play sounds in browser instead of via bot</p>
+        </div>
+        <div
+          role="switch"
+          aria-checked={localPlaybackMode}
+          onClick={() => onLocalPlaybackModeChange(!localPlaybackMode)}
+          className="relative ml-4 shrink-0 w-10 h-6 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') onLocalPlaybackModeChange(!localPlaybackMode); }}
+        >
+          <div className={`absolute top-0 left-0 w-10 h-6 rounded-full transition-colors ${localPlaybackMode ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`} />
+          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${localPlaybackMode ? 'left-5' : 'left-1'}`} />
+        </div>
+      </label>
+
+      {divider}
+
       {/* About */}
       {sectionLabel('About')}
       <div className="mb-1 flex items-center justify-between">
@@ -226,6 +252,7 @@ export function SettingsMenu({
           </div>
         </>
       )}
+
 
       {divider}
 

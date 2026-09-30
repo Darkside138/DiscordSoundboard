@@ -200,7 +200,8 @@ export function useSoundActions({
   const downloadSound = (sound: Sound) => {
     const link = document.createElement('a');
     link.href = `${API_ENDPOINTS.DOWNLOAD}/${sound.id}`;
-    link.download = `${sound.name}.ogg`;
+    // Empty value lets the browser use the server's Content-Disposition filename (correct extension)
+    link.download = '';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

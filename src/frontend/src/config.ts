@@ -44,4 +44,8 @@ export const API_ENDPOINTS = {
   RESET_ROLE_TO_DEFAULTS: (role: string) => `${API_BASE_URL}/api/rolePermissions/${role}/reset`,
   // Bot version
   BOT_VERSION: `${API_BASE_URL}/bot/version`,
+  // TTS endpoints
+  TTS_STATUS: `${API_BASE_URL}/api/tts/status`,
+  TTS_VOICES: `${API_BASE_URL}/api/tts/voices`,
+  TTS_PLAY: `${API_BASE_URL}/api/tts/play`,
 };
