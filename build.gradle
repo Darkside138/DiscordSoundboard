@@ -200,9 +200,9 @@ tasks.register("bumpPatchVersion") {
                 }
 
                 // Explicitly convert to String, then to int
-                def major = matcher[0][1 as String].toString().toInteger()
-                def minor = matcher[0][2 as String].toString().toInteger()
-                def patch = matcher[0][3 as String].toString().toInteger() + 1
+                def major = matcher[0][1].toString().toInteger()
+                def minor = matcher[0][2].toString().toInteger()
+                def patch = matcher[0][3].toString().toInteger() + 1
 
                 def newVersion = "projectVersion=$major.$minor.$patch"
 
